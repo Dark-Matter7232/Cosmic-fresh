@@ -215,7 +215,7 @@ atomic64_set(atomic64_t *v, s64 i)
 static __inline__ s64
 atomic64_read(const atomic64_t *v)
 {
-	return ACCESS_ONCE((v)->counter);
+	return READ_ONCE((v)->counter);
 }
 
 /* exported interface */

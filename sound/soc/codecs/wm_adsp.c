@@ -5459,6 +5459,8 @@ int wm_adsp2_lock(struct wm_adsp *dsp, unsigned int lock_regions)
 		lock_reg += 2;
 	}
 
+#ifdef CONFIG_DEBUG_FS
+#endif
 	return 0;
 }
 EXPORT_SYMBOL_GPL(wm_adsp2_lock);

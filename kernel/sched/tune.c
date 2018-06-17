@@ -10,11 +10,8 @@
 
 #include <trace/events/sched.h>
 
-
 #include "sched.h"
 #include "tune.h"
-
-
 
 bool schedtune_initialized = false;
 
@@ -26,16 +23,11 @@ static struct schedtune *getSchedtune(char *st_name);
 static int dynamic_boost(struct schedtune *st, int boost);
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
-
-
-
-
 /* We hold schedtune boost in effect for at least this long */
 #define SCHEDTUNE_BOOST_HOLD_NS 50000000ULL
 
 /*
  * EAS scheduler tunables for task groups.
-
 
  */
 
@@ -49,8 +41,6 @@ struct schedtune {
 
 	/* Boost value for tasks on that SchedTune CGroup */
 	int boost;
-
-
 
 	/* Hint to bias scheduling of tasks on that SchedTune CGroup
 	 * towards idle CPUs */
@@ -74,6 +64,9 @@ struct schedtune {
 	 * the value when Dynamic SchedTune Boost is reset.
 	 */
 	int boost_default;
+
+	/* Dynamic boost value for tasks on that SchedTune CGroup */
+	int dynamic_boost;
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 };
 
@@ -111,11 +104,11 @@ root_schedtune = {
 	.band = 0,
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 	.boost_default = 0,
+	.dynamic_boost = 0,
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 
 };
-
 
 /*
  * Maximum number of boost groups to support
@@ -435,8 +428,6 @@ static void schedtune_attach(struct cgroup_taskset *tset)
 		sync_band(task, css_st(css)->band);
 }
 
-
-
 /*
  * NOTE: This function must be called while holding the lock on the CPU RQ
  */
@@ -449,8 +440,6 @@ void schedtune_dequeue_task(struct task_struct *p, int cpu)
 
 	if (unlikely(!schedtune_initialized))
 		return;
-
-
 
 	/*
 	 * Boost group accouting is protected by a per-cpu lock and requires
@@ -467,8 +456,6 @@ void schedtune_dequeue_task(struct task_struct *p, int cpu)
 	rcu_read_unlock();
 	raw_spin_unlock_irqrestore(&bg->lock, irq_flags);
 }
-
-
 
 int schedtune_cpu_boost(int cpu)
 {
@@ -721,6 +708,26 @@ static int prefer_idle_write_wrapper(struct cgroup_subsys_state *css,
 }
 #endif
 
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+static s64
+dynamic_boost_read(struct cgroup_subsys_state *css, struct cftype *cft)
+{
+	struct schedtune *st = css_st(css);
+
+	return st->dynamic_boost;
+}
+
+static int
+dynamic_boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
+	    s64 dynamic_boost)
+{
+	struct schedtune *st = css_st(css);
+	st->dynamic_boost = dynamic_boost;
+
+	return 0;
+}
+#endif // CONFIG_DYNAMIC_STUNE_BOOST
+
 static struct cftype files[] = {
 	{
 		.name = "boost",
@@ -752,7 +759,13 @@ static struct cftype files[] = {
 		.read_u64 = ontime_en_read,
 		.write_u64 = ontime_en_write,
 	},
-
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	{
+		.name = "dynamic_boost",
+		.read_s64 = dynamic_boost_read,
+		.write_s64 = dynamic_boost_write,
+	},
+#endif // CONFIG_DYNAMIC_STUNE_BOOST
 	{ }	/* terminate */
 };
 

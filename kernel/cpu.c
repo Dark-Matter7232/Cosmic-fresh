@@ -1122,10 +1122,10 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
 	rcu_expedited = 0;
 #endif
 
-	cpus_write_lock();
-
 	if (!tasks_frozen && !cpu_isolated(cpu) && num_online_uniso_cpus() == 1)
 		return -EBUSY;
+
+	cpus_write_lock();
 
 	cpuhp_tasks_frozen = tasks_frozen;
 

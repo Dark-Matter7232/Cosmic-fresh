@@ -29,8 +29,10 @@
 #include <linux/rcupdate.h>
 #include "input-compat.h"
 
+#if defined(CONFIG_INPUT_BOOSTER) // Input Booster +
 // Input Booster +
 #include <linux/input/input_booster.h>
+#endif // Input Booster -
 
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
 MODULE_DESCRIPTION("Input core");
@@ -411,7 +413,7 @@ static void input_handle_event(struct input_dev *dev,
 
 }
 
-// Input Booster +
+#if defined(CONFIG_INPUT_BOOSTER) // Input Booster +
 // ********** Define Timeout Functions ********** //
 DECLARE_TIMEOUT_FUNC(touch);
 DECLARE_TIMEOUT_FUNC(multitouch);
@@ -816,6 +818,8 @@ void input_booster_init(void)
 	}
 }
 
+#endif  // Input Booster -
+
 /**
  * input_event() - report new input event
  * @dev: device that generated the event
@@ -837,17 +841,19 @@ void input_event(struct input_dev *dev,
 		 unsigned int type, unsigned int code, int value)
 {
 	unsigned long flags;
-
+#if defined(CONFIG_INPUT_BOOSTER) // Input Booster +
 	// Input Booster +
 	int idx = 0;
+#endif
 
 	if (is_event_supported(type, dev->evbit, EV_MAX)) {
 
 		spin_lock_irqsave(&dev->event_lock, flags);
 		input_handle_event(dev, type, code, value);
 		spin_unlock_irqrestore(&dev->event_lock, flags);
+		
+#if defined(CONFIG_INPUT_BOOSTER) // Input Booster +
 
-		/* Input Booster + */
 		if (device_tree_infor != NULL) {
 			if (type == EV_SYN && input_count > 0) {
 				pr_booster("[Input Booster1] ==============================================\n");
@@ -866,7 +872,7 @@ void input_event(struct input_dev *dev,
 				pr_booster("[Input Booster1] type = %x, code = %x, value =%x   Booster Event Exceeded\n", type, code, value);
 			}
 		}
-		/* Input Booster */
+#endif  // Input Booster -
 	}
 }
 EXPORT_SYMBOL(input_event);
@@ -2962,9 +2968,9 @@ static int __init input_init(void)
 		goto fail2;
 	}
 
-	/* Input Booster + */
+#if defined(CONFIG_INPUT_BOOSTER) // Input Booster +
 	input_booster_init();
-	/* Input Booster */
+#endif  // Input Booster -
 
 	return 0;
 

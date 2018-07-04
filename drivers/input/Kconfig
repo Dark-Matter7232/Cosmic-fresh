@@ -209,6 +209,14 @@ config SEC_DEBUG_TSP_LOG
 	tristate "Support for tsp_msg"
 	default n
 
+config INPUT_BOOSTER
+	bool "Samsung input boost"
+	default n
+	help
+	  Enable the Samsung built-in input boost that acts on
+	  mouse, keyboard, touch (only on sec_ts), and more
+	  input factors.
+
 config SEC_AUTO_INPUT
 	tristate "Samsung auto input"
 	depends on !SAMSUNG_PRODUCT_SHIP

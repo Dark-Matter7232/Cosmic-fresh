@@ -60,8 +60,8 @@ tmp3		.req	x9
 zeroones	.req	x10
 pos		.req	x11
 
-ENTRY(strcmp)
-	eor	tmp1, src1, src2
+WEAK(strcmp)
+
 	mov	zeroones, #REP8_01
 	tst	tmp1, #7
 	b.ne	.Lmisaligned8

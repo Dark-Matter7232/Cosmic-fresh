@@ -560,13 +560,14 @@ static unsigned long swapin_nr_pages(unsigned long offset)
 struct page *swapin_readahead(swp_entry_t entry, gfp_t gfp_mask,
 			struct vm_area_struct *vma, unsigned long addr)
 {
+	bool do_poll = true;
 	struct page *page;
 	unsigned long entry_offset = swp_offset(entry);
 	unsigned long offset = entry_offset;
 	unsigned long start_offset, end_offset;
 	unsigned long mask;
 	struct blk_plug plug;
-	bool do_poll = true, page_allocated;
+	bool page_allocated;
 
 	mask = swapin_nr_pages(offset) - 1;
 	if (!mask)
@@ -731,8 +732,9 @@ struct page *do_swap_page_readahead(swp_entry_t fentry, gfp_t gfp_mask,
 				    struct vm_fault *vmf,
 				    struct vma_swap_readahead *swap_ra)
 {
-	struct blk_plug plug;
 	struct vm_area_struct *vma = vmf->vma;
+	bool do_poll = true;
+	struct blk_plug plug;
 	struct page *page;
 	pte_t *pte, pentry;
 	swp_entry_t entry;
@@ -741,6 +743,8 @@ struct page *do_swap_page_readahead(swp_entry_t fentry, gfp_t gfp_mask,
 
 	if (swap_ra->win == 1)
 		goto skip;
+
+	do_poll = false;
 
 	blk_start_plug(&plug);
 	for (i = 0, pte = swap_ra->ptes; i < swap_ra->nr_pte;
@@ -771,7 +775,7 @@ struct page *do_swap_page_readahead(swp_entry_t fentry, gfp_t gfp_mask,
 	lru_add_drain();
 skip:
 	return read_swap_cache_async(fentry, gfp_mask, vma, vmf->address,
-				     swap_ra->win == 1);
+				     do_poll);
 }
 
 #ifdef CONFIG_SYSFS

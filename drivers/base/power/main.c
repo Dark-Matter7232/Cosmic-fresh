@@ -1837,6 +1837,7 @@ int dpm_prepare(pm_message_t state)
 			log_suspend_abort_reason("Device %s not prepared: %d",
 					dev_name(dev), error);
 #endif
+			dpm_save_failed_dev(dev_name(dev));
 			put_device(dev);
 			break;
 		}

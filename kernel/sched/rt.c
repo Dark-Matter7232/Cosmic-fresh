@@ -3674,6 +3674,9 @@ const struct sched_class rt_sched_class = {
 #ifdef CONFIG_RT_GROUP_SCHED
 	.task_change_group	= task_change_group_rt,
 #endif
+#ifdef CONFIG_SCHED_WALT
+	.fixup_cumulative_runnable_avg = walt_fixup_cumulative_runnable_avg,
+#endif
 };
 
 #ifdef CONFIG_RT_GROUP_SCHED

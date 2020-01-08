@@ -337,6 +337,11 @@ struct g2d_task *g2d_get_free_task(struct g2d_device *g2d_dev,
 	int num_queued = 0;
 	ktime_t ktime_pending;
 
+	if ((g2d_dev->caps & G2D_DEVICE_CAPS_HWFC) && hwfc) {
+		perrfndev(g2d_dev, "HWFC is not supported");
+		return ERR_PTR(-EINVAL);
+	}
+
 	if (hwfc)
 		taskfree = &g2d_dev->tasks_free_hwfc;
 	else
@@ -357,7 +362,7 @@ struct g2d_task *g2d_get_free_task(struct g2d_device *g2d_dev,
 				  num_queued, max_queued);
 
 		if (!block_on_contension)
-			return NULL;
+			return ERR_PTR(-EBUSY);
 
 		ktime_pending = ktime_get();
 
@@ -527,7 +532,8 @@ int g2d_create_tasks(struct g2d_device *g2d_dev)
 		g2d_dev->tasks = task;
 
 		/* MAX_SHARED_BUF_NUM is defined in media/exynos_repeater.h */
-		if (i < MAX_SHARED_BUF_NUM)
+		if ((g2d_dev->caps & G2D_DEVICE_CAPS_HWFC) &&
+		    (i < MAX_SHARED_BUF_NUM))
 			list_add(&task->node, &g2d_dev->tasks_free_hwfc);
 		else
 			list_add(&task->node, &g2d_dev->tasks_free);

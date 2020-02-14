@@ -863,12 +863,13 @@ const struct g2d_device_data g2d_9610_data __initconst = {
 };
 
 const struct g2d_device_data g2d_9810_data __initconst = {
+	.caps = G2D_DEVICE_CAPS_HDR10,
 	.max_layers = G2D_MAX_IMAGES,
 };
 
 const struct g2d_device_data g2d_9820_data __initconst = {
 	.caps = G2D_DEVICE_CAPS_SELF_PROTECTION | G2D_DEVICE_CAPS_YUV_BITDEPTH |
-		G2D_DEVICE_CAPS_HWFC,
+		G2D_DEVICE_CAPS_HWFC | G2D_DEVICE_CAPS_HDR10,
 	.max_layers = G2D_MAX_IMAGES,
 };
 

@@ -19,5 +19,5 @@
 #define LIST_WL_DEFAULT				"wlan;wlan_wake;wlan_wow_wl;wlan_extscan_wl;netmgr_wl;NETLINK;IPA_WS;[timerfd];wlan_ipa;wlan_pno_wl;wlan_rx_wake;wlan_ctrl_wake;wlan_txfl_wake;bluetooth_timer;BT_bt_wake;BT_host_wake;bbd_wake_lock;ssp_sensorhub_wake_lock;ssp_wake_lock;ssp_comm_wake_lock;mmc0_detect;grip_wake_lock;wlan_scan_wake;wlan_pm_wake;nfc_wake_lock;wcnss_filter_lock"
 
 #define LENGTH_LIST_WL				255
-#define LENGTH_LIST_WL_DEFAULT		123
+#define LENGTH_LIST_WL_DEFAULT		(sizeof(LIST_WL_DEFAULT))
 #define LENGTH_LIST_WL_SEARCH		LENGTH_LIST_WL + LENGTH_LIST_WL_DEFAULT + 5

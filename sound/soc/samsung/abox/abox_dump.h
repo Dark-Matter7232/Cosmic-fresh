@@ -20,7 +20,7 @@
  * @param[in]	id		unique buffer id
  * @param[in]	pointer		byte index of the written data
  */
-extern void abox_dump_period_elapsed(int id, size_t pointer);
+static inline void abox_dump_period_elapsed(int id, size_t pointer) {}
 
 /**
  * Register abox dump buffer
@@ -32,7 +32,7 @@ extern void abox_dump_period_elapsed(int id, size_t pointer);
  * @param[in]	bytes		buffer size in bytes
  * @return	error code if any
  */
-extern int abox_dump_register_buffer(struct device *dev, int id,
-		const char *name, void *area, phys_addr_t addr, size_t bytes);
+static inline  int abox_dump_register_buffer(struct device *dev, int id,
+		const char *name, void *area, phys_addr_t addr, size_t bytes) { return 0; }
 
 #endif /* __SND_SOC_ABOX_DUMP_H */

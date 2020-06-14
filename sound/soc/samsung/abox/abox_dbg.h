@@ -25,7 +25,7 @@ enum abox_dbg_dump_src {
  * Initialize abox debug driver
  * @return	dentry of abox debugfs root directory
  */
-extern struct dentry *abox_dbg_get_root_dir(void);
+static inline struct dentry *abox_dbg_get_root_dir(void) { return 0; }
 
 /**
  * print gpr into the kmsg from memory
@@ -33,15 +33,15 @@ extern struct dentry *abox_dbg_get_root_dir(void);
  * @param[in]	data		pointer to abox_data structure
  * @param[in]	addr		pointer to gpr dump
  */
-extern void abox_dbg_print_gpr_from_addr(struct device *dev,
-		struct abox_data *data, unsigned int *addr);
+static inline void abox_dbg_print_gpr_from_addr(struct device *dev,
+		struct abox_data *data, unsigned int *addr) {}
 
 /**
  * print gpr into the kmsg
  * @param[in]	dev		pointer to device which invokes this API
  * @param[in]	data		pointer to abox_data structure
  */
-extern void abox_dbg_print_gpr(struct device *dev, struct abox_data *data);
+static inline void abox_dbg_print_gpr(struct device *dev, struct abox_data *data) {}
 
 /**
  * dump gpr from memory
@@ -50,8 +50,8 @@ extern void abox_dbg_print_gpr(struct device *dev, struct abox_data *data);
  * @param[in]	src		source of the dump request
  * @param[in]	reason		reason description
  */
-extern void abox_dbg_dump_gpr_from_addr(struct device *dev, unsigned int *addr,
-		enum abox_dbg_dump_src src, const char *reason);
+static inline void abox_dbg_dump_gpr_from_addr(struct device *dev, unsigned int *addr,
+		enum abox_dbg_dump_src src, const char *reason) {}
 
 /**
  * dump gpr
@@ -60,8 +60,8 @@ extern void abox_dbg_dump_gpr_from_addr(struct device *dev, unsigned int *addr,
  * @param[in]	src		source of the dump request
  * @param[in]	reason		reason description
  */
-extern void abox_dbg_dump_gpr(struct device *dev, struct abox_data *data,
-		enum abox_dbg_dump_src src, const char *reason);
+static inline void abox_dbg_dump_gpr(struct device *dev, struct abox_data *data,
+		enum abox_dbg_dump_src src, const char *reason) {}
 
 /**
  * dump memory
@@ -70,8 +70,8 @@ extern void abox_dbg_dump_gpr(struct device *dev, struct abox_data *data,
  * @param[in]	src		source of the dump request
  * @param[in]	reason		reason description
  */
-extern void abox_dbg_dump_mem(struct device *dev, struct abox_data *data,
-		enum abox_dbg_dump_src src, const char *reason);
+static inline void abox_dbg_dump_mem(struct device *dev, struct abox_data *data,
+		enum abox_dbg_dump_src src, const char *reason) {}
 
 /**
  * dump gpr and memory
@@ -80,8 +80,8 @@ extern void abox_dbg_dump_mem(struct device *dev, struct abox_data *data,
  * @param[in]	src		source of the dump request
  * @param[in]	reason		reason description
  */
-extern void abox_dbg_dump_gpr_mem(struct device *dev, struct abox_data *data,
-		enum abox_dbg_dump_src src, const char *reason);
+static inline void abox_dbg_dump_gpr_mem(struct device *dev, struct abox_data *data,
+		enum abox_dbg_dump_src src, const char *reason) {}
 
 /**
  * dump gpr and memory except DRAM
@@ -89,14 +89,14 @@ extern void abox_dbg_dump_gpr_mem(struct device *dev, struct abox_data *data,
  * @param[in]	data		pointer to abox_data structure
  * @param[in]	reason		reason description
  */
-extern void abox_dbg_dump_simple(struct device *dev, struct abox_data *data,
-		const char *reason);
+static inline void abox_dbg_dump_simple(struct device *dev, struct abox_data *data,
+		const char *reason) {}
 
 /**
  * Push status of the abox
  * @param[in]	dev		pointer to abox device
  * @param[in]	ok		true for okay, false on otherwise
  */
-extern void abox_dbg_report_status(struct device *dev, bool ok);
+static inline void abox_dbg_report_status(struct device *dev, bool ok) {}
 
 #endif /* __SND_SOC_ABOX_DEBUG_H */

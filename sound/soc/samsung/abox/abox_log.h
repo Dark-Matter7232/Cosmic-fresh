@@ -19,26 +19,26 @@
  * Flush log from all shared memories to kernel memory
  * @param[in]	dev		pointer to abox device
  */
-extern void abox_log_flush_all(struct device *dev);
+static inline  void abox_log_flush_all(struct device *dev) {}
 
 /**
  * Schedule log flush from all shared memories to kernel memory
  * @param[in]	dev		pointer to abox device
  */
-extern void abox_log_schedule_flush_all(struct device *dev);
+static inline  void abox_log_schedule_flush_all(struct device *dev) {}
 
 /**
  * drain log and stop scheduling log flush
  * @param[in]	dev		pointer to abox device
  */
-extern void abox_log_drain_all(struct device *dev);
+static inline  void abox_log_drain_all(struct device *dev) {}
 
 /**
  * Flush log from specific shared memory to kernel memory
  * @param[in]	dev		pointer to abox device
  * @param[in]	id		unique buffer id
  */
-extern void abox_log_flush_by_id(struct device *dev, int id);
+static inline  void abox_log_flush_by_id(struct device *dev, int id) {}
 
 /**
  * Register abox log buffer
@@ -47,7 +47,7 @@ extern void abox_log_flush_by_id(struct device *dev, int id);
  * @param[in]	buffer		pointer to shared buffer
  * @return	error code if any
  */
-extern int abox_log_register_buffer(struct device *dev, int id,
-		struct ABOX_LOG_BUFFER *buffer);
+static inline  int abox_log_register_buffer(struct device *dev, int id,
+		struct ABOX_LOG_BUFFER *buffer) { return 0; }
 
 #endif /* __SND_SOC_ABOX_LOG_H */

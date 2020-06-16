@@ -109,79 +109,54 @@ static inline struct sysmmu_event_log *sysmmu_event_log_get(
 #define DEFINE_SYSMMU_EVENT_LOG(evt)					\
 static inline void SYSMMU_EVENT_LOG_##evt(struct exynos_iommu_event_log *plog) \
 {									\
-	struct sysmmu_event_log *log = sysmmu_event_log_get(plog);	\
-	log->event = EVENT_SYSMMU_##evt;				\
 }
 
 #define DEFINE_SYSMMU_EVENT_LOG_1ADDR(evt)				\
 static inline void SYSMMU_EVENT_LOG_##evt(				\
 		struct exynos_iommu_event_log *plog, u32 addr)		\
 {									\
-	struct sysmmu_event_log *log = sysmmu_event_log_get(plog);	\
-	log->eventdata.addr = addr;					\
-	log->event = EVENT_SYSMMU_##evt;				\
 }
 
 #define DEFINE_SYSMMU_EVENT_LOG_2ADDR(evt)				\
 static inline void SYSMMU_EVENT_LOG_##evt(struct exynos_iommu_event_log *plog, \
 				u32 start, u32 end)			\
 {									\
-	struct sysmmu_event_log *log = sysmmu_event_log_get(plog);	\
-	log->eventdata.range.start = start;				\
-	log->eventdata.range.end = end;					\
-	log->event = EVENT_SYSMMU_##evt;				\
 }
 
 static inline void SYSMMU_EVENT_LOG_IOVMM_MAP(
 				struct exynos_iommu_event_log *plog,
 				u32 start, u32 end, unsigned int dummy)
 {
-	struct sysmmu_event_log *log = sysmmu_event_log_get(plog);
-	log->eventdata.iovmm.start = start;
-	log->eventdata.iovmm.end = end;
-	log->eventdata.iovmm.dummy = dummy;
-	log->event = EVENT_SYSMMU_IOVMM_MAP;
 }
 
 static inline void SYSMMU_EVENT_LOG_IOMMU_ATTACH(
 			struct exynos_iommu_event_log *plog, struct device *dev)
 {
-	struct sysmmu_event_log *log = sysmmu_event_log_get(plog);
-	log->eventdata.dev = dev;
-	log->event = EVENT_SYSMMU_IOMMU_ATTACH;
 }
 
 static inline void SYSMMU_EVENT_LOG_IOMMU_DETACH(
 			struct exynos_iommu_event_log *plog, struct device *dev)
 {
-	struct sysmmu_event_log *log = sysmmu_event_log_get(plog);
-	log->eventdata.dev = dev;
-	log->event = EVENT_SYSMMU_IOMMU_DETACH;
 }
 
 static inline void SYSMMU_EVENT_LOG_IOMMU_MAP(
 				struct exynos_iommu_event_log *plog,
 				u32 start, u32 end, unsigned int pfn)
 {
-	struct sysmmu_event_log *log = sysmmu_event_log_get(plog);
-	log->event = EVENT_SYSMMU_IOMMU_MAP;
-	log->eventdata.iommu.start = start;
-	log->eventdata.iommu.end = end;
-	log->eventdata.iommu.pfn = pfn;
 }
 
-int exynos_iommu_init_event_log(struct exynos_iommu_event_log *log,
-				unsigned int log_len);
+static inline int exynos_iommu_init_event_log(struct exynos_iommu_event_log *log,
+				unsigned int log_len) { return 0; }
 
-void sysmmu_add_log_to_debugfs(struct dentry *debugfs_root,
-			struct exynos_iommu_event_log *log, const char *name);
+static inline void sysmmu_add_log_to_debugfs(struct dentry *debugfs_root,
+			struct exynos_iommu_event_log *log, const char *name) {}
 
-void iommu_add_log_to_debugfs(struct dentry *debugfs_root,
-			struct exynos_iommu_event_log *log, const char *name);
+static inline void iommu_add_log_to_debugfs(struct dentry *debugfs_root,
+			struct exynos_iommu_event_log *log, const char *name) {}
 
 #if defined(CONFIG_EXYNOS_IOVMM)
-void iovmm_add_log_to_debugfs(struct dentry *debugfs_root,
-			struct exynos_iommu_event_log *log, const char *name);
+static inline void iovmm_add_log_to_debugfs(struct dentry *debugfs_root,
+			struct exynos_iommu_event_log *log, const char *name) {}
 #else
 #define iovmm_add_log_to_debugfs(debugfs_root, log, name) do { } while (0)
 #endif

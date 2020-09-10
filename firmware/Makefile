@@ -3,8 +3,6 @@
 # kbuild file for firmware/
 #
 
-CONFIG_EXTRA_FIRMWARE_DIR="firmware"
-
 # Create $(fwabs) from $(CONFIG_EXTRA_FIRMWARE_DIR) -- if it doesn't have a
 # leading /, it's relative to $(srctree).
 fwdir := $(subst $(quote),,$(CONFIG_EXTRA_FIRMWARE_DIR))
@@ -12,36 +10,49 @@ fwabs := $(addprefix $(srctree)/,$(filter-out /%,$(fwdir)))$(filter /%,$(fwdir))
 
 fw-external-y := $(subst $(quote),,$(CONFIG_EXTRA_FIRMWARE))
 
-fw-external-$(CONFIG_EXYNOS9610_ACPM) += exynos9610_acpm_fvp.fw
-fw-external-$(CONFIG_EXYNOS9610_ACPM) += exynos9610_acpm_tmu.fw
-fw-external-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_DSX) += tsp_synaptics/synaptics_b0_h.fw
+# There are three cases to care about:
+# 1. Building kernel with CONFIG_FIRMWARE_IN_KERNEL=y -- $(fw-shipped-y) should
+#    include the firmware files to include, according to .config
+# 2. 'make modules_install', which will install firmware for modules, and 
+#    _also_ for the in-kernel drivers when CONFIG_FIRMWARE_IN_KERNEL=n
+# 3. 'make firmware_install', which installs all firmware, unconditionally.
+
+# For the former two cases we want $(fw-shipped-y) and $(fw-shipped-m) to be
+# accurate. In the latter case it doesn't matter -- it'll use $(fw-shipped-all).
+# But be aware that the config file might not be included at all.
+
+fw-shipped-$(CONFIG_EXYNOS9610_ACPM) += exynos9610_acpm_fvp.fw
+fw-shipped-$(CONFIG_EXYNOS9610_ACPM) += exynos9610_acpm_tmu.fw
+fw-shipped-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_DSX) += tsp_synaptics/synaptics_b0_h.fw
 fw-shipped-$(CONFIG_TOUCHSCREEN_SEC_TS) += tsp_sec/y761_dream1.fw
-fw-external-$(CONFIG_TOUCHSCREEN_MELFAS_MSS100) += tsp_melfas/mss100_a51.fw tsp_melfas/mss100_a51_old.fw \
+fw-shipped-$(CONFIG_TOUCHSCREEN_MELFAS_MSS100) += tsp_melfas/mss100_a51.fw tsp_melfas/mss100_a51_old.fw \
 											tsp_melfas/mss100_m31.fw tsp_melfas/mss100_m21.fw tsp_melfas/mss100_m31s.fw
-fw-external-$(CONFIG_TOUCHSCREEN_NOVATEK_NT36672A) += tsp_novatek/nt36672a_xcoverpro.fw tsp_novatek/nt36672a_xcoverpro_4BF245.fw
-fw-external-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET) += tsp_himax/hx83102e_gta4xl.fw tsp_himax/hx83102e_gta4xl_old.fw
-fw-external-$(CONFIG_EPEN_WACOM_W9019) += epen/wacom9019_gta4xl.fw
+fw-shipped-$(CONFIG_TOUCHSCREEN_NOVATEK_NT36672A) += tsp_novatek/nt36672a_xcoverpro.fw tsp_novatek/nt36672a_xcoverpro_4BF245.fw
+fw-shipped-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET) += tsp_himax/hx83102e_gta4xl.fw tsp_himax/hx83102e_gta4xl_old.fw
+fw-shipped-$(CONFIG_EPEN_WACOM_W9019) += epen/wacom9019_gta4xl.fw
 
 # Touch based grip sensor
-fw-external-$(CONFIG_SENSORS_A96T3X6) += abov/a96t326_voguelte.fw
-fw-external-$(CONFIG_SENSORS_TC3XXK) += coreriver/tc305k_a50ser.fw
-fw-external-$(CONFIG_SENSORS_A96T3X6_M30S) += abov/a96t326_m30s.fw
-fw-external-$(CONFIG_SENSORS_A96T3X6_A51) += abov/a96t356_a51.fw abov/a96t356_a51_sub.fw
-fw-external-$(CONFIG_SENSORS_A96T3X6_A51_USA) += abov/a96t356_a51_usa.fw abov/a96t356_a51_usa_sub.fw
-fw-external-$(CONFIG_SENSORS_A96T3X6_TABA4XL) += abov/a96t356_taba4xl.fw abov/a96t356_taba4xl_wifi.fw
-fw-external-$(CONFIG_SENSORS_A96T3X6_M31) += abov/a96t326_m31.fw
+fw-shipped-$(CONFIG_SENSORS_A96T3X6) += abov/a96t326_voguelte.fw
+fw-shipped-$(CONFIG_SENSORS_TC3XXK) += coreriver/tc305k_a50ser.fw
+fw-shipped-$(CONFIG_SENSORS_A96T3X6_M30S) += abov/a96t326_m30s.fw
+fw-shipped-$(CONFIG_SENSORS_A96T3X6_A51) += abov/a96t356_a51.fw abov/a96t356_a51_sub.fw
+fw-shipped-$(CONFIG_SENSORS_A96T3X6_A51_USA) += abov/a96t356_a51_usa.fw abov/a96t356_a51_usa_sub.fw
+fw-shipped-$(CONFIG_SENSORS_A96T3X6_TABA4XL) += abov/a96t356_taba4xl.fw abov/a96t356_taba4xl_wifi.fw
+fw-shipped-$(CONFIG_SENSORS_A96T3X6_M31) += abov/a96t326_m31.fw
 
 # sensorhub
-fw-external-$(CONFIG_SENSORS_SSP) += sensorhub/shub_bl.fw
-fw-external-$(CONFIG_SENSORS_SSP_A51) += sensorhub/a51_bring_up.fw
-fw-external-$(CONFIG_SENSORS_SSP_A51) += sensorhub/shub_exynos9611_a51.fw
-fw-external-$(CONFIG_SENSORS_SSP_XCOVERPRO) += sensorhub/shub_exynos9611_g715.fw
-fw-external-$(CONFIG_SENSORS_SSP_GTA4XL) += sensorhub/shub_exynos9611_gta4xl.fw
-fw-external-$(CONFIG_SENSORS_SSP_M31) += sensorhub/shub_ramen_m31.fw
-fw-external-$(CONFIG_SENSORS_SSP_M21) += sensorhub/shub_ramen_m21.fw
-fw-external-$(CONFIG_SENSORS_SSP_M31S) += sensorhub/shub_ramen_m31s.fw
+fw-shipped-$(CONFIG_SENSORS_SSP) += sensorhub/shub_bl.fw
+fw-shipped-$(CONFIG_SENSORS_SSP_A51) += sensorhub/a51_bring_up.fw
+fw-shipped-$(CONFIG_SENSORS_SSP_A51) += sensorhub/shub_exynos9611_a51.fw
+fw-shipped-$(CONFIG_SENSORS_SSP_XCOVERPRO) += sensorhub/shub_exynos9611_g715.fw
+fw-shipped-$(CONFIG_SENSORS_SSP_GTA4XL) += sensorhub/shub_exynos9611_gta4xl.fw
+fw-shipped-$(CONFIG_SENSORS_SSP_M31) += sensorhub/shub_ramen_m31.fw
+fw-shipped-$(CONFIG_SENSORS_SSP_M21) += sensorhub/shub_ramen_m21.fw
+fw-shipped-$(CONFIG_SENSORS_SSP_M31S) += sensorhub/shub_ramen_m31s.fw
 
 fw-shipped-$(CONFIG_FIVE_TEE_DRIVER) += five/ffffffff000000000000000000000072.tlbin
+
+fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
 
 quiet_cmd_ihex  = IHEX    $@
       cmd_ihex  = $(OBJCOPY) -Iihex -Obinary $< $@
@@ -84,10 +95,14 @@ wordsize_deps := $(wildcard include/config/64bit.h include/config/32bit.h \
 		include/config/x86_32.h include/config/x86_64.h \
 		firmware/Makefile)
 
-$(patsubst %,$(obj)/%.gen.S, $(fw-external-y)): %: $(wordsize_deps)
+$(patsubst %,$(obj)/%.gen.S, $(fw-shipped-y)): %: $(wordsize_deps)
+	$(call cmd,fwbin,$(patsubst %.gen.S,%,$@))
+$(patsubst %,$(obj)/%.gen.S, $(fw-external-y)): %: $(wordsize_deps) \
+		include/config/extra/firmware/dir.h
 	$(call cmd,fwbin,$(fwabs)/$(patsubst $(obj)/%.gen.S,%,$@))
 
 # The .o files depend on the binaries directly; the .S files don't.
+$(patsubst %,$(obj)/%.gen.o, $(fw-shipped-y)): %.gen.o: %
 $(patsubst %,$(obj)/%.gen.o, $(fw-external-y)): $(obj)/%.gen.o: $(fwdir)/%
 
 # .ihex is used just as a simple way to hold binary files in a source tree
@@ -95,7 +110,32 @@ $(patsubst %,$(obj)/%.gen.o, $(fw-external-y)): $(obj)/%.gen.o: $(fwdir)/%
 $(obj)/%: $(obj)/%.ihex
 	$(call cmd,ihex)
 
+# Don't depend on ihex2fw if we're installing and it already exists.
+# Putting it after | in the dependencies doesn't seem sufficient when
+# we're installing after a cross-compile, because ihex2fw has dependencies
+# on stuff like /usr/lib/gcc/ppc64-redhat-linux/4.3.0/include/stddef.h and 
+# thus wants to be rebuilt. Which it can't be, if the prebuilt kernel tree
+# is exported read-only for someone to run 'make install'.
+ifeq ($(INSTALL):$(wildcard $(obj)/ihex2fw),install:$(obj)/ihex2fw)
+ihex2fw_dep :=
+else
+ihex2fw_dep := $(obj)/ihex2fw
+endif
+
+# .HEX is also Intel HEX, but where the offset and length in each record
+# is actually meaningful, because the firmware has to be loaded in a certain
+# order rather than as a single binary blob. Thus, we convert them into our
+# more compact binary representation of ihex records (<linux/ihex.h>)
+$(obj)/%.fw: $(obj)/%.HEX $(ihex2fw_dep)
+	$(call cmd,ihex2fw)
+
+# .H16 is our own modified form of Intel HEX, with 16-bit length for records.
+$(obj)/%.fw: $(obj)/%.H16 $(ihex2fw_dep)
+	$(call cmd,h16tofw)
+
+
 obj-y				 += $(patsubst %,%.gen.o, $(fw-external-y))
+obj-$(CONFIG_FIRMWARE_IN_KERNEL) += $(patsubst %,%.gen.o, $(fw-shipped-y))
 
 ifeq ($(KBUILD_SRC),)
 # Makefile.build only creates subdirectories for O= builds, but external
@@ -103,8 +143,13 @@ ifeq ($(KBUILD_SRC),)
 _dummy := $(foreach d,$(addprefix $(obj)/,$(dir $(fw-external-y))), $(shell [ -d $(d) ] || mkdir -p $(d)))
 endif
 
+# Remove .S files and binaries created from ihex
+# (during 'make clean' .config isn't included so they're all in $(fw-shipped-))
 targets := $(patsubst $(obj)/%,%, \
                                 $(shell find $(obj) -name \*.gen.S 2>/dev/null))
+
 # Without this, built-in.o won't be created when it's empty, and the
 # final vmlinux link will fail.
 obj- := dummy
+
+hostprogs-y := ihex2fw

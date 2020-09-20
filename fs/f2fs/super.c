@@ -2673,13 +2673,13 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 			f2fs_msg(sb, KERN_INFO,
 				"Invalid SB checksum offset: %zu",
 				crc_offset);
-			return 1;
+			return -EFSCORRUPTED;
 		}
 		crc = le32_to_cpu(raw_super->crc);
 		if (!f2fs_crc_valid(sbi, crc, raw_super, crc_offset)) {
 			f2fs_msg(sb, KERN_INFO,
 				"Invalid SB checksum value: %u", crc);
-			return 1;
+			return -EFSCORRUPTED;
 		}
 	}
 

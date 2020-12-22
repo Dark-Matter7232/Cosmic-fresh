@@ -731,11 +731,11 @@ size_t g2d_get_payload(struct g2d_reg cmd[], const struct g2d_fmt *fmt,
 		} else {
 			payload += NV12_82_MFC_PAYLOAD(width, height);
 		}
+	} else if (IS_AFBC(mode)) {
+		payload = afbc_buffer_len(cap, flags, cmd, fmt);
 	} else if (IS_YUV(mode)) {
 		payload = g2d_get_ycbcr_payload(fmt, flags,
 						mode, width, height);
-	} else if (IS_AFBC(mode)) {
-		payload = afbc_buffer_len(cap, flags, cmd, fmt);
 	} else {
 		payload = cmd[G2DSFR_IMG_STRIDE].value *
 				cmd[G2DSFR_IMG_BOTTOM].value;

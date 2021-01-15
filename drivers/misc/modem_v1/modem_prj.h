@@ -37,6 +37,7 @@
 #include "include/circ_queue.h"
 #include "include/sipc5.h"
 
+#if 0
 #define DEBUG_MODEM_IF
 #ifdef DEBUG_MODEM_IF
 #if 1
@@ -49,7 +50,6 @@
 #define DEBUG_MODEM_IF_LINK_HEADER
 #endif
 
-#if 0
 #define DEBUG_MODEM_IF_IODEV_TX
 #endif
 #if 0

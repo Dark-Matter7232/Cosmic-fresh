@@ -140,7 +140,7 @@ void minority_report_sync_latest_value(struct mms_ts_info *info)
 
 	info->defect_probability = temp;
 
-	input_info(true, &info->client->dev, "%s : defect_probability[%X]\n",
+	input_dbg(true, &info->client->dev, "%s : defect_probability[%X]\n",
 		__func__, info->defect_probability);
 }
 
@@ -176,7 +176,7 @@ static int mms_proc_table_data(struct mms_ts_info *info, u8 data_type_size,
 	memset(pStr, 0, lsize);
 	memset(info->print_buf, 0, PAGE_SIZE);
 
-	input_info(true, &info->client->dev, "%s [START]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
 
 	/* set axis */
 	if (rotate == 0) {
@@ -776,7 +776,7 @@ int mms_run_test(struct mms_ts_info *info, u8 test_type)
 		for (i = 0; i < vector_num; i++) {
 			vector_id[i] = rbuf[i * 4 + 0] | (rbuf[i * 4 + 1] << 8);
 			vector_elem_num[i] = rbuf[i * 4 + 2] | (rbuf[i * 4 + 3] << 8);
-			input_info(true, &info->client->dev, "%s - vector[%d] : id[%d] elem_num[%d]\n", __func__, i, vector_id[i], vector_elem_num[i]);
+			input_dbg(true, &info->client->dev, "%s - vector[%d] : id[%d] elem_num[%d]\n", __func__, i, vector_id[i], vector_elem_num[i]);
 		}
 	}
 
@@ -805,7 +805,7 @@ int mms_run_test(struct mms_ts_info *info, u8 test_type)
 	}
 
 	if (test_type == MIP_TEST_TYPE_CM) {
-		input_info(true, &info->client->dev, "%s : CM TEST : max_diff[%d]\n",
+		input_dbg(true, &info->client->dev, "%s : CM TEST : max_diff[%d]\n",
 					__func__, info->test_diff_max);
 		minority_report_calculate_cmdata(info);
 	}
@@ -897,7 +897,7 @@ int mms_run_test(struct mms_ts_info *info, u8 test_type)
 		}
 	} else if (test_type == MIP_TEST_TYPE_GPIO_LOW | test_type == MIP_TEST_TYPE_GPIO_HIGH) { 
 		info->image_buf[0] = gpio_get_value(info->dtdata->gpio_intr);
-		input_info(true, &info->client->dev, "%s gpio value %d\n", __func__, info->image_buf[0]);
+		input_dbg(true, &info->client->dev, "%s gpio value %d\n", __func__, info->image_buf[0]);
 	}
 
 	/* set normal mode */
@@ -953,7 +953,7 @@ EXIT:
 	if (ret)
 		input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	else
-		input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+		input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 
 	return ret;
 }
@@ -1014,22 +1014,22 @@ int mms_get_image(struct mms_ts_info *info, u8 image_type)
 	//check image type
 	switch (image_type) {
 	case MIP_IMG_TYPE_INTENSITY:
-		input_info(true, &info->client->dev, "=== Intensity Image ===\n");
+		input_dbg(true, &info->client->dev, "=== Intensity Image ===\n");
 		break;
 	case MIP_IMG_TYPE_RAWDATA:
-		input_info(true, &info->client->dev, "=== Rawdata Image ===\n");
+		input_dbg(true, &info->client->dev, "=== Rawdata Image ===\n");
 		break;
 	case MIP_IMG_TYPE_HSELF_RAWDATA:
-		input_info(true, &info->client->dev, "=== self Rawdata Image ===\n");
+		input_dbg(true, &info->client->dev, "=== self Rawdata Image ===\n");
 		break;
 	case MIP_IMG_TYPE_HSELF_INTENSITY:
-		input_info(true, &info->client->dev, "=== self intensity Image ===\n");
+		input_dbg(true, &info->client->dev, "=== self intensity Image ===\n");
 		break;
 	case MIP_IMG_TYPE_PROX_INTENSITY:
-		input_info(true, &info->client->dev, "=== PROX intensity Image ===\n");
+		input_dbg(true, &info->client->dev, "=== PROX intensity Image ===\n");
 		break;
 	case MIP_IMG_TYPE_5POINT_INTENSITY:
-		input_info(true, &info->client->dev, "=== sensitivity Image ===\n");
+		input_dbg(true, &info->client->dev, "=== sensitivity Image ===\n");
 		break;		
 	default:
 		input_err(true, &info->client->dev, "%s [ERROR] Unknown image type\n", __func__);
@@ -1197,7 +1197,7 @@ static ssize_t mms_sys_fw_version(struct device *dev,
 		goto ERROR;
 	}
 
-	input_info(true, &info->client->dev,
+	input_dbg(true, &info->client->dev,
 		"%s - F/W Version : %02X.%02X %02X.%02X %02X.%02X %02X.%02X\n",
 		__func__, rbuf[0], rbuf[1], rbuf[2], rbuf[3],
 		rbuf[4], rbuf[5], rbuf[6], rbuf[7]);
@@ -1270,7 +1270,7 @@ static ssize_t mms_sys_device_enable(struct device *dev,
 
 	mms_enable(info);
 
-	input_info(true, &client->dev, "%s", __func__);
+	input_dbg(true, &client->dev, "%s", __func__);
 
 	sprintf(data, "Device : Enabled\n");
 	strcat(info->print_buf, data);
@@ -1295,7 +1295,7 @@ static ssize_t mms_sys_device_disable(struct device *dev,
 
 	mms_disable(info);
 
-	input_info(true, &client->dev, "%s", __func__);
+	input_dbg(true, &client->dev, "%s", __func__);
 
 	sprintf(data, "Device : Disabled\n");
 	strcat(info->print_buf, data);
@@ -1319,7 +1319,7 @@ static ssize_t mms_sys_irq_enable(struct device *dev,
 
 	enable_irq(info->irq);
 
-	input_info(true, &client->dev, "%s\n", __func__);
+	input_dbg(true, &client->dev, "%s\n", __func__);
 
 	sprintf(data, "IRQ : Enabled\n");
 	strcat(info->print_buf, data);
@@ -1344,7 +1344,7 @@ static ssize_t mms_sys_irq_disable(struct device *dev,
 	disable_irq(info->irq);
 	mms_clear_input(info);
 
-	input_info(true, &client->dev, "%s\n", __func__);
+	input_dbg(true, &client->dev, "%s\n", __func__);
 
 	sprintf(data, "IRQ : Disabled\n");
 	strcat(info->print_buf, data);
@@ -1368,7 +1368,7 @@ static ssize_t mms_sys_power_on(struct device *dev,
 
 	mms_power_control(info, 1);
 
-	input_info(true, &client->dev, "%s", __func__);
+	input_dbg(true, &client->dev, "%s", __func__);
 
 	sprintf(data, "Power : On\n");
 	strcat(info->print_buf, data);
@@ -1392,7 +1392,7 @@ static ssize_t mms_sys_power_off(struct device *dev,
 
 	mms_power_control(info, 0);
 
-	input_info(true, &client->dev, "%s", __func__);
+	input_dbg(true, &client->dev, "%s", __func__);
 
 	sprintf(data, "Power : Off\n");
 	strcat(info->print_buf, data);
@@ -1414,7 +1414,7 @@ static ssize_t mms_sys_reboot(struct device *dev,
 
 	memset(info->print_buf, 0, PAGE_SIZE);
 
-	input_info(true, &client->dev, "%s", __func__);
+	input_dbg(true, &client->dev, "%s", __func__);
 
 	disable_irq(info->irq);
 	mms_clear_input(info);
@@ -1448,7 +1448,7 @@ static ssize_t mms_sys_glove_mode_store(struct device *dev,
 		if (mms_i2c_write(info, wbuf, 3))
 			input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		else
-			input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
+			input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
 	} else
 		input_err(true, &info->client->dev, "%s [ERROR] Unknown value\n", __func__);
 
@@ -1480,7 +1480,7 @@ static ssize_t mms_sys_glove_mode_show(struct device *dev,
 		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_read\n", __func__);
 		sprintf(data, "\nGlove Mode : ERROR\n");
 	} else {
-		input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
+		input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
 		sprintf(data, "\nGlove Mode : %d\n", rbuf[0]);
 	}
 
@@ -1510,7 +1510,7 @@ static ssize_t mms_sys_charger_mode_store(struct device *dev,
 		if (mms_i2c_write(info, wbuf, 3))
 			input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		else
-			input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
+			input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
 	} else
 		input_err(true, &info->client->dev, "%s [ERROR] Unknown value\n", __func__);
 
@@ -1542,7 +1542,7 @@ static ssize_t mms_sys_charger_mode_show(struct device *dev,
 		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_read\n", __func__);
 		sprintf(data, "\nCharger Mode : ERROR\n");
 	} else {
-		input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
+		input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
 		sprintf(data, "\nCharger Mode : %d\n", rbuf[0]);
 	}
 
@@ -1572,7 +1572,7 @@ static ssize_t mms_sys_window_mode_store(struct device *dev,
 		if (mms_i2c_write(info, wbuf, 3))
 			input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		else
-			input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
+			input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
 	} else
 		input_err(true, &info->client->dev, "%s [ERROR] Unknown value\n", __func__);
 
@@ -1604,7 +1604,7 @@ static ssize_t mms_sys_window_mode_show(struct device *dev,
 		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_read\n", __func__);
 		sprintf(data, "\nWindow Mode : ERROR\n");
 	} else {
-		input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
+		input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
 		sprintf(data, "\nWindow Mode : %d\n", rbuf[0]);
 	}
 
@@ -1634,7 +1634,7 @@ static ssize_t mms_sys_palm_rejection_mode_store(struct device *dev,
 		if (mms_i2c_write(info, wbuf, 3))
 			input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		else
-			input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
+			input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, buf[0]);
 	} else
 		input_err(true, &info->client->dev, "%s [ERROR] Unknown value\n", __func__);
 
@@ -1666,7 +1666,7 @@ static ssize_t mms_sys_palm_rejection_mode_show(struct device *dev,
 		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_read\n", __func__);
 		sprintf(data, "\nPalm Rejection Mode : ERROR\n");
 	} else {
-		input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
+		input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, rbuf[0]);
 		sprintf(data, "\nPalm Rejection Mode : %d\n", rbuf[0]);
 	}
 
@@ -1835,7 +1835,7 @@ static ssize_t mip4_ts_sys_proximity(struct device *dev, struct device_attribute
 		input_err(true, &info->client->dev, "%s [ERROR] mip4_ts_i2c_write\n", __func__);
 		snprintf(data, sizeof(data), "%s : ERROR\n", attr->attr.name);
 	} else {
-		input_info(true, &info->client->dev, "%s - addr[0x%02X%02X] value[%d]\n", __func__, wbuf[0], wbuf[1], wbuf[2]);
+		input_dbg(true, &info->client->dev, "%s - addr[0x%02X%02X] value[%d]\n", __func__, wbuf[0], wbuf[1], wbuf[2]);
 		snprintf(data, sizeof(data), "%s : %d\n", attr->attr.name, wbuf[2]);
 	}
 

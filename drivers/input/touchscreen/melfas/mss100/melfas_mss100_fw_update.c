@@ -405,11 +405,11 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 			info->fw_ver_bin[i] = bin_info->version[i];
 	}
 	/* Check F/W version */
-	input_info(true, &info->client->dev, "%s - Firmware binary version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, bin_info->version[0], bin_info->version[1], bin_info->version[2], bin_info->version[3], bin_info->version[4], bin_info->version[5], bin_info->version[6], bin_info->version[7]);
+	input_dbg(true, &info->client->dev, "%s - Firmware binary version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, bin_info->version[0], bin_info->version[1], bin_info->version[2], bin_info->version[3], bin_info->version[4], bin_info->version[5], bin_info->version[6], bin_info->version[7]);
 
 	if (force == 1) {
 		/* Force update */
-		input_info(true, &info->client->dev, "%s - Force update\n", __func__);
+		input_dbg(true, &info->client->dev, "%s - Force update\n", __func__);
 	} else {
 		while (retry--) {
 			if (!mms_get_fw_version(info, ver_chip)) {
@@ -423,7 +423,7 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 		if (retry <= 0) {
 			input_err(true, &info->client->dev, "%s [ERROR] Failed to read chip firmware version\n", __func__);
 		} else {
-			input_info(true, &info->client->dev, "%s - Chip firmware version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, ver_chip[0], ver_chip[1], ver_chip[2], ver_chip[3], ver_chip[4], ver_chip[5], ver_chip[6], ver_chip[7]);
+			input_dbg(true, &info->client->dev, "%s - Chip firmware version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, ver_chip[0], ver_chip[1], ver_chip[2], ver_chip[3], ver_chip[4], ver_chip[5], ver_chip[6], ver_chip[7]);
 
 			/* check f/w version
 			 * ver[0][1] : boot version
@@ -482,7 +482,7 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 			}
 
 			if (bin_info->version[7] <= ver_chip[7]) {
-				input_info(true, &info->client->dev, "%s - Chip firmware is already up-to-date\n", __func__);
+				input_dbg(true, &info->client->dev, "%s - Chip firmware is already up-to-date\n", __func__);
 				ret = FW_ERR_UPTODATE;
 				goto error_update;
 			}
@@ -506,10 +506,10 @@ update:
 			ret = FW_ERR_DOWNLOAD;
 			goto error_update;
 		}
-		input_info(true, &info->client->dev, "%s - ECC [0x%02X%02X%02X%02X]\n", __func__, rbuf[0], rbuf[1], rbuf[2], rbuf[3]);
+		input_dbg(true, &info->client->dev, "%s - ECC [0x%02X%02X%02X%02X]\n", __func__, rbuf[0], rbuf[1], rbuf[2], rbuf[3]);
 
 		if (memcmp(ecc_error, rbuf, 4) == 0)
-			input_info(true, &info->client->dev, "%s - ECC error\n", __func__);
+			input_dbg(true, &info->client->dev, "%s - ECC error\n", __func__);
 	}
 
 	/* Erase */
@@ -579,7 +579,7 @@ update:
 	if (!on_probe) {
 		ret = mms_reinit(info);
 		if (ret < 0)
-			input_info(true, &info->client->dev, "%s: failed\n", __func__);
+			input_dbg(true, &info->client->dev, "%s: failed\n", __func__);
 	}
 
 	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);

@@ -39,7 +39,7 @@ void mms_power_reboot(struct mms_ts_info *info)
 
 	mutex_unlock(&info->modechange);
 
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 }
 
 /** reinit **/
@@ -49,7 +49,7 @@ void mms_reset_work(struct work_struct *work)
 			reset_work.work);
 	int ret;
 
-	input_info(true, &info->client->dev, "%s [START]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
 
 	if (info->reset_is_on_going) {
 		input_err(true, &info->client->dev, "%s: reset is ongoing\n", __func__);
@@ -99,7 +99,7 @@ void mms_reset_work(struct work_struct *work)
 	}
 	info->reset_is_on_going = false;
 	mutex_unlock(&info->modechange);
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 }
 /**
  * I2C Read
@@ -301,7 +301,7 @@ int mms_reinit(struct mms_ts_info *info)
 	int ret = 0;
 	u8 mode = G_NONE;
 
-	input_info(true, &info->client->dev, "%s: start reinit\n", __func__);
+	input_dbg(true, &info->client->dev, "%s: start reinit\n", __func__);
 
 	if (info->disable_esd == true) {
 		ret = mms_disable_esd_alert(info);
@@ -335,7 +335,7 @@ int mms_reinit(struct mms_ts_info *info)
 		wbuf[1] = MIP_R1_CTRL_PROXIMITY;
 		wbuf[2] = 1;
 	
-		input_info(true, &info->client->dev, "%s: set ed_enable\n", __func__);
+		input_dbg(true, &info->client->dev, "%s: set ed_enable\n", __func__);
 
 		ret = mms_i2c_write(info, wbuf, 3);
 		if (ret) {
@@ -362,7 +362,7 @@ int mms_reinit(struct mms_ts_info *info)
 		wbuf[1] = MIP_R1_CTRL_GLOVE_MODE;
 		wbuf[2] = 1;
 	
-		input_info(true, &info->client->dev, "%s: set glove mode/n", __func__);
+		input_dbg(true, &info->client->dev, "%s: set glove mode/n", __func__);
 
 		ret = mms_i2c_write(info, wbuf, 3);
 		if (ret) {
@@ -377,11 +377,11 @@ int mms_reinit(struct mms_ts_info *info)
 
 	ret = mms_set_fod_rect(info);
 	if (ret < 0) {
-		input_info(true, &info->client->dev, "%s: failed/n", __func__);
+		input_dbg(true, &info->client->dev, "%s: failed/n", __func__);
 		return -EINVAL;
 	}
 
-	input_info(true, &info->client->dev, "%s: done reinit\n", __func__);
+	input_dbg(true, &info->client->dev, "%s: done reinit\n", __func__);
 
 	return ret;
 }
@@ -413,11 +413,11 @@ int mms_enable(struct mms_ts_info *info)
 
 	ret = mms_reinit(info);
 	if (ret < 0)
-		input_info(true, &info->client->dev, "%s: failed\n", __func__);
+		input_dbg(true, &info->client->dev, "%s: failed\n", __func__);
 
 	mutex_unlock(&info->lock);
 
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 	return ret;
 }
 
@@ -446,7 +446,7 @@ int mms_disable(struct mms_ts_info *info)
 
 	mutex_unlock(&info->lock);
 
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 }
 
@@ -470,7 +470,7 @@ static int mms_input_open(struct input_dev *dev)
 
 	mutex_lock(&info->modechange);
 
-	input_info(true, &info->client->dev, "%s %s\n",
+	input_dbg(true, &info->client->dev, "%s %s\n",
 			__func__, info->lowpower_mode ? "exit LPM mode" : "");
 
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
@@ -527,7 +527,7 @@ static void mms_input_close(struct input_dev *dev)
 
 	mutex_lock(&info->modechange);
 
-	input_info(true, &info->client->dev, "%s %s\n",
+	input_dbg(true, &info->client->dev, "%s %s\n",
 			__func__, info->lowpower_mode ? "enter LPM mode" : "");
 
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
@@ -635,7 +635,7 @@ int mms_get_fw_version(struct mms_ts_info *info, u8 *ver_buf)
 	info->fw_model_ver_ic = (ver_buf[4] << 8 | ver_buf[5]);
 	info->fw_ver_ic = (ver_buf[6] << 8 | ver_buf[7]);
 
-	input_info(true, &info->client->dev,
+	input_dbg(true, &info->client->dev,
 			"%s: boot:%x.%x core:%x.%x %x.%x version:%x.%x\n",
 			__func__, ver_buf[0], ver_buf[1], ver_buf[2], ver_buf[3], ver_buf[4],
 			ver_buf[5], ver_buf[6], ver_buf[7]);
@@ -676,7 +676,7 @@ int mms_disable_esd_alert(struct mms_ts_info *info)
 	u8 wbuf[4];
 	u8 rbuf[4];
 
-	input_info(true, &info->client->dev, "%s [START]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
 
 	wbuf[0] = MIP_R0_CTRL;
 	wbuf[1] = MIP_R1_CTRL_DISABLE_ESD_ALERT;
@@ -692,11 +692,11 @@ int mms_disable_esd_alert(struct mms_ts_info *info)
 	}
 
 	if (rbuf[0] != 1) {
-		input_info(true, &info->client->dev, "%s [ERROR] failed\n", __func__);
+		input_dbg(true, &info->client->dev, "%s [ERROR] failed\n", __func__);
 		goto ERROR;
 	}
 
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 ERROR:
@@ -711,13 +711,13 @@ static int mms_alert_handler_esd(struct mms_ts_info *info, u8 *rbuf)
 {
 	u8 frame_cnt = rbuf[1];
 
-	input_info(true, &info->client->dev, "%s [START] - frame_cnt[%d]\n",
+	input_dbg(true, &info->client->dev, "%s [START] - frame_cnt[%d]\n",
 		__func__, frame_cnt);
 
 	if (frame_cnt == 0) {
 		//sensor crack, not ESD
 		info->esd_cnt++;
-		input_info(true, &info->client->dev, "%s - esd_cnt[%d]\n",
+		input_dbg(true, &info->client->dev, "%s - esd_cnt[%d]\n",
 			__func__, info->esd_cnt);
 
 		if (info->disable_esd == true) {
@@ -742,7 +742,7 @@ static int mms_alert_handler_esd(struct mms_ts_info *info, u8 *rbuf)
 		info->esd_cnt = 0;
 	}
 
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 }
 
@@ -756,7 +756,7 @@ static int mms_alert_handler_sram(struct mms_ts_info *info, u8 *data)
 	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
 
 	info->sram_addr_num = (unsigned int) (data[0] | (data[1] << 8));
-	input_info(true, &info->client->dev, "%s - sram_addr_num [%d]\n", __func__, info->sram_addr_num);
+	input_dbg(true, &info->client->dev, "%s - sram_addr_num [%d]\n", __func__, info->sram_addr_num);
 
 	if (info->sram_addr_num > 8) {
 		input_err(true, &info->client->dev, "%s [ERROR] sram_addr_num [%d]\n",
@@ -767,12 +767,12 @@ static int mms_alert_handler_sram(struct mms_ts_info *info, u8 *data)
 	for (i = 0; i < info->sram_addr_num; i++) {
 		info->sram_addr[i] = data[2 + 4 * i] | (data[2 + 4 * i + 1] << 8) |
 							(data[2 + 4 * i + 2] << 16) | (data[2 + 4 * i + 3] << 24);
-		input_info(true, &info->client->dev, "%s - sram_addr #%d [0x%08X]\n",
+		input_dbg(true, &info->client->dev, "%s - sram_addr #%d [0x%08X]\n",
 						__func__, i, info->sram_addr[i]);
 	}
 	for (i = info->sram_addr_num; i < 8; i++) {
 		info->sram_addr[i] = 0;
-		input_info(true, &info->client->dev, "%s - sram_addr #%d [0x%08X]\n",
+		input_dbg(true, &info->client->dev, "%s - sram_addr #%d [0x%08X]\n",
 						__func__, i, info->sram_addr[i]);
 	}
 
@@ -803,7 +803,7 @@ int mms_alert_handler_sponge(struct mms_ts_info *info, u8 *rbuf, u8 size)
 
 static int mms_alert_handler_pocket_mode_state(struct mms_ts_info *info, u8 data)
 {
-	input_info(true, &info->client->dev, "%s: pocket event(%d)\n", __func__, data);
+	input_dbg(true, &info->client->dev, "%s: pocket event(%d)\n", __func__, data);
 
 	if (data == IN_POCKET || data == OUT_POCKET) {
 		input_report_abs(info->input_dev_proximity, ABS_MT_CUSTOM, data);
@@ -818,12 +818,12 @@ static int mms_alert_handler_proximity_state(struct mms_ts_info *info, u8 data)
 	
 	if (!info->dtdata->support_protos) {
 		if (data == 4 || data == 5) {
-			input_info(true, &info->client->dev, "%s: not support protos %d\n", __func__, data);
+			input_dbg(true, &info->client->dev, "%s: not support protos %d\n", __func__, data);
 			return 0;
 		}
 	}
 
-	input_info(true, &info->client->dev, "%s: hover %d\n", __func__, data);
+	input_dbg(true, &info->client->dev, "%s: hover %d\n", __func__, data);
 	info->hover_event = data;
 
 	input_report_abs(info->input_dev_proximity, ABS_MT_CUSTOM, data);
@@ -844,23 +844,23 @@ static int mms_alert_handler_proximity_state(struct mms_ts_info *info, u8 data)
 static int mms_alert_handler_mode_state(struct mms_ts_info *info, u8 data)
 {
 	if (data == ENTER_NOISE_MODE) {
-		input_info(true, &info->client->dev, "%s: NOISE ON[%d]\n", __func__, data);
+		input_dbg(true, &info->client->dev, "%s: NOISE ON[%d]\n", __func__, data);
 		info->noise_mode = 1;
 	} else if (data == EXIT_NOISE_MODE) {
-		input_info(true, &info->client->dev, "%s: NOISE OFF[%d]\n", __func__, data);
+		input_dbg(true, &info->client->dev, "%s: NOISE OFF[%d]\n", __func__, data);
 		info->noise_mode = 0;
 	} else if (data == ENTER_WET_MODE) {
-		input_info(true, &info->client->dev, "%s: WET MODE ON[%d]\n", __func__, data);
+		input_dbg(true, &info->client->dev, "%s: WET MODE ON[%d]\n", __func__, data);
 		info->wet_mode = 1;
 	} else if (data == EXIT_WET_MODE) {
-		input_info(true, &info->client->dev, "%s: WET MODE OFF[%d]\n", __func__, data);
+		input_dbg(true, &info->client->dev, "%s: WET MODE OFF[%d]\n", __func__, data);
 		info->wet_mode = 0;
 	} else if (data == MODE_STATE_VSYNC_ON) {
-		input_info(true, &info->client->dev, "%s: VSYNC ON[%d]\n", __func__, data);
+		input_dbg(true, &info->client->dev, "%s: VSYNC ON[%d]\n", __func__, data);
 	} else if (data == MODE_STATE_VSYNC_OFF) {
-		input_info(true, &info->client->dev, "%s: VSYNC OFF[%d]\n", __func__, data);
+		input_dbg(true, &info->client->dev, "%s: VSYNC OFF[%d]\n", __func__, data);
 	} else {
-		input_info(true, &info->client->dev, "%s: NOT DEFINED[%d]\n", __func__, data);
+		input_dbg(true, &info->client->dev, "%s: NOT DEFINED[%d]\n", __func__, data);
 		return 1;
 	}
 
@@ -873,7 +873,7 @@ int mms_charger_attached(struct mms_ts_info *info, bool status)
 	u8 wbuf[4];
 	int ret = 0;
 
-	input_info(true, &info->client->dev, "%s [START] %s\n", __func__, status ? "connected" : "disconnected");
+	input_dbg(true, &info->client->dev, "%s [START] %s\n", __func__, status ? "connected" : "disconnected");
 
 	wbuf[0] = MIP_R0_CTRL;
 	wbuf[1] = MIP_R1_CTRL_CHARGER_MODE;
@@ -884,7 +884,7 @@ int mms_charger_attached(struct mms_ts_info *info, bool status)
 		if (ret)
 			input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		else
-			input_info(true, &info->client->dev, "%s - value[%d]\n", __func__, wbuf[2]);
+			input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, wbuf[2]);
 	} else {
 		input_err(true, &info->client->dev, "%s [ERROR] Unknown value[%d]\n", __func__, status);
 	}
@@ -921,7 +921,7 @@ static irqreturn_t mms_interrupt(int irq, void *dev_id)
 			return IRQ_HANDLED;
 		}
 
-		input_info(true, &info->client->dev, "%s: run LPM interrupt handler, %d\n", __func__, ret);
+		input_dbg(true, &info->client->dev, "%s: run LPM interrupt handler, %d\n", __func__, ret);
 		/* run lpm interrupt handler */
 	}
 
@@ -1010,7 +1010,7 @@ static irqreturn_t mms_interrupt(int irq, void *dev_id)
 ERROR:
 	input_err(true, &client->dev, "%s [ERROR]\n", __func__);
 	if (RESET_ON_EVENT_ERROR) {
-		input_info(true, &client->dev, "%s - Reset on error\n", __func__);
+		input_dbg(true, &client->dev, "%s - Reset on error\n", __func__);
 		schedule_delayed_work(&info->reset_work, msecs_to_jiffies(TOUCH_RESET_DWORK_TIME));
 	}
 	return IRQ_HANDLED;
@@ -1035,7 +1035,7 @@ int mms_fw_update_from_kernel(struct mms_ts_info *info, bool force, bool on_prob
 	if (!fw_name)
 		goto ERROR;
 
-	input_info(true, &info->client->dev, "%s [START]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
 
 	//Disable IRQ
 	mutex_lock(&info->lock);
@@ -1073,7 +1073,7 @@ int mms_fw_update_from_kernel(struct mms_ts_info *info, bool force, bool on_prob
 	if (ret < 0)
 		goto ERROR;
 
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 ERROR:
@@ -1094,7 +1094,7 @@ int mms_fw_update_from_storage(struct mms_ts_info *info, bool force, bool signin
 	size_t spu_fw_size;
 	size_t spu_ret = 0;
 
-	input_info(true, &info->client->dev, "%s [START]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
 
 	//Disable IRQ
 	mutex_lock(&info->lock);
@@ -1142,7 +1142,7 @@ int mms_fw_update_from_storage(struct mms_ts_info *info, bool force, bool signin
 			}
 
 			nread = vfs_read(fp, (char __user *)spu_fw_data, spu_fw_size, &fp->f_pos);
-			input_info(true, &info->client->dev, "%s - path [%s] size [%zu]\n",
+			input_dbg(true, &info->client->dev, "%s - path [%s] size [%zu]\n",
 					__func__, file_path, spu_fw_size);
 
 			if (nread != spu_fw_size) {
@@ -1168,7 +1168,7 @@ int mms_fw_update_from_storage(struct mms_ts_info *info, bool force, bool signin
 			vfree(spu_fw_data);
 		} else {
 			nread = vfs_read(fp, (char __user *)fw_data, fw_size, &fp->f_pos);
-			input_info(true, &info->client->dev, "%s - path [%s] size [%zu]\n",
+			input_dbg(true, &info->client->dev, "%s - path [%s] size [%zu]\n",
 				__func__, file_path, fw_size);
 
 			if (nread != fw_size) {
@@ -1213,7 +1213,7 @@ static ssize_t mms_sys_fw_update(struct device *dev,
 
 	memset(info->print_buf, 0, PAGE_SIZE);
 
-	input_info(true, &info->client->dev, "%s [START]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
 
 	ret = mms_fw_update_from_storage(info, true, NORMAL, TSP_PATH_EXTERNAL_FW);
 
@@ -1241,7 +1241,7 @@ static ssize_t mms_sys_fw_update(struct device *dev,
 		break;
 	}
 
-	input_info(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
 
 	strcat(info->print_buf, data);
 	result = snprintf(buf, PAGE_SIZE, "%s\n", info->print_buf);
@@ -1280,7 +1280,7 @@ static int mms_init_config(struct mms_ts_info *info)
 	wbuf[1] = MIP_R1_INFO_PRODUCT_NAME;
 	mms_i2c_read(info, wbuf, 2, rbuf, 16);
 	memcpy(info->product_name, rbuf, 16);
-	input_info(true, &info->client->dev, "%s - product_name[%s]\n",
+	input_dbg(true, &info->client->dev, "%s - product_name[%s]\n",
 		__func__, info->product_name);
 
 	/* read fw version */
@@ -1292,9 +1292,9 @@ static int mms_init_config(struct mms_ts_info *info)
 	info->node_y = info->dtdata->node_y;
 	info->node_key = info->dtdata->node_key;
 
-	input_info(true, &info->client->dev, "%s - max_x[%d] max_y[%d]\n",
+	input_dbg(true, &info->client->dev, "%s - max_x[%d] max_y[%d]\n",
 		__func__, info->max_x, info->max_y);
-	input_info(true, &info->client->dev, "%s - node_x[%d] node_y[%d] node_key[%d]\n",
+	input_dbg(true, &info->client->dev, "%s - node_x[%d] node_y[%d] node_key[%d]\n",
 		__func__, info->node_x, info->node_y, info->node_key);
 
 #if MMS_USE_TOUCHKEY
@@ -1310,7 +1310,7 @@ static int mms_init_config(struct mms_ts_info *info)
 	wbuf[1] = MIP_R1_EVENT_FORMAT;
 	ret = mms_i2c_read(info, wbuf, 2, rbuf, 4);
 	if (ret == 1) {
-		input_info(true, &info->client->dev, "%s - read event format fail\n", __func__);
+		input_dbg(true, &info->client->dev, "%s - read event format fail\n", __func__);
 		info->event_format = info->dtdata->event_format;
 		info->event_size = info->dtdata->event_size;
 		info->event_size_type = info->dtdata->event_size_type;
@@ -1325,7 +1325,7 @@ static int mms_init_config(struct mms_ts_info *info)
 	info->event_size = info->dtdata->event_size;
 	info->event_size_type = info->dtdata->event_size_type;
 
-	input_info(true, &info->client->dev, "%s event_format[%d] event_size[%d] event_size_type[%d]\n",
+	input_dbg(true, &info->client->dev, "%s event_format[%d] event_size[%d] event_size_type[%d]\n",
 				__func__, info->event_format, info->event_size, info->event_size_type);
 
 	/* sponge fod info */
@@ -1333,7 +1333,7 @@ static int mms_init_config(struct mms_ts_info *info)
 	info->fod_rx = info->dtdata->fod_rx;
 	info->fod_vi_size = info->dtdata->fod_vi_size;
 
-	input_info(true, &info->client->dev, "%s fod_tx[%d] fod_rx[%d] fod_vi_size[%d]\n",
+	input_dbg(true, &info->client->dev, "%s fod_tx[%d] fod_rx[%d] fod_vi_size[%d]\n",
 				__func__, info->fod_tx, info->fod_rx, info->fod_vi_size);
 
 	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
@@ -1432,14 +1432,14 @@ static void mms_ts_print_info_work(struct work_struct *work)
 	struct mms_ts_info *info = container_of(work, struct mms_ts_info, work_print_info.work);
 
 #ifdef TCLM_CONCEPT
-	input_info(true, &info->client->dev, "mode:%04X, tc:%d, noise:%x,%x, wet:%d wc:%x, lp:%x D%05X fn:%04X/%04X // v:%02X%02X cal:%02X(%02X) C%02XT%04X.%4s%s Cal_flag:%s,%d // %d %d\n",
+	input_dbg(true, &info->client->dev, "mode:%04X, tc:%d, noise:%x,%x, wet:%d wc:%x, lp:%x D%05X fn:%04X/%04X // v:%02X%02X cal:%02X(%02X) C%02XT%04X.%4s%s Cal_flag:%s,%d // %d %d\n",
 		0, info->touch_count, info->noise_mode, 0, info->wet_mode,
 		0/*wireless charger*/, info->lowpower_mode/*lp*/, info->defect_probability, 0/*touch function*/, info->ic_status,
 		info->fw_ver_ic >> 8, info->fw_ver_ic & 0xFF,
 		0, 0, 0, 0, " ", " ", " ", 0/*TCLM*/,
 		info->print_info_cnt_open, info->print_info_cnt_release);
 #else
-	input_info(true, &info->client->dev, "mode:%04X, tc:%d, noise:%x,%x, wet:%d wc:%x, lp:%x D%05X fn:%04X/%04X // v:%02X%02X cal:NOCAL // %d %d\n",
+	input_dbg(true, &info->client->dev, "mode:%04X, tc:%d, noise:%x,%x, wet:%d wc:%x, lp:%x D%05X fn:%04X/%04X // v:%02X%02X cal:NOCAL // %d %d\n",
 		0, info->touch_count, info->noise_mode, 0, info->wet_mode,
 		0/*wireless charger*/, info->lowpower_mode/*lp*/, info->defect_probability, 0/*touch function*/, info->ic_status,
 		info->fw_ver_ic >> 8, info->fw_ver_ic & 0xFF,
@@ -1723,7 +1723,7 @@ static int mms_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	device_init_wakeup(&client->dev, true);
 	info->init = false;
 	info->ic_status = PWR_ON;
-	input_info(true, &client->dev,
+	input_dbg(true, &client->dev,
 		"MELFAS %s Touchscreen is initialized successfully\n", CHIP_NAME);
 	input_log_fix();
 	schedule_work(&info->work_print_info.work);

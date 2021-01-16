@@ -127,7 +127,7 @@ config REGULATOR_AB8500
 
 config REGULATOR_ARIZONA_LDO1
 	tristate "Wolfson Arizona class devices LDO1"
-	depends on MFD_ARIZONA
+	depends on MFD_ARIZONA || MFD_MADERA
 	depends on SND_SOC
 	help
 	  Support for the LDO1 regulators found on Wolfson Arizona class
@@ -135,7 +135,7 @@ config REGULATOR_ARIZONA_LDO1
 
 config REGULATOR_ARIZONA_MICSUPP
 	tristate "Wolfson Arizona class devices MICSUPP"
-	depends on MFD_ARIZONA
+	depends on MFD_ARIZONA || MFD_MADERA
 	depends on SND_SOC
 	help
 	  Support for the MICSUPP regulators found on Wolfson Arizona class

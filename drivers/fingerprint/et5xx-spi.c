@@ -1436,49 +1436,24 @@ static struct device_attribute *fp_attrs[] = {
 	NULL,
 };
 
-static void etspi_work_func_debug(struct work_struct *work)
-{
-	pr_info("%s ldo: %d, sleep: %d, tz: %d, spi_value: 0x%x, type: %s\n",
-		__func__,
-		g_data->ldo_enabled, gpio_get_value(g_data->sleepPin),
-		g_data->tz_mode, g_data->spi_value,
-		sensor_status[g_data->sensortype + 2]);
-}
-
 static void etspi_enable_debug_timer(void)
 {
-	mod_timer(&g_data->dbg_timer,
-		round_jiffies_up(jiffies + FPSENSOR_DEBUG_TIMER_SEC));
+
 }
 
 static void etspi_disable_debug_timer(void)
 {
-	del_timer_sync(&g_data->dbg_timer);
-	cancel_work_sync(&g_data->work_debug);
+
 }
 
 static void etspi_timer_func(unsigned long ptr)
 {
-	queue_work(g_data->wq_dbg, &g_data->work_debug);
-	mod_timer(&g_data->dbg_timer,
-		round_jiffies_up(jiffies + FPSENSOR_DEBUG_TIMER_SEC));
+
 }
 
 static int etspi_set_timer(struct etspi_data *etspi)
 {
-	int status = 0;
-
-	setup_timer(&etspi->dbg_timer,
-		etspi_timer_func, (unsigned long)etspi);
-	etspi->wq_dbg =
-		create_singlethread_workqueue("etspi_debug_wq");
-	if (!etspi->wq_dbg) {
-		status = -ENOMEM;
-		pr_err("%s could not create workqueue\n", __func__);
-		return status;
-	}
-	INIT_WORK(&etspi->work_debug, etspi_work_func_debug);
-	return status;
+	return 0;
 }
 
 #ifndef ENABLE_SENSORS_FPRINT_SECURE

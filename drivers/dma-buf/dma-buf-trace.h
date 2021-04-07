@@ -49,7 +49,7 @@ static inline int dmabuf_trace_track_buffer(struct dma_buf *dmabuf)
 {
 	return -ENOTTY;
 }
-static inline int dmabuf_trace_untrack_bufer(struct dma_buf *dmabuf)
+static inline int dmabuf_trace_untrack_buffer(struct dma_buf *dmabuf)
 {
 	return -ENOTTY;
 }

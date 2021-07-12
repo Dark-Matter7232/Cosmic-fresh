@@ -12,6 +12,7 @@
 #include <linux/moduleparam.h>
 #include <linux/compiler.h>
 #include <linux/ems_service.h>
+#include <uapi/linux/sched/types.h>
 
 #define MAX_USER_RT_PRIO        100
 #define MAX_RT_PRIO             MAX_USER_RT_PRIO

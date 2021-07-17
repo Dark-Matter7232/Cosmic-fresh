@@ -42,6 +42,7 @@
 #include <linux/fs.h>
 #include <linux/trace.h>
 #include <linux/sched/rt.h>
+#include <linux/kernel.h>
 
 #include "trace.h"
 #include "trace_output.h"
@@ -759,7 +760,7 @@ __trace_buffer_lock_reserve(struct ring_buffer *buffer,
 
 	return event;
 }
-
+#if 0
 void tracer_tracing_on(struct trace_array *tr)
 {
 	if (tr->trace_buffer.buffer)
@@ -788,7 +789,7 @@ void tracing_on(void)
 	tracer_tracing_on(&global_trace);
 }
 EXPORT_SYMBOL_GPL(tracing_on);
-
+#endif
 
 static __always_inline void
 __buffer_unlock_commit(struct ring_buffer *buffer, struct ring_buffer_event *event)
@@ -896,7 +897,7 @@ int __trace_bputs(unsigned long ip, const char *str)
 }
 EXPORT_SYMBOL_GPL(__trace_bputs);
 
-#ifdef CONFIG_TRACER_SNAPSHOT
+#if 0
 void tracing_snapshot_instance(struct trace_array *tr)
 {
 	struct tracer *tracer = tr->current_trace;
@@ -1029,23 +1030,12 @@ void tracing_snapshot_alloc(void)
 }
 EXPORT_SYMBOL_GPL(tracing_snapshot_alloc);
 #else
-void tracing_snapshot(void)
-{
-	WARN_ONCE(1, "Snapshot feature not enabled, but internal snapshot used");
-}
-EXPORT_SYMBOL_GPL(tracing_snapshot);
 int tracing_alloc_snapshot(void)
 {
 	WARN_ONCE(1, "Snapshot feature not enabled, but snapshot allocation used");
 	return -ENODEV;
 }
 EXPORT_SYMBOL_GPL(tracing_alloc_snapshot);
-void tracing_snapshot_alloc(void)
-{
-	/* Give warning */
-	tracing_snapshot();
-}
-EXPORT_SYMBOL_GPL(tracing_snapshot_alloc);
 #endif /* CONFIG_TRACER_SNAPSHOT */
 
 void tracer_tracing_off(struct trace_array *tr)
@@ -1065,6 +1055,7 @@ void tracer_tracing_off(struct trace_array *tr)
 	smp_wmb();
 }
 
+#if 0
 /**
  * tracing_off - turn off tracing buffers
  *
@@ -1078,6 +1069,7 @@ void tracing_off(void)
 	tracer_tracing_off(&global_trace);
 }
 EXPORT_SYMBOL_GPL(tracing_off);
+#endif
 
 void disable_trace_on_warning(void)
 {
@@ -1098,6 +1090,7 @@ int tracer_tracing_is_on(struct trace_array *tr)
 	return !tr->buffer_disabled;
 }
 
+#if 0
 /**
  * tracing_is_on - show state of ring buffers enabled
  */
@@ -1106,6 +1099,7 @@ int tracing_is_on(void)
 	return tracer_tracing_is_on(&global_trace);
 }
 EXPORT_SYMBOL_GPL(tracing_is_on);
+#endif
 
 static int __init set_buf_size(char *str)
 {
@@ -1794,7 +1788,7 @@ int is_tracing_stopped(void)
 {
 	return global_trace.stop_count;
 }
-
+#if 0
 /**
  * tracing_start - quick start of the tracer
  *
@@ -1837,6 +1831,7 @@ void tracing_start(void)
  out:
 	raw_spin_unlock_irqrestore(&global_trace.start_lock, flags);
 }
+#endif
 
 static void tracing_start_tr(struct trace_array *tr)
 {
@@ -1869,6 +1864,7 @@ static void tracing_start_tr(struct trace_array *tr)
 	raw_spin_unlock_irqrestore(&tr->start_lock, flags);
 }
 
+#if 0
 /**
  * tracing_stop - quick stop of the tracer
  *
@@ -1902,6 +1898,7 @@ void tracing_stop(void)
  out:
 	raw_spin_unlock_irqrestore(&global_trace.start_lock, flags);
 }
+#endif
 
 static void tracing_stop_tr(struct trace_array *tr)
 {
@@ -2706,7 +2703,7 @@ void __trace_stack(struct trace_array *tr, unsigned long flags, int skip,
 	__ftrace_trace_stack(buffer, flags, skip, pc, NULL);
 	rcu_irq_exit_irqson();
 }
-
+#if 0
 /**
  * trace_dump_stack - record a stack back trace in the trace buffer
  * @skip: Number of functions to skip (helper handlers)
@@ -2728,6 +2725,7 @@ void trace_dump_stack(int skip)
 	__ftrace_trace_stack(global_trace.trace_buffer.buffer,
 			     flags, skip, preempt_count(), NULL);
 }
+#endif
 
 static DEFINE_PER_CPU(int, user_stack_count);
 
@@ -7558,7 +7556,6 @@ rb_simple_write(struct file *filp, const char __user *ubuf,
 		if (!!val == tracer_tracing_is_on(tr)) {
 			val = 0; /* do nothing */
 		} else if (val) {
-			tracer_tracing_on(tr);
 			if (tr->current_trace->start)
 				tr->current_trace->start(tr);
 		} else {
@@ -8171,7 +8168,7 @@ void trace_init_global_iter(struct trace_iterator *iter)
 	if (trace_clocks[iter->tr->clock_id].in_ns)
 		iter->iter_flags |= TRACE_FILE_TIME_IN_NS;
 }
-
+#if 0
 void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
 {
 	/* use static because iter can be a bit big for the stack */
@@ -8284,6 +8281,7 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
 	local_irq_restore(flags);
 }
 EXPORT_SYMBOL_GPL(ftrace_dump);
+#endif
 
 __init static int tracer_alloc_buffers(void)
 {

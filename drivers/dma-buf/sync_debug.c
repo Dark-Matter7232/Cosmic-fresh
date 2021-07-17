@@ -134,7 +134,6 @@ static void sync_print_sync_file(struct seq_file *s,
 	int i;
 
 	seq_printf(s, "[%p] %s: %s\n", sync_file,
-		   sync_file_get_name(sync_file, buf, sizeof(buf)),
 		   sync_status_str(dma_fence_get_status(sync_file->fence)));
 
 	if (dma_fence_is_array(sync_file->fence)) {

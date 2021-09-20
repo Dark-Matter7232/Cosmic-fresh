@@ -37,6 +37,10 @@
 #include <backend/gpu/mali_kbase_jm_internal.h>
 #include <backend/gpu/mali_kbase_pm_internal.h>
 
+#if IS_ENABLED(CONFIG_MALI_EXYNOS_SECURE_RENDERING_LEGACY)
+#include <gpu_protected_mode.h>
+#endif
+
 /* Return whether the specified ringbuffer is empty. HW access lock must be
  * held
  */
@@ -539,6 +543,11 @@ static int kbase_jm_protected_entry(struct kbase_device *kbdev,
 
 static int kbase_jm_enter_protected_mode(struct kbase_device *kbdev,
 		struct kbase_jd_atom **katom, int idx, int js)
+#if IS_ENABLED(CONFIG_MALI_EXYNOS_SECURE_RENDERING_LEGACY)
+{
+	return kbase_jm_enter_protected_mode_exynos(kbdev, katom, idx, js);
+}
+#else
 {
 	int err = 0;
 
@@ -711,9 +720,15 @@ static int kbase_jm_enter_protected_mode(struct kbase_device *kbdev,
 
 	return 0;
 }
+#endif /* CONFIG_MALI_EXYNOS_SECURE_RENDERING_LEGACY */
 
 static int kbase_jm_exit_protected_mode(struct kbase_device *kbdev,
 		struct kbase_jd_atom **katom, int idx, int js)
+#if IS_ENABLED(CONFIG_MALI_EXYNOS_SECURE_RENDERING_LEGACY)
+{
+	return kbase_jm_exit_protected_mode_exynos(kbdev, katom, idx, js);
+}
+#else
 {
 	int err = 0;
 
@@ -810,6 +825,7 @@ static int kbase_jm_exit_protected_mode(struct kbase_device *kbdev,
 
 	return 0;
 }
+#endif /* CONFIG_MALI_EXYNOS_SECURE_RENDERING_LEGACY */
 
 void kbase_backend_slot_update(struct kbase_device *kbdev)
 {
@@ -1398,6 +1414,10 @@ static inline void kbase_gpu_remove_atom(struct kbase_device *kbdev,
 	if (disjoint)
 		kbase_job_check_enter_disjoint(kbdev, action, katom->core_req,
 									katom);
+
+	/* MALI_SEC_INTEGRATION */
+	KBASE_KTRACE_ADD_JM_SLOT_INFO(kbdev, LSI_KATOM_REMOVED, katom->kctx, katom, 0u, katom->slot_nr, /*info_value*/ 0);
+
 }
 
 static int should_stop_x_dep_slot(struct kbase_jd_atom *katom)

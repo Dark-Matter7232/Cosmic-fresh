@@ -70,6 +70,10 @@ void kbasep_ktrace_backend_format_msg(struct kbase_ktrace_msg *trace_msg,
 				"%d", trace_msg->backend.gpu.refcount), 0);
 }
 
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+bool check_trace_code(enum kbase_ktrace_code);
+#endif
+
 void kbasep_ktrace_add_jm(struct kbase_device *kbdev,
 		enum kbase_ktrace_code code, struct kbase_context *kctx,
 		struct kbase_jd_atom *katom, u64 gpu_addr,
@@ -78,6 +82,14 @@ void kbasep_ktrace_add_jm(struct kbase_device *kbdev,
 {
 	unsigned long irqflags;
 	struct kbase_ktrace_msg *trace_msg;
+
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+	if (!check_trace_code(code))
+		return;
+
+	if (code == KBASE_KTRACE_CODE(JM_SOFTSTOP) || code == KBASE_KTRACE_CODE(JM_HARDSTOP))
+		gpu_dump_register_hooks(kbdev);
+#endif
 
 	spin_lock_irqsave(&kbdev->ktrace.lock, irqflags);
 

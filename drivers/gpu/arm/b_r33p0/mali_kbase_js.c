@@ -3263,6 +3263,8 @@ static bool js_end_rp_is_complete(struct kbase_jd_atom *const end_katom)
 struct kbase_jd_atom *kbase_js_complete_atom(struct kbase_jd_atom *katom,
 		ktime_t *end_timestamp)
 {
+	/* MALI_SEC_INTEGRATION : MALI_SEC_CL_BOOST */
+	u64 microseconds_spent = 0;
 	struct kbase_device *kbdev;
 	struct kbase_context *kctx = katom->kctx;
 	struct kbase_jd_atom *x_dep = katom->x_post_dep;
@@ -3296,6 +3298,28 @@ struct kbase_jd_atom *kbase_js_complete_atom(struct kbase_jd_atom *katom,
 
 	trace_sysgraph_gpu(SGR_COMPLETE, kctx->id,
 			kbase_jd_atom_id(katom->kctx, katom), katom->slot_nr);
+
+	/* MALI_SEC_INTEGRATION : MALI_SEC_CL_BOOST */
+	/* Calculate the job's time used */
+	if (end_timestamp != NULL) {
+		/* Only calculating it for jobs that really run on the HW (e.g.
+		 * removed from next jobs never actually ran, so really did take
+		 * zero time) */
+		ktime_t tick_diff = ktime_sub(*end_timestamp,
+				katom->start_timestamp);
+
+		microseconds_spent = ktime_to_ns(tick_diff);
+
+		/* MALI_SEC_INTEGRATION */
+		if (kbdev->vendor_callbacks->cl_boost_update_utilization)
+			kbdev->vendor_callbacks->cl_boost_update_utilization(kbdev, katom, microseconds_spent);
+
+		do_div(microseconds_spent, 1000);
+
+		/* Round up time spent to the minimum timer resolution */
+		if (microseconds_spent < KBASEP_JS_TICK_RESOLUTION_US)
+			microseconds_spent = KBASEP_JS_TICK_RESOLUTION_US;
+	}
 
 	kbase_jd_done(katom, katom->slot_nr, end_timestamp, 0);
 

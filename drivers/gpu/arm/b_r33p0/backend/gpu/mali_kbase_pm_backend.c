@@ -76,6 +76,9 @@ int kbase_pm_runtime_init(struct kbase_device *kbdev)
 					callbacks->power_runtime_gpu_idle_callback;
 		kbdev->pm.backend.callback_power_runtime_gpu_active =
 					callbacks->power_runtime_gpu_active_callback;
+		/* MALI_SEC_INTEGRATION */
+		kbdev->pm.backend.callback_power_dvfs_on =
+					callbacks->power_dvfs_on_callback;
 
 		if (callbacks->power_runtime_init_callback)
 			return callbacks->power_runtime_init_callback(kbdev);
@@ -364,6 +367,9 @@ static void kbase_pm_gpu_poweroff_wait_wq(struct work_struct *data)
 	if (kbase_pm_is_gpu_lost(kbdev))
 		backend->poweron_required = false;
 #endif
+
+	/* MALI_SEC_INTEGRATION */
+	KBASE_KTRACE_ADD(kbdev, KBASE_DEVICE_PM_WAIT_WQ_RUN, NULL, backend->poweron_required);
 
 	pm_handle_power_off(kbdev);
 
@@ -927,6 +933,9 @@ void kbase_hwaccess_pm_suspend(struct kbase_device *kbdev)
 
 	if (kbdev->pm.backend.callback_power_suspend)
 		kbdev->pm.backend.callback_power_suspend(kbdev);
+
+	/* MALI_SEC_INTEGRATION */
+	KBASE_KTRACE_ADD(kbdev, KBASE_DEVICE_PM_SUSPEND, NULL, 0u);
 }
 
 void kbase_hwaccess_pm_resume(struct kbase_device *kbdev)
@@ -949,6 +958,8 @@ void kbase_hwaccess_pm_resume(struct kbase_device *kbdev)
 
 	wake_up_all(&kbdev->pm.resume_wait);
 	kbase_pm_unlock(kbdev);
+	/* MALI_SEC_INTEGRATION */
+	KBASE_KTRACE_ADD(kbdev, KBASE_DEVICE_PM_RESUME, NULL, 0u);
 }
 
 #ifdef CONFIG_MALI_ARBITER_SUPPORT

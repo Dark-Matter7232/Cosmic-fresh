@@ -98,7 +98,12 @@ union kbase_ktrace_backend {
 		u64 gpu_addr;
 		int atom_number; /* Only valid for KBASE_KTRACE_FLAG_JM_ATOM */
 		/* Pack smaller members together */
+		/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+		enum kbase_ktrace_code code;
+#else
 		kbase_ktrace_code_t code;
+#endif
 		kbase_ktrace_flag_t flags;
 		u8 jobslot;
 		u8 refcount;

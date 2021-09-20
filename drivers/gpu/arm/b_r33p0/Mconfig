@@ -322,5 +322,5 @@ config MALI_HW_ERRATA_1485982_USE_CLOCK_ALTERNATIVE
 	  slowest clock will be selected.
 
 
-source "kernel/drivers/gpu/arm/midgard/arbitration/Mconfig"
-source "kernel/drivers/gpu/arm/midgard/tests/Mconfig"
+source "kernel/drivers/gpu/arm/b_r33p0/arbitration/Mconfig"
+source "kernel/drivers/gpu/arm/b_r33p0/tests/Mconfig"

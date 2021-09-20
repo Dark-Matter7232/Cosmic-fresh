@@ -154,6 +154,9 @@ int dummy_array[] = {
 	KBASE_KTRACE_CODE_MAKE_CODE(ARB_VM_EVT),
 #endif
 
+/* MALI_SEC_INTEGRATION */
+#include "platform/exynos/gpu_trace_defs.h"
+
 #if MALI_USE_CSF
 #include "debug/backend/mali_kbase_debug_ktrace_codes_csf.h"
 #else

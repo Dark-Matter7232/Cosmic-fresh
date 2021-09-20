@@ -51,6 +51,7 @@ DEFINE_EVENT(mali_jm_slot_template, mali_##name, \
 	TP_PROTO(struct kbase_context *kctx, int jobslot, u64 info_val), \
 	TP_ARGS(kctx, jobslot, info_val))
 DEFINE_MALI_JM_SLOT_EVENT(JM_SUBMIT);
+DEFINE_MALI_JM_SLOT_EVENT(LSI_KATOM_REMOVED);
 DEFINE_MALI_JM_SLOT_EVENT(JM_JOB_DONE);
 DEFINE_MALI_JM_SLOT_EVENT(JM_UPDATE_HEAD);
 DEFINE_MALI_JM_SLOT_EVENT(JM_CHECK_HEAD);

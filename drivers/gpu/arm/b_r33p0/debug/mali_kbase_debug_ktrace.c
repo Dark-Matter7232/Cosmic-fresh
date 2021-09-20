@@ -22,8 +22,15 @@
 #include <mali_kbase.h>
 #include "debug/mali_kbase_debug_ktrace_internal.h"
 
+/* MALI_SEC_INTEGRATION */
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(4, 10, 0))
+#include <linux/sched/clock.h>
+#endif
+
 int kbase_ktrace_init(struct kbase_device *kbdev)
 {
+/* MALI_SEC_INTEGRATION */
+#ifndef CONFIG_MALI_EXYNOS_TRACE
 #if KBASE_KTRACE_TARGET_RBUF
 	struct kbase_ktrace_msg *rbuf;
 
@@ -35,14 +42,18 @@ int kbase_ktrace_init(struct kbase_device *kbdev)
 	kbdev->ktrace.rbuf = rbuf;
 	spin_lock_init(&kbdev->ktrace.lock);
 #endif /* KBASE_KTRACE_TARGET_RBUF */
+#endif
 	return 0;
 }
 
 void kbase_ktrace_term(struct kbase_device *kbdev)
 {
+/* MALI_SEC_INTEGRATION */
+#ifndef CONFIG_MALI_EXYNOS_TRACE
 #if KBASE_KTRACE_TARGET_RBUF
 	kfree(kbdev->ktrace.rbuf);
 #endif /* KBASE_KTRACE_TARGET_RBUF */
+#endif
 }
 
 void kbase_ktrace_hook_wrapper(void *param)
@@ -78,8 +89,8 @@ static void kbasep_ktrace_format_header(char *buffer, int sz, s32 written)
 
 	buffer[sz - 1] = 0;
 }
-
-static void kbasep_ktrace_format_msg(struct kbase_ktrace_msg *trace_msg,
+/* MALI_SEC_INTEGRATION */
+void kbasep_ktrace_format_msg(struct kbase_ktrace_msg *trace_msg,
 		char *buffer, int sz)
 {
 	s32 written = 0;
@@ -134,6 +145,54 @@ static void kbasep_ktrace_dump_msg(struct kbase_device *kbdev,
 	dev_dbg(kbdev->dev, "%s", buffer);
 }
 
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+bool check_trace_code(enum kbase_ktrace_code code)
+{
+#ifdef CONFIG_MALI_EXYNOS_TRACE_ALL
+	return true;
+#else
+	unsigned int temp = code;
+
+	switch (temp) {
+	case KBASE_KTRACE_CODE(PM_PWROFF_L2):
+	case KBASE_KTRACE_CODE(PM_PWRON_L2):
+	case KBASE_KTRACE_CODE(CORE_CTX_DESTROY):
+	case KBASE_KTRACE_CODE(CORE_GPU_SOFT_RESET):
+	case KBASE_KTRACE_CODE(CORE_GPU_HARD_RESET):
+	case KBASE_KTRACE_CODE(JM_SOFTSTOP):
+	case KBASE_KTRACE_CODE(JM_HARDSTOP):
+	case KBASE_KTRACE_CODE(LSI_KATOM_REMOVED):
+	case KBASE_KTRACE_CODE(JM_SUBMIT):
+	case KBASE_KTRACE_CODE(JM_JOB_DONE):
+	case KBASE_KTRACE_CODE(LSI_GPU_RPM_RESUME_API):
+	case KBASE_KTRACE_CODE(LSI_GPU_RPM_SUSPEND_API):
+	case KBASE_KTRACE_CODE(LSI_SUSPEND_CALLBACK):
+	case KBASE_KTRACE_CODE(KBASE_DEVICE_SUSPEND):
+	case KBASE_KTRACE_CODE(KBASE_DEVICE_RESUME):
+	case KBASE_KTRACE_CODE(KBASE_DEVICE_PM_WAIT_WQ_QUEUE_WORK):
+	case KBASE_KTRACE_CODE(LSI_JM_IRQ_E):
+	case KBASE_KTRACE_CODE(LSI_MMU_IRQ_E):
+	case KBASE_KTRACE_CODE(LSI_GPU_IRQ_E):
+	case KBASE_KTRACE_CODE(LSI_GPU_ON):
+	case KBASE_KTRACE_CODE(LSI_GPU_OFF):
+	case KBASE_KTRACE_CODE(LSI_RESUME_FREQ):
+	case KBASE_KTRACE_CODE(LSI_CLOCK_VALUE):
+	case KBASE_KTRACE_CODE(LSI_TMU_VALUE):
+	case KBASE_KTRACE_CODE(LSI_GPU_MAX_LOCK):
+	case KBASE_KTRACE_CODE(LSI_GPU_MIN_LOCK):
+	case KBASE_KTRACE_CODE(LSI_RESET_GPU_EARLY_DUPE):
+	case KBASE_KTRACE_CODE(LSI_RESET_RACE_DETECTED_EARLY_OUT):
+	case KBASE_KTRACE_CODE(LSI_PM_SUSPEND):
+		return true;
+	default:
+		return false;
+	}
+	return true;
+#endif
+}
+#endif
+
 struct kbase_ktrace_msg *kbasep_ktrace_reserve(struct kbase_ktrace *ktrace)
 {
 	struct kbase_ktrace_msg *trace_msg;
@@ -154,12 +213,27 @@ void kbasep_ktrace_msg_init(struct kbase_ktrace *ktrace,
 		struct kbase_context *kctx, kbase_ktrace_flag_t flags,
 		u64 info_val)
 {
+        /* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+        u64 time;
+        unsigned long rem_nsec;
+#endif
+
 	lockdep_assert_held(&ktrace->lock);
 
 	trace_msg->thread_id = task_pid_nr(current);
+
 	trace_msg->cpu = task_cpu(current);
 
+	/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+	time = local_clock();
+	rem_nsec = do_div(time, 1000000000);
+	trace_msg->timestamp.tv_sec = time;
+	trace_msg->timestamp.tv_nsec = rem_nsec;
+#else
 	ktime_get_real_ts64(&trace_msg->timestamp);
+#endif
 
 	/* No need to store a flag about whether there was a kctx, tgid==0 is
 	 * sufficient
@@ -184,6 +258,15 @@ void kbasep_ktrace_add(struct kbase_device *kbdev, enum kbase_ktrace_code code,
 	struct kbase_ktrace_msg *trace_msg;
 
 	WARN_ON((flags & ~KBASE_KTRACE_FLAG_COMMON_ALL));
+
+	/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+        if (!check_trace_code(code))
+                return;
+
+	if (code == KBASE_KTRACE_CODE(JM_SOFTSTOP) || code == KBASE_KTRACE_CODE(JM_HARDSTOP))
+                gpu_dump_register_hooks(kbdev);
+#endif
 
 	spin_lock_irqsave(&kbdev->ktrace.lock, irqflags);
 
@@ -330,7 +413,8 @@ static int kbasep_ktrace_debugfs_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static const struct file_operations kbasep_ktrace_debugfs_fops = {
+/* MALI_SEC_INTEGRATIONS : REMOVE STATIC */
+const struct file_operations kbasep_ktrace_debugfs_fops = {
 	.owner = THIS_MODULE,
 	.open = kbasep_ktrace_debugfs_open,
 	.read = seq_read,
@@ -340,9 +424,12 @@ static const struct file_operations kbasep_ktrace_debugfs_fops = {
 
 void kbase_ktrace_debugfs_init(struct kbase_device *kbdev)
 {
+/* MALI_SEC_INTEGRATION */
+#ifndef CONFIG_MALI_EXYNOS_TRACE
 	debugfs_create_file("mali_trace", 0444,
 			kbdev->mali_debugfs_directory, kbdev,
 			&kbasep_ktrace_debugfs_fops);
+#endif
 }
 #endif /* CONFIG_DEBUG_FS */
 

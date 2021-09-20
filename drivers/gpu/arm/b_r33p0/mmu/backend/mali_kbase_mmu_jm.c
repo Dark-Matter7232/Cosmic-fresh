@@ -142,6 +142,14 @@ void kbase_mmu_report_fault_and_kill(struct kbase_context *kctx,
 		source_id,
 		kctx->pid);
 
+	/* MALI_SEC_INTEGRATION */
+	if (kbdev->vendor_callbacks->update_status)
+		kbdev->vendor_callbacks->update_status(kbdev, "completion_code", exception_type);
+
+	/* MALI_SEC_INTEGRATION */
+	if (kbdev->vendor_callbacks->debug_pagetable_info)
+		kbdev->vendor_callbacks->debug_pagetable_info(kctx, fault->addr);
+
 	/* hardware counters dump fault handling */
 	spin_lock_irqsave(&kbdev->hwcnt.lock, flags);
 	if ((kbdev->hwcnt.kctx) && (kbdev->hwcnt.kctx->as_nr == as_no) &&

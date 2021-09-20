@@ -523,10 +523,15 @@ struct kbase_jd_atom {
 	u32 device_nr;
 	u64 jc;
 	void *softjob_data;
+	/* MALI_SEC_INTEGRATION */
+	spinlock_t fence_lock;
 #if defined(CONFIG_SYNC)
 	struct sync_fence *fence;
 	struct sync_fence_waiter sync_waiter;
 #endif				/* CONFIG_SYNC */
+	/* MALI_SEC_INTEGRATION */
+	struct mutex fence_mt;
+	struct timer_list fence_timer;
 #if defined(CONFIG_MALI_DMA_FENCE) || defined(CONFIG_SYNC_FILE)
 	struct {
 		/* Use the functions/API defined in mali_kbase_fence.h to

@@ -81,7 +81,8 @@ MALI_COVERAGE ?= 0
 CONFIG_MALI_PLATFORM_NAME ?= "devicetree"
 
 # Kconfig passes in the name with quotes for in-tree builds - remove them.
-MALI_PLATFORM_DIR := $(shell echo $(CONFIG_MALI_PLATFORM_NAME))
+# MALI_SEC_INTEGRATION : rename CONFIG_MALI_PLATFORM_NAME to CONFIG_MALI_PLATFORM_THIRDPARTY_NAME
+MALI_PLATFORM_DIR := $(shell echo $(CONFIG_MALI_PLATFORM_THIRDPARTY_NAME))
 
 ifeq ($(CONFIG_MALI_CSF_SUPPORT),y)
     MALI_JIT_PRESSURE_LIMIT_BASE = 0
@@ -122,12 +123,13 @@ ccflags-y = \
     -DMALI_PLATFORM_DIR=$(MALI_PLATFORM_DIR)
 
 
+# MALI_SEC_INTEGRATION : rename CONFIG_MALI_PLATFORM_NAME to CONFIG_MALI_PLATFORM_THIRDPARTY_NAME
 ifeq ($(KBUILD_EXTMOD),)
 # in-tree
-    ccflags-y +=-DMALI_KBASE_PLATFORM_PATH=../../$(src)/platform/$(CONFIG_MALI_PLATFORM_NAME)
+    DEFINES +=-DMALI_KBASE_PLATFORM_PATH=../../$(src)/platform/$(CONFIG_MALI_PLATFORM_THIRDPARTY_NAME)
 else
 # out-of-tree
-    ccflags-y +=-DMALI_KBASE_PLATFORM_PATH=$(src)/platform/$(CONFIG_MALI_PLATFORM_NAME)
+    DEFINES +=-DMALI_KBASE_PLATFORM_PATH=$(src)/platform/$(CONFIG_MALI_PLATFORM_THIRDPARTY_NAME)
 endif
 
 ccflags-y += \
@@ -233,8 +235,10 @@ INCLUDE_SUBDIR = \
     $(src)/mmu/Kbuild \
     $(src)/tl/Kbuild \
     $(src)/gpu/Kbuild \
-    $(src)/thirdparty/Kbuild \
-    $(src)/platform/$(MALI_PLATFORM_DIR)/Kbuild
+    $(src)/thirdparty/Kbuild
+#   $(src)/platform/$(MALI_PLATFORM_DIR)/Kbuild
+
+obj-$(CONFIG_MALI_MIDGARD) += platform/
 
 ifeq ($(CONFIG_MALI_CSF_SUPPORT),y)
     INCLUDE_SUBDIR += $(src)/csf/Kbuild

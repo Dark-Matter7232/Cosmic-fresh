@@ -263,7 +263,7 @@ void kbase_context_common_term(struct kbase_context *kctx)
 	kbase_remove_kctx_from_process(kctx);
 	mutex_unlock(&kctx->kbdev->kctx_list_lock);
 
-	KBASE_KTRACE_ADD(kctx->kbdev, CORE_CTX_DESTROY, kctx, 0u);
+	KBASE_KTRACE_ADD(kctx->kbdev, CORE_CTX_DESTROY, kctx, kctx->tgid);
 }
 
 int kbase_context_mem_pool_group_init(struct kbase_context *kctx)

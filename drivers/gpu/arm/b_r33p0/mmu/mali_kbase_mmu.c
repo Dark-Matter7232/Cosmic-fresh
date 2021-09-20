@@ -45,6 +45,9 @@
 #include <mali_kbase_trace_gpu_mem.h>
 #define KBASE_MMU_PAGE_ENTRIES 512
 
+/* MALI_SEC_INTEGRATION */
+#include <gpu_control.h>
+
 /**
  * kbase_mmu_flush_invalidate() - Flush and invalidate the GPU caches.
  * @kctx: The KBase context.
@@ -563,6 +566,9 @@ void kbase_mmu_page_fault_worker(struct work_struct *data)
 	dev_dbg(kbdev->dev,
 		"Entering %s %pK, fault_pfn %lld, as_no %d\n",
 		__func__, (void *)data, fault_pfn, as_no);
+	/* MALI_SEC_INTEGRATION */
+	/* clear the type to mark we've arrived in the fault worker */
+	//faulting_as->fault_type = KBASE_MMU_FAULT_TYPE_UNKNOWN;
 
 	/* Grab the context that was already refcounted in kbase_mmu_interrupt()
 	 * Therefore, it cannot be scheduled out of this AS until we explicitly
@@ -1656,6 +1662,12 @@ static void kbase_mmu_flush_invalidate(struct kbase_context *kctx,
 	if (nr == 0)
 		return;
 
+	/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_RT_PM
+	if (!gpu_is_power_on())
+		return;
+#endif
+
 	kbdev = kctx->kbdev;
 #if !MALI_USE_CSF
 	mutex_lock(&kbdev->js_data.queue_mutex);
@@ -2261,6 +2273,9 @@ void kbase_mmu_bus_fault_worker(struct work_struct *data)
 
 	kbdev = container_of(faulting_as, struct kbase_device, as[as_no]);
 
+	/* MALI_SEC_INTEGRATION */
+	/* clear the type to mark we've arrived in the fault worker */
+	//faulting_as->fault_type = KBASE_MMU_FAULT_TYPE_UNKNOWN;
 	/* Grab the context, already refcounted in kbase_mmu_interrupt() on
 	 * flagging of the bus-fault. Therefore, it cannot be scheduled out of
 	 * this AS until we explicitly release it

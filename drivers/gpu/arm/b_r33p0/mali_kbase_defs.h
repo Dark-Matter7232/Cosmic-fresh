@@ -71,6 +71,9 @@
 #include <linux/regulator/consumer.h>
 #include <linux/memory_group_manager.h>
 
+/* MALI_SEC_INTEGRATION */
+#include <platform/exynos/gpu_integration_defs.h>
+
 #include "debug/mali_kbase_debug_ktrace_defs.h"
 
 /** Number of milliseconds before we time out on a GPU soft/hard reset */
@@ -406,15 +409,24 @@ struct kbase_pm_device_data {
 	u64 debug_core_mask[BASE_JM_MAX_NR_SLOTS];
 	u64 debug_core_mask_all;
 #endif /* MALI_USE_CSF */
+#ifdef CONFIG_MALI_GPU_CORE_MASK_SELECTION
+	/* MALI_SEC_INTEGRATION */
+	u64 debug_core_mask_info;
+#endif
 
 	int (*callback_power_runtime_init)(struct kbase_device *kbdev);
 	void (*callback_power_runtime_term)(struct kbase_device *kbdev);
+
 	u32 dvfs_period;
+
 	struct kbase_pm_backend_data backend;
+
 #ifdef CONFIG_MALI_ARBITER_SUPPORT
 	struct kbase_arbiter_vm_state *arb_vm_state;
+
 	atomic_t gpu_users_waiting;
 #endif /* CONFIG_MALI_ARBITER_SUPPORT */
+
 	struct kbase_clk_rate_trace_manager clk_rtm;
 };
 
@@ -875,6 +887,7 @@ struct kbase_process {
  *                         enabled.
  * @protected_mode_hwcnt_disable_work: Work item to disable GPU hardware
  *                         counters, used if atomic disable is not possible.
+ * @protected_mode_support: set to true if protected mode is supported.
  * @buslogger:              Pointer to the structure required for interfacing
  *                          with the bus logger module to set the size of buffer
  *                          used by the module for capturing bus logs.
@@ -1070,6 +1083,10 @@ struct kbase_device {
 	struct dentry *debugfs_ctx_directory;
 	struct dentry *debugfs_instr_directory;
 
+	/* MALI_SEC_INTEGRATION */
+	/* debugfs entry for trace */
+	struct dentry *trace_dentry;
+
 #ifdef CONFIG_MALI_DEBUG
 	u64 debugfs_as_read_bitmap;
 #endif /* CONFIG_MALI_DEBUG */
@@ -1136,6 +1153,9 @@ struct kbase_device {
 	spinlock_t hwaccess_lock;
 
 	struct mutex mmu_hw_mutex;
+
+	/* MALI_SEC_INTEGRATION */
+	struct kbase_vendor_callbacks *vendor_callbacks;
 
 	u8 l2_size_override;
 	u8 l2_hash_override;
@@ -1737,6 +1757,17 @@ struct kbase_context {
 	atomic_t work_count;
 	struct timer_list soft_job_timeout;
 
+	/* MALI_SEC_INTEGRATION */
+	int ctx_status;
+	char name[CTX_NAME_SIZE];
+	/* MALI_SEC_INTEGRATION */
+	bool destroying_context;
+	atomic_t mem_profile_showing_state;
+	wait_queue_head_t mem_profile_wait;
+
+	/* MALI_SEC_INTEGRATION */
+	bool need_to_force_schedule_out;
+
 	atomic_t atoms_pulled;
 	atomic_t atoms_pulled_slot[BASE_JM_MAX_NR_SLOTS];
 	int atoms_pulled_slot_pri[BASE_JM_MAX_NR_SLOTS][
@@ -1829,6 +1860,14 @@ struct kbase_context {
 #endif
 
 	base_context_create_flags create_flags;
+	
+	/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_SEC_VK_BOOST
+	bool ctx_vk_need_qos;
+#endif
+
+	/* MALI_SEC_INTEGRATION */
+	u64 mem_usage;
 
 #if !MALI_USE_CSF
 	struct kbase_kinstr_jm *kinstr_jm;

@@ -33,10 +33,15 @@ menuconfig MALI_MIDGARD
 
 if MALI_MIDGARD
 
-config MALI_PLATFORM_NAME
+# MALI_SEC_INTEGRATION
+config MALI_PLATFORM_THIRDPARTY
+	default y
+	bool "Third Party Platform"
+
+config MALI_PLATFORM_THIRDPARTY_NAME
 	depends on MALI_MIDGARD
 	string "Platform name"
-	default "devicetree"
+	default "exynos"
 	help
 	  Enter the name of the desired platform configuration directory to
 	  include in the build. 'platform/$(MALI_PLATFORM_NAME)/Kbuild' must
@@ -47,7 +52,7 @@ config MALI_REAL_HW
 	def_bool !MALI_NO_MALI
 
 menu "Platform specific options"
-source "drivers/gpu/arm/midgard/platform/Kconfig"
+source "drivers/gpu/arm/b_r33p0/platform/Kconfig"
 endmenu
 
 config MALI_CSF_SUPPORT
@@ -61,7 +66,7 @@ config MALI_DEVFREQ
 	bool "Enable devfreq support for Mali"
 	depends on MALI_MIDGARD && PM_DEVFREQ
 	select DEVFREQ_GOV_SIMPLE_ONDEMAND
-	default y
+	default n
 	help
 	  Support devfreq for Mali.
 
@@ -226,7 +231,7 @@ config MALI_DEBUG
 config MALI_FENCE_DEBUG
 	bool "Enable debug sync fence usage"
 	depends on MALI_MIDGARD && MALI_EXPERT && (SYNC || SYNC_FILE)
-	default y if MALI_DEBUG
+	default y
 	help
 	  Select this option to enable additional checking and reporting on the
 	  use of sync fences in the Mali driver.
@@ -374,9 +379,9 @@ config MALI_ARBITRATION
 	  If unsure, say N.
 
 if MALI_ARBITRATION
-source "drivers/gpu/arm/midgard/arbitration/Kconfig"
+source "drivers/gpu/arm/b_r33p0/arbitration/Kconfig"
 endif
 
-source "drivers/gpu/arm/midgard/tests/Kconfig"
+source "drivers/gpu/arm/b_r33p0/tests/Kconfig"
 
 endif

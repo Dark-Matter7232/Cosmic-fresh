@@ -29,6 +29,11 @@
 #include <backend/gpu/mali_kbase_jm_internal.h>
 #include <backend/gpu/mali_kbase_js_internal.h>
 
+/* MALI_SEC_INTEGRATION  */
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(4, 14, 0))
+#include <soc/samsung/exynos-debug.h>
+#endif
+
 #if !MALI_USE_CSF
 /*
  * Hold the runpool_mutex for this

@@ -28,4 +28,4 @@ config MALI_XEN
 	  If unsure, say N.
 
 
-source "drivers/gpu/arm/midgard/arbitration/ptm/Kconfig"
+source "drivers/gpu/arm/b_r33p0/arbitration/ptm/Kconfig"

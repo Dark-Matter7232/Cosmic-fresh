@@ -24,6 +24,56 @@
 #include <tl/mali_kbase_tracepoints.h>
 #include <mali_linux_trace.h>
 
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_DEBUG_LOCK_ALLOC
+#include <lockdep.h>
+#endif
+
+static bool kbase_event_check_error(struct kbase_context *kctx, struct kbase_jd_atom *katom, struct base_jd_udata *data)
+{
+	pgd_t *pgd;
+	struct mm_struct *mm;
+
+	memset(data->blob, 0, sizeof(data->blob));
+
+	if (!kctx || !katom) {
+		printk("kctx: 0x%p, katom: 0x%p\n", kctx, katom);
+		return false;
+	}
+
+	if (katom->status != KBASE_JD_ATOM_STATE_COMPLETED) {
+		printk("Abnormal situation\n");
+		printk("kctx: 0x%p, katom: 0x%p, katom->status: 0x%x\n", kctx, katom, katom->status);
+		return false;
+	}
+
+	mm  = katom->kctx->process_mm;
+	if (mm == NULL) {
+		printk("Abnormal katom\n");
+		printk("katom->kctx: 0x%p, katom->kctx->tgid: %d, katom->kctx->process_mm: 0x%p\n", katom->kctx, katom->kctx->tgid, katom->kctx->process_mm);
+		return false;
+	}
+	pgd = pgd_offset(mm, (unsigned long)&katom->completed);
+	if (pgd_none(*pgd) || pgd_bad(*pgd)) {
+		printk("Abnormal katom\n");
+		printk("katom->kctx: 0x%p, katom->kctx->tgid: %d, katom->kctx->process_mm: 0x%p, pgd: 0x%px\n", katom->kctx, katom->kctx->tgid, katom->kctx->process_mm, pgd);
+		return false;
+	}
+
+#ifdef CONFIG_DEBUG_LOCK_ALLOC
+	if (katom->completed.lock.dep_map.key) {
+		pgd = pgd_offset(mm, (unsigned long)&katom->completed.lock.dep_map.key);
+		if (pgd_none(*pgd) || pgd_bad(*pgd)) {
+			printk("Abnormal katom 2\n");
+			printk("katom->kctx: 0x%p, katom->kctx->tgid: %d, katom->kctx->process_mm: 0x%p, pgd: 0x%px\n", katom->kctx, katom->kctx->tgid, katom->kctx->process_mm, pgd);
+			return false;
+		}
+	}
+#endif
+
+	return true;
+} /* MALI_SEC_INTEGRATION */
+
 static struct base_jd_udata kbase_event_process(struct kbase_context *kctx, struct kbase_jd_atom *katom)
 {
 	struct base_jd_udata data;
@@ -34,6 +84,10 @@ static struct base_jd_udata kbase_event_process(struct kbase_context *kctx, stru
 	KBASE_DEBUG_ASSERT(kctx != NULL);
 	KBASE_DEBUG_ASSERT(katom != NULL);
 	KBASE_DEBUG_ASSERT(katom->status == KBASE_JD_ATOM_STATE_COMPLETED);
+
+	/* MALI_SEC_INTEGRATION */
+	if (kbase_event_check_error(kctx, katom, &data) == false)
+		return data;
 
 	kbdev = kctx->kbdev;
 	data = katom->udata;
@@ -75,7 +129,11 @@ int kbase_event_dequeue(struct kbase_context *ctx, struct base_jd_event_v2 *ueve
 	/* normal event processing */
 	atomic_dec(&ctx->event_count);
 	atom = list_entry(ctx->event_list.next, struct kbase_jd_atom, dep_item[0]);
-	list_del(ctx->event_list.next);
+
+	/* MALI_SEC_INTEGRATION */
+	/* Do not delete from list if item was removed already */
+	if (!(ctx->event_list.next->prev == LIST_POISON2 || ctx->event_list.next->next == LIST_POISON1))
+		list_del(ctx->event_list.next);
 
 	mutex_unlock(&ctx->event_mutex);
 

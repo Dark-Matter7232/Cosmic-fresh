@@ -311,6 +311,10 @@ static void kbase_fence_debug_check_atom(struct kbase_jd_atom *katom)
 	}
 }
 
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_SEC_JOB_STATUS_CHECK
+extern int gpu_job_fence_status_dump(struct sync_file *timeout_sync_file);
+#endif
 static void kbase_fence_debug_wait_timeout(struct kbase_jd_atom *katom)
 {
 	struct kbase_context *kctx = katom->kctx;
@@ -320,6 +324,11 @@ static void kbase_fence_debug_wait_timeout(struct kbase_jd_atom *katom)
 	struct kbase_sync_fence_info info;
 
 	spin_lock_irqsave(&kctx->waiting_soft_jobs_lock, lflags);
+
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_SEC_JOB_STATUS_CHECK
+	gpu_job_fence_status_dump(NULL);
+#endif
 
 	if (kbase_sync_fence_in_info_get(katom, &info)) {
 		/* Fence must have signaled just after timeout. */
@@ -1605,6 +1614,16 @@ int kbase_process_soft_job(struct kbase_jd_atom *katom)
 
 void kbase_cancel_soft_job(struct kbase_jd_atom *katom)
 {
+	/* MALI_SEC_INTEGRATION */
+	pgd_t *pgd;
+	struct mm_struct *mm = katom->kctx->process_mm;
+
+	pgd = pgd_offset(mm, (unsigned long)katom);
+	if (pgd_none(*pgd) || pgd_bad(*pgd)) {
+		printk("Abnormal katom\n");
+		printk("katom->kctx: 0x%p, katom->kctx->tgid: %d, katom->kctx->process_mm: 0x%p, pgd: 0x%px\n", katom->kctx, katom->kctx->tgid, katom->kctx->process_mm, pgd);
+		return;
+	}
 	switch (katom->core_req & BASE_JD_REQ_SOFT_JOB_TYPE) {
 #if defined(CONFIG_SYNC) || defined(CONFIG_SYNC_FILE)
 	case BASE_JD_REQ_SOFT_FENCE_WAIT:

@@ -834,6 +834,10 @@ config MAX_DIRTY_THRESH_PAGES
 	  (Setting dirty_bytes disables this option.)
 
 
+config VMSTAT_INTERVAL
+	int "Default interval in seconds to update vmstat"
+	default 1
+
 config BALANCE_ANON_FILE_RECLAIM
 	bool "During reclaim treat anon and file backed pages equally"
 	depends on SWAP

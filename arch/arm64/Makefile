@@ -187,6 +187,7 @@ endif
 KBUILD_DTBS	:= dtbs
 
 KBUILD_DTBO_EXYNOS_IMG := dtbo_exynos.img
+KBUILD_DTB_EXYNOS_IMG := dtb_exynos.img
 
 all:	Image $(KBUILD_DTBS) $(subst $\",,$(CONFIG_BUILD_ARM64_APPENDED_KERNEL_IMAGE_NAME))
 
@@ -224,6 +225,11 @@ $(KBUILD_DTBO_EXYNOS_IMG): dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
 all: $(KBUILD_DTBO_EXYNOS_IMG)
+
+$(KBUILD_DTB_EXYNOS_IMG): dtbs
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+
+all: $(KBUILD_DTB_EXYNOS_IMG)
 
 PHONY += vdso_install
 vdso_install:

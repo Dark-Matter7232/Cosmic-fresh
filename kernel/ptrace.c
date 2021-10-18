@@ -20,6 +20,7 @@
 #include <linux/ptrace.h>
 #include <linux/security.h>
 #include <linux/signal.h>
+#include <linux/task_integrity.h>
 #include <linux/uio.h>
 #include <linux/audit.h>
 #include <linux/pid_namespace.h>

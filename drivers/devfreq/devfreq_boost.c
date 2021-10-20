@@ -11,6 +11,7 @@
 #include <linux/kthread.h>
 #include <linux/slab.h>
 #include <uapi/linux/sched/types.h>
+#include <linux/sched.h>
 
 static unsigned long devfreq_boost_freq =
 	CONFIG_DEVFREQ_EXYNOS_MIF_BOOST_FREQ;
@@ -19,6 +20,8 @@ static unsigned short devfreq_boost_dur =
 
 module_param(devfreq_boost_freq, long, 0644);
 module_param(devfreq_boost_dur, short, 0644);
+
+static int boost_slot;
 
 enum {
 	SCREEN_OFF,
@@ -209,10 +212,18 @@ static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
 		struct boost_dev *b = d->devices + i;
 
 		if (*blank == FB_BLANK_UNBLANK) {
+		        reset_stune_boost("top-app", boost_slot);
+		        reset_stune_boost("foreground", boost_slot);
+		        reset_stune_boost("background", boost_slot);
+                        
 			clear_bit(SCREEN_OFF, &b->state);
 			__devfreq_boost_kick_max(b,
 				CONFIG_DEVFREQ_WAKE_BOOST_DURATION_MS);
 		} else {
+                        do_stune_boost("top-app", -30, &boost_slot);
+                        do_stune_boost("foreground", -30, &boost_slot);
+                        do_stune_boost("background", -30, &boost_slot);
+  
 			set_bit(SCREEN_OFF, &b->state);
 			wake_up(&b->boost_waitq);
 		}

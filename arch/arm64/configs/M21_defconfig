@@ -5142,7 +5142,7 @@ CONFIG_SPU_VERIFY=y
 #
 # samsung Performace manager
 #
-CONFIG_KPERFMON=y
+# CONFIG_KPERFMON is not set
 
 #
 # Firmware Drivers
@@ -5675,7 +5675,7 @@ CONFIG_CRYPTO=y
 #
 # Crypto core or helper
 #
-CONFIG_CRYPTO_FIPS=y
+# CONFIG_CRYPTO_FIPS is not set
 CONFIG_CRYPTO_ALGAPI=y
 CONFIG_CRYPTO_ALGAPI2=y
 CONFIG_CRYPTO_AEAD=y

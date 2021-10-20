@@ -13,6 +13,7 @@
 #include <linux/compiler.h>
 #include <linux/ems_service.h>
 #include <uapi/linux/sched/types.h>
+#include <linux/sched.h>
 
 #define MAX_USER_RT_PRIO        100
 #define MAX_RT_PRIO             MAX_USER_RT_PRIO
@@ -33,6 +34,8 @@ unsigned short devfreq_boost_dur = CONFIG_DEVFREQ_BOOST_DURATION_MS;
 module_param(devfreq_boost_freq, long, 0644);
 module_param(devfreq_light_boost_freq, long, 0644);
 module_param(devfreq_boost_dur, short, 0644);
+
+static int boost_slot;
 
 struct boost_dev {
 	struct devfreq *df;
@@ -242,10 +245,18 @@ static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
 		struct boost_dev *b = d->devices + i;
 
 		if (*blank == FB_BLANK_UNBLANK) {
+		        reset_stune_boost("top-app", boost_slot);
+		        reset_stune_boost("foreground", boost_slot);
+		        reset_stune_boost("background", boost_slot);
+                        
 			clear_bit(SCREEN_OFF, &b->state);
 			__devfreq_boost_kick_max(b,
 				CONFIG_DEVFREQ_WAKE_BOOST_DURATION_MS);
 		} else {
+                        do_stune_boost("top-app", -30, &boost_slot);
+                        do_stune_boost("foreground", -30, &boost_slot);
+                        do_stune_boost("background", -30, &boost_slot);
+  
 			set_bit(SCREEN_OFF, &b->state);
 			wake_up(&b->boost_waitq);
 		}

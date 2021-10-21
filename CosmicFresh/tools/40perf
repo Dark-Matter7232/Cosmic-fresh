@@ -1,0 +1,9 @@
+#!/system/bin/sh
+
+# trim #
+busybox fstrim -v /cache > /data/trim.log;
+busybox fstrim -v /data >> /data/trim.log;
+
+# Block unwanted wakelocks
+WAKELOCKS="12860000.decon_f;ssp_comm_wake_lock;ssp_wake_lock;tsp_wakelock;umts_ipc0;umts_ipc1"
+echo $WAKELOCKS > /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker

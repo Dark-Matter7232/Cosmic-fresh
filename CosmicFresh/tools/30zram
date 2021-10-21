@@ -1,0 +1,57 @@
+#!/system/bin/sh
+
+# Wait for boot complete first
+while [[ $(getprop sys.boot_completed) != "1" ]]; do
+	sleep 1;
+done
+
+# Enable zswap
+echo "20" > /sys/module/zswap/parameters/max_pool_percent;
+echo "1" > /sys/module/zswap/parameters/enabled;
+
+# Set maximum swappiness
+echo 60 > /proc/sys/vm/swappiness;
+
+# Set page-cluster to lowest to maximize performance
+echo 0 > /proc/sys/vm/page-cluster;
+
+zram_pos=""
+
+# How many CPU cores do we have? (get fixed numer of one for now)
+num_cpu=1 # $(($(cat /sys/devices/system/cpu/kernel_max) + 1))
+
+# Find all available zram positions and swapoff (if swapon'd)
+for i in $(ls /sys/block/ | grep zram); do
+	pos=$(echo $i | busybox tail -c 2)
+	zram_pos="$zram_pos $pos";
+	zram_dev=$(grep $i /proc/swaps | busybox cut -f1 -d "$pos")
+	if [[ $zram_dev ]]; then
+		echo "Turning off swap for $zram_dev$pos"
+		swapoff $zram_dev$pos;
+	fi
+done
+
+# Remove all available zRAMs first
+for i in $zram_pos; do
+	if [ $i != 0 ]; then
+		echo "Removing zram$i";
+	fi;
+
+	echo $i > /sys/class/zram-control/hot_remove;
+done;
+
+# Calculate memory to use for zram (1/2 of ram)
+totalmem=$(busybox free | grep -e "^Mem:" | busybox sed -e 's/^Mem: *//' -e 's/  *.*//')
+echo "Total RAM available: $totalmem"
+mem=$(((totalmem * 3 / 4 / ${num_cpu})))
+echo "Total per-zram-device size: $mem"
+
+# Now let's start
+for i in $(busybox seq 0 $(($num_cpu - 1))); do
+	echo "Adding zram$i";
+	cat /sys/class/zram-control/hot_add;
+	echo ${mem}K > /sys/block/zram$i/disksize;
+	mkswap /dev/block/zram$i;
+	swapon -p 05 /dev/block/zram$i;
+done;
+

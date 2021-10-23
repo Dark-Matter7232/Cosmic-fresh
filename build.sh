@@ -56,7 +56,6 @@ add_deps() {
     verify_toolchain_install
 }
 verify_toolchain_install() {
-    sleep 2
     script_echo " "
     if [[ -d "${TOOLCHAIN}" ]]; then
         script_echo "I: Toolchain found at default location"

@@ -2131,7 +2131,7 @@ long _do_fork(unsigned long clone_flags,
 
 	/* Boost DDR bus and CPU freq to the max for 50 ms when userspace launches an app */
 	if (task_is_zygote(current))
-                devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 60);
+                devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 50);
 	/*
 	 * Determine whether and which event to report to ptracer.  When
 	 * called from kernel_thread or CLONE_UNTRACED is explicitly

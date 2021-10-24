@@ -35,6 +35,9 @@
 #include <linux/smc.h>
 #endif
 #include <linux/sysfs.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/devfreq_boost.h>
+#include <linux/state_notifier.h>
 
 #include <linux/pinctrl/consumer.h>
 #include "../pinctrl/core.h"
@@ -82,6 +85,12 @@ static irqreturn_t etspi_fingerprint_interrupt(int irq, void *dev_id)
 	pr_info("%s FPS triggered.int_count(%d) On(%d)\n", __func__,
 		etspi->int_count, etspi->finger_on);
 	etspi->interrupt_count++;
+
+	if (state_suspended) {
+		cpu_input_boost_kick_max(200);
+		devfreq_boost_kick_wake(DEVFREQ_EXYNOS_MIF);
+	}
+
 	return IRQ_HANDLED;
 }
 

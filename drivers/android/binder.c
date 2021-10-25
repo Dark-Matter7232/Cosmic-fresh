@@ -616,13 +616,13 @@ static struct binder_work *binder_dequeue_work_head_ilocked(
 }
 
 #ifdef CONFIG_FAST_TRACK
-static int binder_count_show(struct seq_file *m, void *unused)
+static int count_show(struct seq_file *m, void *unused)
 {
 	seq_printf(m, "Total foreground request: %llu %llu\n",
 		(unsigned long long)atomic64_read(&binder_fg_req_num), (unsigned long long)atomic64_read(&binder_work_seq));
 	return 0;
 }
-BINDER_DEBUG_ENTRY(count);
+DEFINE_SHOW_ATTRIBUTE(count);
 
 static int binder_switch_show(struct seq_file *m, void *unused)
 {
@@ -6639,7 +6639,7 @@ static int __init binder_init(void)
 				    S_IRUGO,
 				    binder_debugfs_dir_entry_root,
 				    NULL,
-				    &binder_count_fops);
+				    &count_fops);
 		debugfs_create_file("switch",
 				    S_IRUGO,
 				    binder_debugfs_dir_entry_root,

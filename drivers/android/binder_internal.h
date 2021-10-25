@@ -181,6 +181,10 @@ struct binder_work {
 		BINDER_WORK_DEAD_BINDER_AND_CLEAR,
 		BINDER_WORK_CLEAR_DEATH_NOTIFICATION,
 	} type;
+
+#ifdef CONFIG_FAST_TRACK
+	uint64_t seq;
+#endif
 };
 
 struct binder_error {
@@ -457,6 +461,10 @@ struct binder_proc {
 	wait_queue_head_t freeze_wait;
 
 	struct list_head todo;
+#ifdef CONFIG_FAST_TRACK
+	struct list_head fg_todo;
+	uint32_t fg_count;
+#endif
 	struct binder_stats stats;
 	struct list_head delivered_death;
 	int max_threads;

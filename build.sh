@@ -16,13 +16,13 @@ TOOLCHAIN=$(pwd)/build-shit/toolchain
 export_env_vars() {
     export KBUILD_BUILD_USER=Kohei
     export KBUILD_BUILD_HOST=Izumi
-    
+
     export ARCH=arm64
     export SUBARCH=arm64
     export ANDROID_MAJOR_VERSION=r
     export PLATFORM_VERSION=11.0.0
     export $ARCH
-    
+
     # CCACHE
     export USE_CCACHE=1
     export PATH="/usr/lib/ccache/bin/:$PATH"
@@ -47,11 +47,16 @@ add_deps() {
         script_echo "Create build-shit folder"
         mkdir $(pwd)/build-shit
     fi
-    
+
     if [ ! -d $(pwd)/build-shit/toolchain ]
     then
         script_echo "Downloading proton-clang...."
-        git clone https://github.com/TenSeventy7/exynos9610_toolchains_fresh.git ${TOOLCHAIN} --single-branch -b ${BUILD_PREF_COMPILER_VERSION} --depth 1 2>&1 | sed 's/^/     /'
+        cd build-shit
+        script_echo $(wget -q https://github.com/kdrag0n/proton-clang/archive/refs/tags/20201212.tar.gz -O clang.tar.gz);
+        bsdtar xf clang.tar.gz
+        rm -rf clang.tar.gz
+        mv proton-clang* build-shit/toolchain
+        cd ../
     fi
     verify_toolchain_install
 }
@@ -69,32 +74,44 @@ verify_toolchain_install() {
 }
 build_kernel_image() {
     script_echo " "
+    echo -e "${GRN}"
     read -p "Write the Kernel version: " KV
-    
+    echo -e "${YELLOW}"
     script_echo 'Building CosmicFresh Kernel For M21'
     make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M21_defconfig 2>&1 | sed 's/^/     /'
     make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 | sed 's/^/     /'
-}
-build_flashable_zip() {
-    if [[ -e "$(pwd)/arch/arm64/boot/Image" ]]; then
-        script_echo " "
-        script_echo "I: Building kernel image..."
+    SUCCESS=$?
+    echo -e "${RST}"
+
+    if [ $SUCCESS -eq 0 ]
+    then
         echo -e "${GRN}"
-        rm -f $(pwd)/CosmicFresh/{Image, *.zip}
-        cp -r $(pwd)/arch/arm64/boot/Image CosmicFresh/Image
-        cd $(pwd)/CosmicFresh/
-        zip -r9 "CosmicFresh-R$KV.zip" anykernel.sh META-INF tools version Image
-        cd ../..
-        rm -f $(pwd)/arch/arm64/boot/Image        
+        script_echo "------------------------------------------------------------"
+        script_echo "Compilation successful..."
+        script_echo "Image can be found at out/arch/arm64/boot/Image"
+        script_echo  "------------------------------------------------------------"
+        build_flashable_zip
     else
         echo -e "${RED}"
-        script_echo "E: Image not built!"
-        script_echo "   Errors can be fround from above."
-        sleep 3
-        exit_script
+        script_echo "------------------------------------------------------------"
+        script_echo "Compilation failed..check build logs for errors"
+        script_echo "------------------------------------------------------------"
+        echo -e "${RST}"
+        rm -rf $(pwd)/arch/arm64/boot/Image
     fi
 }
+build_flashable_zip() {
+    script_echo " "
+    script_echo "I: Building kernel image..."
+    echo -e "${GRN}"
+    rm -f $(pwd)/CosmicFresh/{Image, *.zip}
+    cp -r $(pwd)/arch/arm64/boot/Image CosmicFresh/Image
+    cd $(pwd)/CosmicFresh/
+    zip -r9 "CosmicFresh-R$KV.zip" anykernel.sh META-INF tools version Image
+    cd ../..
+    rm -f $(pwd)/arch/arm64/boot/Image
+}
+
 add_deps
 export_env_vars
 build_kernel_image
-build_flashable_zip

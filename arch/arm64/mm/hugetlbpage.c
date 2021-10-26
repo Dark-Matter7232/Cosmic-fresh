@@ -54,14 +54,14 @@ static inline pgprot_t pte_pgprot(pte_t pte)
 static int find_num_contig(struct mm_struct *mm, unsigned long addr,
 			   pte_t *ptep, size_t *pgsize)
 {
-	pgd_t *pgdp = pgd_offset(mm, addr);
-	pud_t *pudp;
-	pmd_t *pmdp;
+	pgd_t *pgd = pgd_offset(mm, addr);
+	pud_t *pud;
+	pmd_t *pmd;
 
 	*pgsize = PAGE_SIZE;
-	pudp = pud_offset(pgdp, addr);
-	pmdp = pmd_offset(pudp, addr);
-	if ((pte_t *)pmdp == ptep) {
+	pud = pud_offset(pgd, addr);
+	pmd = pmd_offset(pud, addr);
+	if ((pte_t *)pmd == ptep) {
 		*pgsize = PMD_SIZE;
 		return CONT_PMDS;
 	}
@@ -184,8 +184,11 @@ void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
 
 	clear_flush(mm, addr, ptep, pgsize, ncontig);
 
-	for (i = 0; i < ncontig; i++, ptep++, addr += pgsize, pfn += dpfn)
+	for (i = 0; i < ncontig; i++, ptep++, addr += pgsize, pfn += dpfn) {
+		pr_debug("%s: set pte %p to 0x%llx\n", __func__, ptep,
+			 pte_val(pfn_pte(pfn, hugeprot)));
 		set_pte_at(mm, addr, ptep, pfn_pte(pfn, hugeprot));
+	}
 }
 
 void set_huge_swap_pte_at(struct mm_struct *mm, unsigned long addr,
@@ -203,20 +206,20 @@ void set_huge_swap_pte_at(struct mm_struct *mm, unsigned long addr,
 pte_t *huge_pte_alloc(struct mm_struct *mm,
 		      unsigned long addr, unsigned long sz)
 {
-	pgd_t *pgdp;
-	pud_t *pudp;
-	pmd_t *pmdp;
-	pte_t *ptep = NULL;
+	pgd_t *pgd;
+	pud_t *pud;
+	pte_t *pte = NULL;
 
-	pgdp = pgd_offset(mm, addr);
-	pudp = pud_alloc(mm, pgdp, addr);
-	if (!pudp)
+	pr_debug("%s: addr:0x%lx sz:0x%lx\n", __func__, addr, sz);
+	pgd = pgd_offset(mm, addr);
+	pud = pud_alloc(mm, pgd, addr);
+	if (!pud)
 		return NULL;
 
 	if (sz == PUD_SIZE) {
-		ptep = (pte_t *)pudp;
+		pte = (pte_t *)pud;
 	} else if (sz == (PAGE_SIZE * CONT_PTES)) {
-		pmdp = pmd_alloc(mm, pudp, addr);
+		pmd_t *pmd = pmd_alloc(mm, pud, addr);
 
 		WARN_ON(addr & (sz - 1));
 		/*
@@ -226,55 +229,60 @@ pte_t *huge_pte_alloc(struct mm_struct *mm,
 		 * will be no pte_unmap() to correspond with this
 		 * pte_alloc_map().
 		 */
-		ptep = pte_alloc_map(mm, pmdp, addr);
+		pte = pte_alloc_map(mm, pmd, addr);
 	} else if (sz == PMD_SIZE) {
 		if (IS_ENABLED(CONFIG_ARCH_WANT_HUGE_PMD_SHARE) &&
-		    pud_none(READ_ONCE(*pudp)))
-			ptep = huge_pmd_share(mm, addr, pudp);
+		    pud_none(*pud))
+			pte = huge_pmd_share(mm, addr, pud);
 		else
-			ptep = (pte_t *)pmd_alloc(mm, pudp, addr);
+			pte = (pte_t *)pmd_alloc(mm, pud, addr);
 	} else if (sz == (PMD_SIZE * CONT_PMDS)) {
-		pmdp = pmd_alloc(mm, pudp, addr);
+		pmd_t *pmd;
+
+		pmd = pmd_alloc(mm, pud, addr);
 		WARN_ON(addr & (sz - 1));
-		return (pte_t *)pmdp;
+		return (pte_t *)pmd;
 	}
 
-	return ptep;
+	pr_debug("%s: addr:0x%lx sz:0x%lx ret pte=%p/0x%llx\n", __func__, addr,
+	       sz, pte, pte_val(*pte));
+	return pte;
 }
 
 pte_t *huge_pte_offset(struct mm_struct *mm,
 		       unsigned long addr, unsigned long sz)
 {
-	pgd_t *pgdp;
-	pud_t *pudp, pud;
-	pmd_t *pmdp, pmd;
+	pgd_t *pgd;
+	pud_t *pud;
+	pmd_t *pmd;
 
-	pgdp = pgd_offset(mm, addr);
-	if (!pgd_present(READ_ONCE(*pgdp)))
+	pgd = pgd_offset(mm, addr);
+	pr_debug("%s: addr:0x%lx pgd:%p\n", __func__, addr, pgd);
+	if (!pgd_present(*pgd))
 		return NULL;
 
-	pudp = pud_offset(pgdp, addr);
-	pud = READ_ONCE(*pudp);
-	if (sz != PUD_SIZE && pud_none(pud))
+	pud = pud_offset(pgd, addr);
+	if (sz != PUD_SIZE && pud_none(*pud))
 		return NULL;
 	/* hugepage or swap? */
-	if (pud_huge(pud) || !pud_present(pud))
-		return (pte_t *)pudp;
+	if (pud_huge(*pud) || !pud_present(*pud))
+		return (pte_t *)pud;
 	/* table; check the next level */
 
 	if (sz == CONT_PMD_SIZE)
 		addr &= CONT_PMD_MASK;
 
-	pmdp = pmd_offset(pudp, addr);
-	pmd = READ_ONCE(*pmdp);
+	pmd = pmd_offset(pud, addr);
 	if (!(sz == PMD_SIZE || sz == CONT_PMD_SIZE) &&
-	    pmd_none(pmd))
+	    pmd_none(*pmd))
 		return NULL;
-	if (pmd_huge(pmd) || !pmd_present(pmd))
-		return (pte_t *)pmdp;
+	if (pmd_huge(*pmd) || !pmd_present(*pmd))
+		return (pte_t *)pmd;
 
-	if (sz == CONT_PTE_SIZE)
-		return pte_offset_kernel(pmdp, (addr & CONT_PTE_MASK));
+	if (sz == CONT_PTE_SIZE) {
+		pte_t *pte = pte_offset_kernel(pmd, (addr & CONT_PTE_MASK));
+		return pte;
+	}
 
 	return NULL;
 }
@@ -365,7 +373,7 @@ void huge_ptep_set_wrprotect(struct mm_struct *mm,
 	size_t pgsize;
 	pte_t pte;
 
-	if (!pte_cont(READ_ONCE(*ptep))) {
+	if (!pte_cont(*ptep)) {
 		ptep_set_wrprotect(mm, addr, ptep);
 		return;
 	}
@@ -389,7 +397,7 @@ void huge_ptep_clear_flush(struct vm_area_struct *vma,
 	size_t pgsize;
 	int ncontig;
 
-	if (!pte_cont(READ_ONCE(*ptep))) {
+	if (!pte_cont(*ptep)) {
 		ptep_clear_flush(vma, addr, ptep);
 		return;
 	}

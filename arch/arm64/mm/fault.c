@@ -152,8 +152,7 @@ static inline phys_addr_t show_virt_to_phys(unsigned long addr)
 void show_pte(unsigned long addr)
 {
 	struct mm_struct *mm;
-	pgd_t *pgdp;
-	pgd_t pgd;
+	pgd_t *pgd;
 
 	if (addr < TASK_SIZE) {
 		/* TTBR0 */
@@ -172,37 +171,33 @@ void show_pte(unsigned long addr)
 		return;
 	}
 
-	pr_alert("%s pgtable: %luk pages, %u-bit VAs, pgdp = %p\n",
+	pr_alert("%s pgtable: %luk pages, %u-bit VAs, pgd = %p\n",
 		 mm == &init_mm ? "swapper" : "user", PAGE_SIZE / SZ_1K,
 		 VA_BITS, mm->pgd);
-	pgdp = pgd_offset(mm, addr);
-	pgd = READ_ONCE(*pgdp);
-	pr_alert("[%016lx] pgd=%016llx", addr, pgd_val(pgd));
+	pgd = pgd_offset(mm, addr);
+	pr_alert("[%016lx] *pgd=%016llx", addr, pgd_val(*pgd));
 
 	do {
-		pud_t *pudp, pud;
-		pmd_t *pmdp, pmd;
-		pte_t *ptep, pte;
+		pud_t *pud;
+		pmd_t *pmd;
+		pte_t *pte;
 
-		if (pgd_none(pgd) || pgd_bad(pgd))
+		if (pgd_none(*pgd) || pgd_bad(*pgd))
 			break;
 
-		pudp = pud_offset(pgdp, addr);
-		pud = READ_ONCE(*pudp);
-		pr_cont(", pud=%016llx", pud_val(pud));
-		if (pud_none(pud) || pud_bad(pud))
+		pud = pud_offset(pgd, addr);
+		pr_cont(", *pud=%016llx", pud_val(*pud));
+		if (pud_none(*pud) || pud_bad(*pud))
 			break;
 
-		pmdp = pmd_offset(pudp, addr);
-		pmd = READ_ONCE(*pmdp);
-		pr_cont(", pmd=%016llx", pmd_val(pmd));
-		if (pmd_none(pmd) || pmd_bad(pmd))
+		pmd = pmd_offset(pud, addr);
+		pr_cont(", *pmd=%016llx", pmd_val(*pmd));
+		if (pmd_none(*pmd) || pmd_bad(*pmd))
 			break;
 
-		ptep = pte_offset_map(pmdp, addr);
-		pte = READ_ONCE(*ptep);
-		pr_cont(", pte=%016llx", pte_val(pte));
-		pte_unmap(ptep);
+		pte = pte_offset_map(pmd, addr);
+		pr_cont(", *pte=%016llx", pte_val(*pte));
+		pte_unmap(pte);
 	} while(0);
 
 	pr_cont("\n");
@@ -223,9 +218,8 @@ int ptep_set_access_flags(struct vm_area_struct *vma,
 			  pte_t entry, int dirty)
 {
 	pteval_t old_pteval, pteval;
-	pte_t pte = READ_ONCE(*ptep);
 
-	if (pte_same(pte, entry))
+	if (pte_same(*ptep, entry))
 		return 0;
 
 	/* only preserve the access flags and write permission */
@@ -238,7 +232,7 @@ int ptep_set_access_flags(struct vm_area_struct *vma,
 	 * (calculated as: a & b == ~(~a | ~b)).
 	 */
 	pte_val(entry) ^= PTE_RDONLY;
-	pteval = pte_val(pte);
+	pteval = READ_ONCE(pte_val(*ptep));
 	do {
 		old_pteval = pteval;
 		pteval ^= PTE_RDONLY;

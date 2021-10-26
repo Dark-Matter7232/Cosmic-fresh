@@ -193,32 +193,32 @@ static inline pmd_t kvm_s2pmd_mkwrite(pmd_t pmd)
 	return pmd;
 }
 
-static inline void kvm_set_s2pte_readonly(pte_t *ptep)
+static inline void kvm_set_s2pte_readonly(pte_t *pte)
 {
 	pteval_t old_pteval, pteval;
 
-	pteval = READ_ONCE(pte_val(*ptep));
+	pteval = READ_ONCE(pte_val(*pte));
 	do {
 		old_pteval = pteval;
 		pteval &= ~PTE_S2_RDWR;
 		pteval |= PTE_S2_RDONLY;
-		pteval = cmpxchg_relaxed(&pte_val(*ptep), old_pteval, pteval);
+		pteval = cmpxchg_relaxed(&pte_val(*pte), old_pteval, pteval);
 	} while (pteval != old_pteval);
 }
 
-static inline bool kvm_s2pte_readonly(pte_t *ptep)
+static inline bool kvm_s2pte_readonly(pte_t *pte)
 {
-	return (READ_ONCE(pte_val(*ptep)) & PTE_S2_RDWR) == PTE_S2_RDONLY;
+	return (pte_val(*pte) & PTE_S2_RDWR) == PTE_S2_RDONLY;
 }
 
-static inline void kvm_set_s2pmd_readonly(pmd_t *pmdp)
+static inline void kvm_set_s2pmd_readonly(pmd_t *pmd)
 {
-	kvm_set_s2pte_readonly((pte_t *)pmdp);
+	kvm_set_s2pte_readonly((pte_t *)pmd);
 }
 
-static inline bool kvm_s2pmd_readonly(pmd_t *pmdp)
+static inline bool kvm_s2pmd_readonly(pmd_t *pmd)
 {
-	return kvm_s2pte_readonly((pte_t *)pmdp);
+	return kvm_s2pte_readonly((pte_t *)pmd);
 }
 
 static inline bool kvm_page_empty(void *ptr)
@@ -295,12 +295,6 @@ static inline bool __kvm_cpu_uses_extended_idmap(void)
 {
 	return __cpu_uses_extended_idmap();
 }
-
-/*
- * Can't use pgd_populate here, because the extended idmap adds an extra level
- * above CONFIG_PGTABLE_LEVELS (which is 2 or 3 if we're using the extended
- * idmap), and pgd_populate is only available if CONFIG_PGTABLE_LEVELS = 4.
- */
 
 static inline void __kvm_extend_hypmap(pgd_t *boot_hyp_pgd,
 				       pgd_t *hyp_pgd,

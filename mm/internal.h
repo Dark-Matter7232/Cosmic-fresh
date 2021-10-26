@@ -40,12 +40,6 @@ void page_writeback_init(void);
 
 int do_swap_page(struct vm_fault *vmf);
 
-#ifdef CONFIG_SPECULATIVE_PAGE_FAULT
-extern struct vm_area_struct *get_vma(struct mm_struct *mm,
-				      unsigned long addr);
-extern void put_vma(struct vm_area_struct *vma);
-#endif
-
 void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *start_vma,
 		unsigned long floor, unsigned long ceiling);
 
@@ -288,8 +282,7 @@ static inline bool is_data_mapping(vm_flags_t flags)
 
 /* mm/util.c */
 void __vma_link_list(struct mm_struct *mm, struct vm_area_struct *vma,
-		struct vm_area_struct *prev);
-void __vma_unlink_list(struct mm_struct *mm, struct vm_area_struct *vma);
+		struct vm_area_struct *prev, struct rb_node *rb_parent);
 
 #ifdef CONFIG_MMU
 extern long populate_vma_page_range(struct vm_area_struct *vma,

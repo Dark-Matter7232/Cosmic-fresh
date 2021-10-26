@@ -293,7 +293,7 @@ static void exynos_reboot(enum reboot_mode mode, const char *cmd)
 	pr_info("SOC ID %X. Revision: %x\n", soc_id, revision);
 	switch(soc_id) {
 	case EXYNOS9810_SOC_ID:
-		/* Check reset_sequencer_configuration register */
+/*		 Check reset_sequencer_configuration register
 		if (readl(exynos_pmu_base + RESET_SEQUENCER_CONFIGURATION) & DFD_EDPCSR_DUMP_EN) {
 			dfd_set_dump_gpr(0);
 		}
@@ -303,6 +303,7 @@ static void exynos_reboot(enum reboot_mode mode, const char *cmd)
 			while (1)
 				wfi();
 		}
+*/	
 		break;
 	case EXYNOS9610_SOC_ID:
 		/* Check reset_sequencer_configuration register */

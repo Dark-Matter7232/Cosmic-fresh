@@ -55,6 +55,8 @@ extern void sec_gaf_supply_rqinfo(unsigned short curr_offset, unsigned short rq_
 #define sec_debug_post_panic_handler()		do { } while (0)
 
 #define sec_debug_get_debug_level()		(0)
+#define sec_debug_enter_upload()		(0)
+#define sec_debug_clear_magic_rambase()		(0)
 #define sec_debug_disable_printk_process()	do { } while (0)
 #define sec_debug_verbose_reg(a, b, c)		do { } while (0)
 
@@ -62,6 +64,7 @@ extern void sec_gaf_supply_rqinfo(unsigned short curr_offset, unsigned short rq_
 #define sec_getlog_supply_platform(a, b)	do { } while (0)
 
 #define sec_gaf_supply_rqinfo(a, b)		do { } while (0)
+#define sec_debug_set_extra_info_backtrace_task(a)		do { } while (0)
 #endif /* CONFIG_SEC_DEBUG */
 
 enum sec_debug_reset_reason_t {
@@ -356,6 +359,7 @@ extern void get_bk_item_val_as_string(const char *key, char *buf);
 extern void sec_debug_get_kevent_info(struct ess_info_offset *p, int type);
 extern unsigned long sec_debug_get_kevent_index_addr(int type);
 
+#ifdef CONFIG_SEC_DEBUG
 extern void sec_debug_set_task_in_pm_suspend(uint64_t task);
 extern void sec_debug_set_task_in_sys_reboot(uint64_t task);
 extern void sec_debug_set_task_in_sys_shutdown(uint64_t task);
@@ -370,6 +374,22 @@ extern void sec_debug_set_unfrozen_task_count(uint64_t count);
 extern void sec_debug_set_task_in_sync_irq(uint64_t task, unsigned int irq, const char *name, struct irq_desc *desc);
 extern void sec_debug_set_device_shutdown_timeinfo(uint64_t start, uint64_t end, uint64_t duration, uint64_t func);
 extern void sec_debug_clr_device_shutdown_timeinfo(void);
+#else
+#define sec_debug_set_task_in_pm_suspend(a)		do { } while (0)
+#define sec_debug_set_task_in_sys_reboot(a)		do { } while (0)
+#define sec_debug_set_task_in_sys_shutdown(a)		do { } while (0)
+#define sec_debug_set_task_in_dev_shutdown(a)		do { } while (0)
+#define sec_debug_set_sysrq_crash(a)		do { } while (0)
+#define sec_debug_set_task_in_soft_lockup(a)		do { } while (0)
+#define sec_debug_set_cpu_in_soft_lockup(a)		do { } while (0)
+#define sec_debug_set_task_in_hard_lockup(a)		do { } while (0)
+#define sec_debug_set_cpu_in_hard_lockup(a)		do { } while (0)
+#define sec_debug_set_unfrozen_task(a)		do { } while (0)
+#define sec_debug_set_unfrozen_task_count(a)		do { } while (0)
+#define sec_debug_set_task_in_sync_irq(a, b, c, d)		do { } while (0)
+#define sec_debug_set_device_shutdown_timeinfo(a, b, c, d)		do { } while (0)
+#define sec_debug_clr_device_shutdown_timeinfo(a)		do { } while (0)
+#endif
 
 extern struct watchdogd_info *sec_debug_get_wdd_info(void);
 extern struct bad_stack_info *sec_debug_get_bs_info(void);

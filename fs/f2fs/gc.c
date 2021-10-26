@@ -336,7 +336,7 @@ static struct notifier_block fb_notifier_block = {
 void __init f2fs_init_rapid_gc(void)
 {
  	INIT_WORK(&rapid_gc_fb_worker, rapid_gc_fb_work);
- 	gc_wakelock = wakeup_source_register(NULL, "f2fs_rapid_gc_wakelock");
+ 	gc_wakelock = wakeup_source_register("f2fs_rapid_gc_wakelock");
  	fb_register_client(&fb_notifier_block);
 }
 

@@ -952,8 +952,7 @@
 };
 
 &shared_meta {
-	status = "okay";
-	parts = "vbmeta,boot,system,vendor,product,odm,prism,optics,vbmeta_samsung,recovery,dtbo,keystorage";
+	status = "disabled";
 };
 
 &android_q_fstab {

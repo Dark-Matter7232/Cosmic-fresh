@@ -198,13 +198,13 @@ static DEFINE_MUTEX(selinux_sdcardfs_lock);
 
 #ifdef CONFIG_SECURITY_SELINUX_DEVELOP
 // [ SEC_SELINUX_PORTING_COMMON
-//#if defined(CONFIG_ALWAYS_ENFORCE)
-//CONFIG_RKP_KDP
-//int selinux_enforcing __kdp_ro;
-//#else
+int selinux_enforcing;
+#if defined(CONFIG_ALWAYS_ENFORCE)
+// CONFIG_RKP_KDP
+static int selinux_enforcing_boot __kdp_ro;
+#else
 static int selinux_enforcing_boot;
-//#endif
-
+#endif
 // ] SEC_SELINUX_PORTING_COMMON
 
 

@@ -20,7 +20,6 @@
 #undef DEBUG /* If you need pr_debug logs, changes this definition */
 #define pr_fmt(fmt) "fps_%s: " fmt, __func__
 #include <linux/clk.h>
-#include "fingerprint_sysfs.h"
 
 /* fingerprint debug timer */
 //#define FPSENSOR_DEBUG_TIMER_SEC (10 * HZ)

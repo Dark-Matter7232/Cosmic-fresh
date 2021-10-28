@@ -211,6 +211,10 @@ struct request {
 
 	struct gendisk *rq_disk;
 	struct hd_struct *part;
+	/* Time that I/O was submitted to the kernel. */
+	u64 start_time_ns;
+	/* Time that I/O was submitted to the device. */
+	u64 io_start_time_ns;
 	unsigned long start_time;
 	struct blk_issue_stat issue_stat;
 #ifdef CONFIG_BLK_CGROUP

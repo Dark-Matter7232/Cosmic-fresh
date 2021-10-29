@@ -196,21 +196,10 @@ static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
 
 	/* Boost when the screen turns on and unboost when it turns off */
 	if (*blank == FB_BLANK_UNBLANK) {
-		set_stune_boost("top-app", 2, &boost_slot);
-		set_stune_boost("foreground", 1, &boost_slot);	
-		set_stune_boost("background", -25, &boost_slot);
-		do_prefer_idle("top-app", 1);
-		do_prefer_idle("foreground", 1);
 
 		clear_bit(SCREEN_OFF, &b->state);
 		__cpu_input_boost_kick_max(b, CONFIG_WAKE_BOOST_DURATION_MS);
 	} else {
-		set_stune_boost("top-app", -30, &boost_slot);
-		set_stune_boost("foreground", -30, &boost_slot);	
-		set_stune_boost("background", -30, &boost_slot);
-		do_prefer_idle("top-app", 0);
-		do_prefer_idle("foreground", 0);
-
 		set_bit(SCREEN_OFF, &b->state);
 		wake_up(&b->boost_waitq);
 	}

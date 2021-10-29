@@ -107,13 +107,11 @@ static int exynos_constraint_parse(struct exynos_devfreq_data *data,
 	/* Although there is not any constraint, MIF table should be sent to FVP */
 	min_block = ect_get_block(BLOCK_MINLOCK);
 	if (min_block == NULL) {
-		dev_info(data->dev, "There is not a min block in ECT\n");
 		const_flag = 0;
 	}
 
 	ect_domain = ect_minlock_get_domain(min_block, (char *)devfreq_domain_name);
 	if (ect_domain == NULL) {
-		dev_info(data->dev, "There is not a domain in min block\n");
 		const_flag = 0;
 	}
 
@@ -320,8 +318,6 @@ static int exynos_devfreq_init_freq_table(struct exynos_devfreq_data *data)
 		return -EINVAL;
 	}
 
-	dev_info(data->dev, "max_freq: %uKhz, get_max_freq: %uKhz\n",
-			data->max_freq, max_freq);
 
 	if (max_freq < data->max_freq) {
 		flags |= DEVFREQ_FLAG_LEAST_UPPER_BOUND;
@@ -346,8 +342,6 @@ static int exynos_devfreq_init_freq_table(struct exynos_devfreq_data *data)
 		return -EINVAL;
 	}
 
-	dev_info(data->dev, "min_freq: %uKhz, get_min_freq: %uKhz\n",
-			data->min_freq, min_freq);
 
 	if (min_freq > data->min_freq) {
 		flags &= ~DEVFREQ_FLAG_LEAST_UPPER_BOUND;
@@ -362,8 +356,6 @@ static int exynos_devfreq_init_freq_table(struct exynos_devfreq_data *data)
 		dev_pm_opp_put(target_opp);
 	}
 
-	dev_info(data->dev, "min_freq: %uKhz, max_freq: %uKhz\n",
-			data->min_freq, data->max_freq);
 
 	for (i = 0; i < data->max_state; i++) {
 		if (data->opp_list[i].freq > data->max_freq ||
@@ -753,7 +745,6 @@ static ssize_t store_use_delay_time(struct device *dev,
 		data->simple_interactive_data.use_delay_time = use_delay_time ? true : false;
 		mutex_unlock(&data->devfreq->lock);
 	} else {
-		dev_info(data->dev, "This is invalid value: %d\n", use_delay_time);
 	}
 
 	return count;
@@ -916,10 +907,8 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 	}
 
 	if (of_property_read_string(np, "pd_name", &pd_name)) {
-		dev_info(data->dev, "no power domain\n");
 		data->pm_domain = NULL;
 	} else {
-		dev_info(data->dev, "power domain: %s\n", pd_name);
 		data->pm_domain = exynos_pd_lookup_name(pd_name);
 	}
 
@@ -939,7 +928,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 				       (size_t)(ARRAY_SIZE(boot_array)))) {
 		data->boot_qos_timeout = 0;
 		data->boot_freq = 0;
-		dev_info(data->dev, "This doesn't use boot value\n");
 	} else {
 		data->boot_qos_timeout = boot_array[0];
 		data->boot_freq = boot_array[1];
@@ -961,10 +949,8 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 			data->use_acpm = true;
 		} else {
 			data->use_acpm = false;
-			dev_info(data->dev, "This does not use acpm\n");
 		}
 	} else {
-		dev_info(data->dev, "This does not use acpm\n");
 		data->use_acpm = false;
 	}
 
@@ -973,10 +959,8 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 			data->bts_update = true;
 		} else {
 			data->bts_update = false;
-			dev_info(data->dev, "This does not bts update\n");
 		}
 	} else {
-		dev_info(data->dev, "This does not bts update\n");
 		data->bts_update = false;
 	}
 
@@ -985,10 +969,8 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 			data->update_fvp = true;
 		} else {
 			data->update_fvp = false;
-			dev_info(data->dev, "This does not update fvp\n");
 		}
 	} else {
-		dev_info(data->dev, "This does not update fvp\n");
 		data->update_fvp = false;
 	}
 
@@ -1025,8 +1007,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 					= DEFAULT_DELAY_TIME;
 				data->simple_interactive_data.ndelay_time =
 					DEFAULT_NDELAY_TIME;
-				dev_info(data->dev, "set default delay time %d ms\n",
-						DEFAULT_DELAY_TIME);
 			} else {
 				data->simple_interactive_data.delay_time =
 					get_tokenized_data(buf, &ntokens);
@@ -1087,7 +1067,6 @@ static int exynos_init_freq_table(struct exynos_devfreq_data *data)
 			dev_err(data->dev, "failed to add opp entries %uKhz\n", freq);
 			return ret;
 		} else {
-			dev_info(data->dev, "DEVFREQ : %8uKhz, %8uuV\n", freq, volt);
 		}
 	}
 
@@ -1276,7 +1255,6 @@ static int exynos_devfreq_suspend(struct device *dev)
 
 		dev_err(data->dev, "failed get freq\n");
 
-	dev_info(data->dev, "Suspend_frequency is %u\n", get_freq);
 
 
 	return ret;
@@ -1297,7 +1275,6 @@ static int exynos_devfreq_resume(struct device *dev)
 	u32 cur_freq;
 
 	if (!exynos_devfreq_get_freq(data->dev, &cur_freq, data->clk, data))
-		dev_info(data->dev, "Resume frequency is %u\n", cur_freq);
 
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
 	if (data->use_acpm) {
@@ -1416,8 +1393,6 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 	data->new_volt = (u32)dev_pm_opp_get_voltage(init_opp);
 	dev_pm_opp_put(init_opp);
 
-	dev_info(data->dev, "Initial Frequency: %ld, Initial Voltage: %d\n", init_freq,
-		 data->new_volt);
 
 
 	data->old_volt = data->new_volt;
@@ -1512,7 +1487,6 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 		pm_runtime_put_sync(&pdev->dev);
 	}
 
-	dev_info(data->dev, "devfreq is initialized!!\n");
 
 	return 0;
 

@@ -11,7 +11,6 @@
 #include <linux/kthread.h>
 #include <linux/fb.h>
 #include <linux/slab.h>
-#include <linux/sched.h>
 #include <linux/version.h>
 #include <linux/ems_service.h>
 
@@ -27,8 +26,6 @@ enum {
 	SCREEN_OFF,
 	MAX_BOOST
 };
-
-static int boost_slot;
 
 struct boost_drv {
 	struct delayed_work max_unboost;
@@ -196,17 +193,9 @@ static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
 
 	/* Boost when the screen turns on and unboost when it turns off */
 	if (*blank == FB_BLANK_UNBLANK) {
-		reset_stune_boost("top-app", boost_slot);
-		reset_stune_boost("foreground", boost_slot);
-		reset_stune_boost("background", boost_slot);
-
 		clear_bit(SCREEN_OFF, &b->state);
 		__cpu_input_boost_kick_max(b, CONFIG_WAKE_BOOST_DURATION_MS);
 	} else {
-                do_stune_boost("top-app", -30, &boost_slot);
-                do_stune_boost("foreground", -30, &boost_slot);
-                do_stune_boost("background", -30, &boost_slot);
-
 		set_bit(SCREEN_OFF, &b->state);
 		wake_up(&b->boost_waitq);
 	}

@@ -146,7 +146,7 @@ root_schedtune = {
  *    implementation especially for the computation of the per-CPU boost
  *    value
  */
-#define BOOSTGROUPS_COUNT 7
+#define BOOSTGROUPS_COUNT 6
 
 
 
@@ -894,7 +894,7 @@ static void write_default_values(struct cgroup_subsys_state *css)
 		{ "foreground",	1, 1, 0, 0 },
 		{ "rt",		0, 0, 0, 0 },
 		{ "top-app",	2, 1, 0, 0 },
-		{ "nnapi-hal",	1, 1, 0, 0 },
+		{ "nnapi-hal",	1, 0, 0, 0 },  
 	};
 	int i;
 

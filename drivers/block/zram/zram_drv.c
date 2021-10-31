@@ -39,9 +39,13 @@
 #include <linux/vmstat.h>
 #include <linux/statfs.h>
 #include <uapi/linux/sched/types.h>
+#include <linux/moduleparam.h>
 
 #include "zram_drv.h"
 #include "../loop.h"
+
+unsigned short ram_plus_size = CONFIG_ZRAM_LRU_WRITEBACK_LIMIT;
+module_param(ram_plus_size, short, 0644);
 
 /* Total bytes used by the compressed storage */
 static u64 zram_pool_total_size;
@@ -809,7 +813,7 @@ static bool zram_should_writeback(struct zram *zram,
 	int writtenback_ratio = stored ? (writtenback * 100) / stored : 0;
 	int min_writtenback_ratio = zram_balance_ratio;
 	int margin = max_t(int, 1, zram_balance_ratio / 10);
-	int max_pages = CONFIG_ZRAM_LRU_WRITEBACK_LIMIT;
+	int max_pages = ram_plus_size;
 	static unsigned long time_stamp;
 	bool ret = true;
 

@@ -25,17 +25,15 @@
 #include "ssp_type_define.h"
 #include "ssp_platform.h"
 #include "factory/ssp_factory.h"
-#define ssp_dbg(fmt, ...)
-
-#define ssp_info(fmt, ...)
+#define ssp_dbg(fmt, ...) ((void)0)
+#define ssp_info(fmt, ...) ((void)0)
 
 #define ssp_err(fmt, ...) do { \
 	pr_err("[SSP] " fmt "\n", ##__VA_ARGS__); \
 	} while (0)
 
-#define ssp_dbgf(fmt, ...)
-
-#define ssp_infof(fmt, ...)
+#define ssp_dbgf(fmt, ...) ((void)0)
+#define ssp_infof(fmt, ...) ((void)0)
 
 #define ssp_errf(fmt, ...) do { \
 	pr_err("[SSP] %20s(%4d): " fmt "\n", __func__, __LINE__, ##__VA_ARGS__); \

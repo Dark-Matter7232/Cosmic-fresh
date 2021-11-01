@@ -19,7 +19,7 @@ bool schedtune_initialized = false;
 extern struct reciprocal_value schedtune_spc_rdiv;
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
-#define DYNAMIC_BOOST_SLOTS_COUNT 6
+#define DYNAMIC_BOOST_SLOTS_COUNT 5
 static DEFINE_MUTEX(boost_slot_mutex);
 static DEFINE_MUTEX(stune_boost_mutex);
 struct boost_slot {
@@ -894,7 +894,6 @@ static void write_default_values(struct cgroup_subsys_state *css)
 		{ "foreground",	1, 1, 0, 0 },
 		{ "rt",		0, 0, 0, 0 },
 		{ "top-app",	2, 1, 0, 0 },
-		{ "nnapi-hal",	1, 0, 0, 0 },  
 	};
 	int i;
 

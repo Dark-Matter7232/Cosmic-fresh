@@ -380,6 +380,7 @@ static struct ctl_table kern_table[] = {
 		.extra1		= &min_softirq_accel_mask,
 		.extra2		= &max_softirq_accel_mask,
 	},
+        {
 		.procname	= "sched_wakeup_granularity_ns",
 		.data		= &sysctl_sched_wakeup_granularity,
 		.maxlen		= sizeof(unsigned int),

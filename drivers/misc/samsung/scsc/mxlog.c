@@ -12,6 +12,20 @@
 #include "fwhdr.h"
 #include "mxlog.h"
 
+/* add no-op functions for the driver to compile */
+int scsc_printk_tag_lvl(int tag, int level, const char *fmt, ...)
+{
+	return 0;
+}
+EXPORT_SYMBOL(scsc_printk_tag_lvl);
+
+inline int scsc_printk_tag_dev_lvl(int force, int tag, struct device *dev,
+			    int level, const char *fmt, ...)
+{
+	return 0;
+}
+EXPORT_SYMBOL(scsc_printk_tag_dev_lvl);
+
 /*
  * Receive handler for messages from the FW along the maxwell management transport
  */

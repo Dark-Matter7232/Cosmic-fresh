@@ -240,7 +240,7 @@ static int slsi_tx_dhcp(struct slsi_dev *sdev, struct net_device *dev, struct sk
 
 	if (peer) {
 		spin_lock_bh(&peer->data_qs.cp_lock);
-		/* Controlled port is not yet open; so can't send DHCP frame */
+		/* Controlled port is not yet open; so can't send ARP frame */
 		if (peer->data_qs.controlled_port_state == SCSC_WIFI_FCQ_8021x_STATE_BLOCKED) {
 			SLSI_DBG1_NODEV(SLSI_MLME, "dhcp 8021x_STATE_BLOCKED\n");
 			spin_unlock_bh(&peer->data_qs.cp_lock);

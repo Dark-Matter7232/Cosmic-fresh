@@ -63,7 +63,7 @@
 #include <linux/of_reserved_mem.h>
 #endif
 
-#ifdef CONFIG_EXYNOS_ITMON
+#if IS_ENABLED(CONFIG_EXYNOS_ITMON)
 #include <soc/samsung/exynos-itmon.h>
 #endif
 
@@ -196,7 +196,7 @@ struct platform_mif {
 	void (*resume_handler)(struct scsc_mif_abs *abs, void *data);
 	void *suspendresume_data;
 
-#ifdef CONFIG_EXYNOS_ITMON
+#if IS_ENABLED(CONFIG_EXYNOS_ITMON)
 	struct notifier_block itmon_nb;
 #endif
 
@@ -649,11 +649,13 @@ irqreturn_t platform_wdog_isr(int irq, void *data)
 	}
 
 	/* The wakeup source isn't cleared until WLBT is reset, so change the interrupt type to suppress this */
-	ret = regmap_update_bits(platform->pmureg, WAKEUP_INT_TYPE,
-			RESETREQ_WLBT, 0);
-	SCSC_TAG_INFO_DEV(PLAT_MIF, platform->dev, "Set RESETREQ_WLBT wakeup interrput type to EDGE.\n");
-	if (ret < 0)
-		SCSC_TAG_ERR_DEV(PLAT_MIF, platform->dev, "Failed to Set WAKEUP_INT_TYPE[RESETREQ_WLBT]: %d\n", ret);
+	if (mxman_recovery_disabled()) {
+		ret = regmap_update_bits(platform->pmureg, WAKEUP_INT_TYPE,
+				RESETREQ_WLBT, 0);
+		SCSC_TAG_INFO_DEV(PLAT_MIF, platform->dev, "Set RESETREQ_WLBT wakeup interrput type to EDGE.\n");
+		if (ret < 0)
+			SCSC_TAG_ERR_DEV(PLAT_MIF, platform->dev, "Failed to Set WAKEUP_INT_TYPE[RESETREQ_WLBT]: %d\n", ret);
+	}
 
 	return IRQ_HANDLED;
 }
@@ -1987,7 +1989,7 @@ inline void platform_int_debug(struct platform_mif *platform)
 		ret |= irq_get_irqchip_state(irq, IRQCHIP_STATE_ACTIVE,  &active);
 		ret |= irq_get_irqchip_state(irq, IRQCHIP_STATE_MASKED,  &masked);
 		if (!ret)
-			SCSC_TAG_INFO_DEV(PLAT_MIF, platform->dev, "IRQCHIP_STATE %d(%s): pending %d, active %d, masked %d",
+			SCSC_TAG_INFO_DEV(PLAT_MIF, platform->dev, "IRQCHIP_STATE %d(%s): pending %d, active %d, masked %d\n",
 							  irq, irqs_name[i], pending, active, masked);
 	}
 	platform_mif_dump_register(&platform->interface);
@@ -2014,7 +2016,7 @@ static int __init platform_mif_wifibt_if_reserved_mem_setup(struct reserved_mem 
 RESERVEDMEM_OF_DECLARE(wifibt_if, "exynos,wifibt_if", platform_mif_wifibt_if_reserved_mem_setup);
 #endif
 
-#ifdef CONFIG_EXYNOS_ITMON
+#if IS_ENABLED(CONFIG_EXYNOS_ITMON)
 static int wlbt_itmon_notifier(struct notifier_block *nb,
 		unsigned long action, void *nb_data)
 {
@@ -2319,7 +2321,7 @@ struct scsc_mif_abs *platform_mif_create(struct platform_device *pdev)
 	/* Initialize spinlock */
 	spin_lock_init(&platform->mif_spinlock);
 
-#ifdef CONFIG_EXYNOS_ITMON
+#if IS_ENABLED(CONFIG_EXYNOS_ITMON)
 	platform->itmon_nb.notifier_call = wlbt_itmon_notifier;
 	itmon_notifier_chain_register(&platform->itmon_nb);
 #endif

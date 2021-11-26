@@ -81,6 +81,14 @@ static int napi_select_cpu; /* CPU number */
 #endif
 module_param(napi_select_cpu, int, 0644);
 MODULE_PARM_DESC(napi_select_cpu, "select a specific CPU to execute NAPI poll");
+
+static uint hip4_napi_num_rx_pkts = 80;
+module_param(hip4_napi_num_rx_pkts, uint, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(hip4_napi_num_rx_pkts, "number of packets in Rx queue to deem it as full");
+
+static uint hip4_napi_num_rx_full = 3;
+module_param(hip4_napi_num_rx_full, uint, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(hip4_napi_num_rx_full, "number of iterations of Rx queue full that signal to move to high performance");
 #endif
 
 static int max_buffered_frames = 10000;
@@ -718,7 +726,7 @@ static struct mbulk *hip4_skb_to_mbulk(struct hip4_priv *hip, struct sk_buff *sk
 							    (iph->ihl << 2));
 					th->check = 0;
 					th->check = csum_tcpudp_magic(iph->saddr, iph->daddr, len,
-						IPPROTO_TCP,
+								      IPPROTO_TCP,
 						csum_partial((char *)th, len, 0));
 					SLSI_DBG3_NODEV(SLSI_HIP, "th->check 0x%x\n", ntohs(th->check));
 				} else if (iph->protocol == IPPROTO_UDP) {
@@ -726,7 +734,7 @@ static struct mbulk *hip4_skb_to_mbulk(struct hip4_priv *hip, struct sk_buff *sk
 							    (iph->ihl << 2));
 					uh->check = 0;
 					uh->check = csum_tcpudp_magic(iph->saddr, iph->daddr, len,
-						IPPROTO_UDP,
+								      IPPROTO_UDP,
 						csum_partial((char *)uh, len, 0));
 					SLSI_DBG3_NODEV(SLSI_HIP, "uh->check 0x%x\n", ntohs(uh->check));
 				}
@@ -808,9 +816,9 @@ static struct sk_buff *hip4_mbulk_to_skb(struct scsc_service *service, struct hi
 	}
 
 cont:
-	if (atomic)
+	if (atomic) {
 		skb = alloc_skb(bytes_to_alloc, GFP_ATOMIC);
-	else {
+	} else {
 		spin_unlock_bh(&hip_priv->rx_lock);
 		skb = alloc_skb(bytes_to_alloc, GFP_KERNEL);
 		spin_lock_bh(&hip_priv->rx_lock);
@@ -898,8 +906,8 @@ static void hip4_watchdog(unsigned long data)
 #endif
 {
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-        struct hip4_priv        *priv = from_timer(priv, t, watchdog);
-        struct slsi_hip4        *hip = priv->hip;
+	struct hip4_priv        *priv = from_timer(priv, t, watchdog);
+	struct slsi_hip4        *hip = priv->hip;
 #else
 	struct slsi_hip4        *hip = (struct slsi_hip4 *)data;
 #endif
@@ -909,6 +917,7 @@ static void hip4_watchdog(unsigned long data)
 	unsigned long           flags;
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
 	bool retrigger_watchdog = true;
+	u8 i;
 #endif
 
 	if (!hip || !sdev || !sdev->service || !hip->hip_priv)
@@ -971,7 +980,7 @@ static void hip4_watchdog(unsigned long data)
 	SLSI_INFO_NODEV("Hip4 watchdog triggered\n");
 
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	for (u8 i = 0; i < MIF_HIP_CFG_Q_NUM; i++) {
+	for (i = 0; i < MIF_HIP_CFG_Q_NUM; i++) {
 		if (hip->hip_priv->intr_tohost_mul[i] == MIF_NO_IRQ)
 			continue;
 		if (scsc_service_mifintrbit_bit_mask_status_get(service) & (1 << hip->hip_priv->intr_tohost_mul[i])) {
@@ -992,7 +1001,7 @@ exit:
 }
 
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-void hip4_set_napi_cpu(struct slsi_hip4 *hip, u8 napi_cpu)
+void hip4_set_napi_cpu(struct slsi_hip4 *hip, u8 napi_cpu, bool perf_mode)
 {
 	struct hip4_priv        *hip_priv;
 	struct slsi_dev         *sdev;
@@ -1012,6 +1021,7 @@ void hip4_set_napi_cpu(struct slsi_hip4 *hip, u8 napi_cpu)
 
 	if (!cpu_online(napi_cpu)) {
 		SLSI_ERR_NODEV("CPU%d is offline.\n", napi_cpu);
+		scsc_service_mifintrbit_bit_unmask(sdev->service, hip->hip_priv->intr_tohost_mul[HIP4_MIF_Q_TH_DAT]);
 		return;
 	}
 
@@ -1033,7 +1043,7 @@ void hip4_set_napi_cpu(struct slsi_hip4 *hip, u8 napi_cpu)
 			spin_lock_irqsave(&hip->hip_priv->napi_cpu_lock, flags);
 		}
 		napi_select_cpu = napi_cpu;
-#ifdef CONFIG_SOC_S5E9815
+#if defined(CONFIG_SOC_S5E9815) && defined(CONFIG_SCSC_QOS)
 		/**
 		 * In case where irq affinity set is failed,
 		 * we allow that IRQ and napi are scheduled in different core.
@@ -1041,16 +1051,14 @@ void hip4_set_napi_cpu(struct slsi_hip4 *hip, u8 napi_cpu)
 		if (scsc_service_set_affinity_cpu(sdev->service, napi_select_cpu) != 0)
 			SLSI_ERR_NODEV("Failed to change IRQ affinity (CPU%d).\n", napi_select_cpu);
 #endif
-		/**
-		 * Schedule napi to serve IRQ that might be lost while IRQ bitmap manipulation.
-		 */
+		hip_priv->napi_perf_mode = perf_mode;
 		if (!test_and_set_bit(SLSI_HIP_NAPI_STATE_ENABLED, &hip->hip_priv->napi_state)) {
 			SLSI_INFO_NODEV("enable NAPI on CPU%d\n", napi_select_cpu);
 			napi_enable(&hip->hip_priv->napi);
 		}
-		scsc_service_mifintrbit_bit_unmask(sdev->service, hip->hip_priv->intr_tohost_mul[HIP4_MIF_Q_TH_DAT]);
 		spin_unlock_irqrestore(&hip->hip_priv->napi_cpu_lock, flags);
 	}
+	scsc_service_mifintrbit_bit_unmask(sdev->service, hip->hip_priv->intr_tohost_mul[HIP4_MIF_Q_TH_DAT]);
 	slsi_wake_unlock(&hip->hip_priv->hip4_wake_lock_data);
 }
 
@@ -1122,10 +1130,10 @@ static void hip4_tl_fb(unsigned long data)
 		if ((m->pid & 0x1) == MBULK_POOL_ID_DATA) {
 			colour = mbulk_get_colour(MBULK_POOL_ID_DATA, m);
 #ifdef CONFIG_SCSC_WLAN_HIP4_PROFILING
-			SCSC_HIP4_SAMPLER_VIF_PEER(	hip->hip_priv->minor,
-										0,
-										SLSI_MBULK_COLOUR_GET_VIF(colour),
-										SLSI_MBULK_COLOUR_GET_PEER_IDX(colour));
+			SCSC_HIP4_SAMPLER_VIF_PEER(hip->hip_priv->minor,
+						   0,
+						   SLSI_MBULK_COLOUR_GET_VIF(colour),
+						   SLSI_MBULK_COLOUR_GET_PEER_IDX(colour));
 			/* to profile round-trip */
 			{
 				u16 host_tag;
@@ -1141,9 +1149,9 @@ static void hip4_tl_fb(unsigned long data)
 #endif
 			/* Ignore return value */
 			slsi_hip_tx_done(sdev,
-							SLSI_MBULK_COLOUR_GET_VIF(colour),
-							SLSI_MBULK_COLOUR_GET_PEER_IDX(colour),
-							SLSI_MBULK_COLOUR_GET_AC(colour));
+					 SLSI_MBULK_COLOUR_GET_VIF(colour),
+					 SLSI_MBULK_COLOUR_GET_PEER_IDX(colour),
+					 SLSI_MBULK_COLOUR_GET_AC(colour));
 		}
 		mbulk_free_virt_host(m);
 consume_fb_mbulk:
@@ -1282,6 +1290,7 @@ static void hip4_wq_ctrl(struct work_struct *data)
 		if (m->flag & MBULK_F_WAKEUP) {
 			SLSI_INFO(sdev, "WIFI wakeup by MLME frame 0x%x:\n", fapi_get_sigid(skb));
 			SCSC_BIN_TAG_INFO(BINARY, skb->data, skb->len > 128 ? 128 : skb->len);
+			slsi_skb_cb_get(skb)->wakeup = true;
 		}
 
 #if defined(CONFIG_SCSC_WLAN_DEBUG) || defined(CONFIG_SCSC_WLAN_HIP4_PROFILING)
@@ -1397,6 +1406,7 @@ static int hip4_napi_poll(struct napi_struct *napi, int budget)
 	void                    *mem;
 	struct mbulk            *m;
 	u8                      retry;
+	u8                      todo = 0;
 	int work_done = 0;
 
 	spin_lock_bh(&in_napi_context);
@@ -1407,7 +1417,7 @@ static int hip4_napi_poll(struct napi_struct *napi, int budget)
 	}
 
 	hip = hip_priv->hip;
-	if(!hip || !hip->hip_priv) {
+	if (!hip || !hip->hip_priv) {
 		SLSI_ERR_NODEV("either hip or hip->hip_priv is Null\n");
 		spin_unlock_bh(&in_napi_context);
 		return 0;
@@ -1438,9 +1448,8 @@ static int hip4_napi_poll(struct napi_struct *napi, int budget)
 	SCSC_HIP4_SAMPLER_INT_BH(hip->hip_priv->minor, 0);
 	if (ktime_compare(bh_init_data, bh_end_data) <= 0) {
 		bh_init_data = ktime_get();
-		if (!atomic_read(&hip->hip_priv->closing)) {
+		if (!atomic_read(&hip->hip_priv->closing))
 			atomic_set(&hip->hip_priv->watchdog_timer_active, 0);
-		}
 	}
 	clear_bit(HIP4_MIF_Q_TH_DAT, hip->hip_priv->irq_bitmap);
 
@@ -1449,9 +1458,10 @@ static int hip4_napi_poll(struct napi_struct *napi, int budget)
 
 	service = sdev->service;
 
-	SLSI_DBG4(sdev, SLSI_RX, "todo:%d\n", (idx_w - idx_r) & 0xff);
 	if (idx_r == idx_w) {
 		SLSI_DBG4(sdev, SLSI_RX, "nothing to do, NAPI Complete\n");
+		hip->hip_priv->napi_rx_full_cnt = 0;
+		hip_priv->napi_rx_saturated = 0;
 		bh_end_data = ktime_get();
 		napi_complete(napi);
 		if (!atomic_read(&hip->hip_priv->closing)) {
@@ -1475,6 +1485,25 @@ static int hip4_napi_poll(struct napi_struct *napi, int budget)
 		SCSC_HIP4_SAMPLER_Q(hip_priv->minor, HIP4_MIF_Q_TH_DAT, widx, idx_w, 1);
 	}
 #endif
+
+	todo = ((idx_w - idx_r) & 0xff);
+	SLSI_DBG4(sdev, SLSI_RX, "todo:%hhu\n", todo);
+
+	/* check if Rx queue is saturating and if so move to performance mode */
+	if (!napi_select_cpu && !hip_priv->napi_perf_mode && !hip_priv->napi_rx_saturated) {
+		if (todo > hip4_napi_num_rx_pkts)
+		{
+			if (++hip_priv->napi_rx_full_cnt >= hip4_napi_num_rx_full) {
+				SLSI_INFO(sdev, "Rx queue saturating.. move to performance mode\n");
+				hip_priv->napi_rx_saturated = 1;
+
+				/* signal to traffic monitor to notify clients */
+				slsi_traffic_mon_override(sdev);
+			}
+		} else {
+			hip_priv->napi_rx_full_cnt = 0;
+		}
+	}
 
 	while (idx_r != idx_w) {
 		struct sk_buff *skb;
@@ -1554,12 +1583,13 @@ consume_dat_mbulk:
 	if (work_done < budget) {
 		SLSI_DBG4(sdev, SLSI_RX, "NAPI complete (work_done:%d)\n", work_done);
 		bh_end_data = ktime_get();
+		hip->hip_priv->napi_rx_full_cnt = 0;
+		hip_priv->napi_rx_saturated = 0;
 		napi_complete(napi);
 		if (!atomic_read(&hip->hip_priv->closing)) {
 			/* Nothing more to drain, unmask interrupt */
 			scsc_service_mifintrbit_bit_unmask(sdev->service, hip->hip_priv->intr_tohost_mul[HIP4_MIF_Q_TH_DAT]);
 		}
-
 		if (slsi_wake_lock_active(&hip->hip_priv->hip4_wake_lock_data)) {
 			slsi_wake_unlock(&hip->hip_priv->hip4_wake_lock_data);
 #ifdef CONFIG_SCSC_WLAN_ANDROID
@@ -1613,13 +1643,13 @@ static void hip4_irq_handler_dat(int irq, void *data)
 	spin_lock_irqsave(&hip->hip_priv->napi_cpu_lock, flags);
 	if (test_bit(SLSI_HIP_NAPI_STATE_ENABLED, &hip->hip_priv->napi_state)) {
 		if (napi_select_cpu && (napi_select_cpu != smp_processor_id()) && cpu_online(napi_select_cpu))
-				/* queue work on system_wq. Do not use hip4_workq as
-				 * it is single thread wq and WQ_UNBOUND wouldnt be
-				 * set. What it means? its not garunteed to run on
-				 * intended CPU if wq is created as single threaded
-				 * wq.
-				 */
-				schedule_work_on(napi_select_cpu, &hip->hip_priv->intr_wq_napi_cpu_switch);
+			/* queue work on system_wq. Do not use hip4_workq as
+			 * it is single thread wq and WQ_UNBOUND wouldnt be
+			 * set. What it means? its not garunteed to run on
+			 * intended CPU if wq is created as single threaded
+			 * wq.
+			 */
+			schedule_work_on(napi_select_cpu, &hip->hip_priv->intr_wq_napi_cpu_switch);
 		else
 			napi_schedule(&hip->hip_priv->napi);
 
@@ -1761,10 +1791,10 @@ static void hip4_wq(struct work_struct *data)
 		if ((m->pid & 0x1) == MBULK_POOL_ID_DATA) {
 			colour = mbulk_get_colour(MBULK_POOL_ID_DATA, m);
 #ifdef CONFIG_SCSC_WLAN_HIP4_PROFILING
-			SCSC_HIP4_SAMPLER_VIF_PEER(	hip->hip_priv->minor,
-										0,
-										SLSI_MBULK_COLOUR_GET_VIF(colour),
-										SLSI_MBULK_COLOUR_GET_PEER_IDX(colour));
+			SCSC_HIP4_SAMPLER_VIF_PEER(hip->hip_priv->minor,
+						   0,
+						   SLSI_MBULK_COLOUR_GET_VIF(colour),
+						   SLSI_MBULK_COLOUR_GET_PEER_IDX(colour));
 			/* to profile round-trip */
 			{
 				u16 host_tag;
@@ -1780,9 +1810,9 @@ static void hip4_wq(struct work_struct *data)
 #endif
 			/* Ignore return value */
 			slsi_hip_tx_done(sdev,
-							SLSI_MBULK_COLOUR_GET_VIF(colour),
-							SLSI_MBULK_COLOUR_GET_PEER_IDX(colour),
-							SLSI_MBULK_COLOUR_GET_AC(colour));
+					 SLSI_MBULK_COLOUR_GET_VIF(colour),
+					 SLSI_MBULK_COLOUR_GET_PEER_IDX(colour),
+					 SLSI_MBULK_COLOUR_GET_AC(colour));
 		}
 		mbulk_free_virt_host(m);
 consume_fb_mbulk:
@@ -1837,6 +1867,7 @@ consume_fb_mbulk:
 		if (m->flag & MBULK_F_WAKEUP) {
 			SLSI_INFO(sdev, "WIFI wakeup by MLME frame 0x%x:\n", fapi_get_sigid(skb));
 			SCSC_BIN_TAG_INFO(BINARY, skb->data, skb->len > 128 ? 128 : skb->len);
+			slsi_skb_cb_get(skb)->wakeup = true;
 		}
 
 #if defined(CONFIG_SCSC_WLAN_HIP4_PROFILING) || defined(CONFIG_SCSC_WLAN_DEBUG)
@@ -2147,13 +2178,17 @@ static void hip4_traffic_monitor_cb(void *client_ctx, u32 state, u32 tput_tx, u3
 {
 	struct slsi_hip4 *hip = (struct slsi_hip4 *)client_ctx;
 	struct slsi_dev *sdev = container_of(hip, struct slsi_dev, hip4_inst);
+	u8 state_before;
 
 	if (!sdev)
 		return;
 
 	spin_lock_bh(&hip->hip_priv->pm_qos_lock);
-	SLSI_DBG1(sdev, SLSI_HIP, "event (state:%u, tput_tx:%u bps, tput_rx:%u bps)\n", state, tput_tx, tput_rx);
-	if (state == TRAFFIC_MON_CLIENT_STATE_HIGH)
+	state_before = hip->hip_priv->pm_qos_state;
+
+	SLSI_DBG1(sdev, SLSI_HIP, "state:%u --> event (state:%u, tput_tx:%u bps, tput_rx:%u bps)\n", state_before, state, tput_tx, tput_rx);
+
+	if (state == TRAFFIC_MON_CLIENT_STATE_HIGH || state == TRAFFIC_MON_CLIENT_STATE_OVERRIDE)
 		hip->hip_priv->pm_qos_state = SCSC_QOS_MAX;
 	else if (state == TRAFFIC_MON_CLIENT_STATE_MID)
 		hip->hip_priv->pm_qos_state = SCSC_QOS_MED;
@@ -2162,7 +2197,8 @@ static void hip4_traffic_monitor_cb(void *client_ctx, u32 state, u32 tput_tx, u3
 
 	spin_unlock_bh(&hip->hip_priv->pm_qos_lock);
 
-	schedule_work(&hip->hip_priv->pm_qos_work);
+	if (state_before != hip->hip_priv->pm_qos_state)
+		schedule_work(&hip->hip_priv->pm_qos_work);
 }
 #endif
 
@@ -2177,7 +2213,7 @@ static void hip4_traffic_monitor_logring_cb(void *client_ctx, u32 state, u32 tpu
 		return;
 
 	SLSI_DBG1(sdev, SLSI_HIP, "event (state:%u, tput_tx:%u bps, tput_rx:%u bps)\n", state, tput_tx, tput_rx);
-	if (state == TRAFFIC_MON_CLIENT_STATE_HIGH || state == TRAFFIC_MON_CLIENT_STATE_MID) {
+	if (state == TRAFFIC_MON_CLIENT_STATE_HIGH || state == TRAFFIC_MON_CLIENT_STATE_MID || state == TRAFFIC_MON_CLIENT_STATE_OVERRIDE) {
 		if (hip4_dynamic_logging)
 			scsc_logring_enable(false);
 	} else {
@@ -2198,7 +2234,7 @@ int hip4_init(struct slsi_hip4 *hip)
 	u32                     total_mib_len;
 	u32                     mib_file_offset;
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	struct net_device 	*dev;
+	struct net_device       *dev;
 #endif
 
 	if (!sdev || !sdev->service)
@@ -2469,7 +2505,7 @@ int hip4_init(struct slsi_hip4 *hip)
 #endif
 #endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-	slsi_wake_lock_init(NULL,&hip->hip_priv->hip4_wake_lock.ws, "hip4_wake_lock");
+	slsi_wake_lock_init(NULL, &hip->hip_priv->hip4_wake_lock.ws, "hip4_wake_lock");
 #else
 	slsi_wake_lock_init(&hip->hip_priv->hip4_wake_lock, WAKE_LOCK_SUSPEND, "hip4_wake_lock");
 #endif
@@ -2705,6 +2741,8 @@ int hip4_setup(struct slsi_hip4 *hip)
 		hip->hip_priv->version = 4;
 
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
+		hip->hip_priv->napi_rx_full_cnt = 0;
+		hip->hip_priv->napi_rx_saturated = 0;
 		if (!test_and_set_bit(SLSI_HIP_NAPI_STATE_ENABLED, &hip->hip_priv->napi_state))
 			napi_enable(&hip->hip_priv->napi);
 #endif
@@ -2738,6 +2776,9 @@ void hip4_suspend(struct slsi_hip4 *hip)
 {
 	struct slsi_dev *sdev;
 	struct scsc_service *service;
+#ifdef CONFIG_SCSC_WLAN_RX_NAPI
+	u8 i;
+#endif
 
 	if (!hip || !hip->hip_priv)
 		return;
@@ -2757,7 +2798,7 @@ void hip4_suspend(struct slsi_hip4 *hip)
 	atomic_set(&hip->hip_priv->in_suspend, 1);
 
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	for (u8 i = 0; i < MIF_HIP_CFG_Q_NUM; i++)
+	for (i = 0; i < MIF_HIP_CFG_Q_NUM; i++)
 		if (hip->hip_priv->intr_tohost_mul[i] != MIF_NO_IRQ)
 			scsc_service_mifintrbit_bit_unmask(service, hip->hip_priv->intr_tohost_mul[i]);
 #else
@@ -2769,6 +2810,9 @@ void hip4_resume(struct slsi_hip4 *hip)
 {
 	struct slsi_dev *sdev;
 	struct scsc_service *service;
+#ifdef CONFIG_SCSC_WLAN_RX_NAPI
+	u8 i;
+#endif
 
 	if (!hip || !hip->hip_priv)
 		return;
@@ -2783,7 +2827,7 @@ void hip4_resume(struct slsi_hip4 *hip)
 	service = sdev->service;
 
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	for (u8 i = 0; i < MIF_HIP_CFG_Q_NUM; i++)
+	for (i = 0; i < MIF_HIP_CFG_Q_NUM; i++)
 		if (hip->hip_priv->intr_tohost_mul[i] != MIF_NO_IRQ)
 			scsc_service_mifintrbit_bit_unmask(service, hip->hip_priv->intr_tohost_mul[i]);
 #else
@@ -2798,6 +2842,9 @@ void hip4_freeze(struct slsi_hip4 *hip)
 {
 	struct slsi_dev *sdev;
 	struct scsc_service *service;
+#ifdef CONFIG_SCSC_WLAN_RX_NAPI
+	u8 i;
+#endif
 
 	if (!hip || !hip->hip_priv)
 		return;
@@ -2816,12 +2863,14 @@ void hip4_freeze(struct slsi_hip4 *hip)
 
 	hip4_dump_dbg(hip, NULL, NULL, service);
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	for (u8 i = 0; i < MIF_HIP_CFG_Q_NUM; i++)
+	for (i = 0; i < MIF_HIP_CFG_Q_NUM; i++)
 		if (hip->hip_priv->intr_tohost_mul[i] != MIF_NO_IRQ)
 			scsc_service_mifintrbit_bit_mask(service, hip->hip_priv->intr_tohost_mul[i]);
 
 	if (test_and_clear_bit(SLSI_HIP_NAPI_STATE_ENABLED, &hip->hip_priv->napi_state))
 		napi_disable(&hip->hip_priv->napi);
+	hip->hip_priv->napi_rx_full_cnt = 0;
+	hip->hip_priv->napi_rx_saturated = 0;
 	cancel_work_sync(&hip->hip_priv->intr_wq_napi_cpu_switch);
 	cancel_work_sync(&hip->hip_priv->intr_wq_ctrl);
 	tasklet_kill(&hip->hip_priv->intr_tl_fb);
@@ -2883,6 +2932,8 @@ void hip4_deinit(struct slsi_hip4 *hip)
 
 	if (test_and_clear_bit(SLSI_HIP_NAPI_STATE_ENABLED, &hip->hip_priv->napi_state))
 		napi_disable(&hip->hip_priv->napi);
+	hip->hip_priv->napi_rx_full_cnt = 0;
+	hip->hip_priv->napi_rx_saturated = 0;
 	cancel_work_sync(&hip->hip_priv->intr_wq_napi_cpu_switch);
 	cancel_work_sync(&hip->hip_priv->intr_wq_ctrl);
 	tasklet_kill(&hip->hip_priv->intr_tl_fb);

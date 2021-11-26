@@ -453,8 +453,10 @@ static int slsi_sm_bt_service_cleanup()
 			"cleanup ongoing avdtp detections\n");
 		scsc_avdtp_detect_exit();
 
+#ifdef CONFIG_SCSC_QOS
 		/* Report quality of service statistics */
 		scsc_bt_qos_service_stop();
+#endif
 
 		mutex_lock(&bt_audio_mutex);
 #ifndef CONFIG_SOC_EXYNOS7885
@@ -1081,6 +1083,10 @@ int slsi_sm_bt_service_start(void)
 	} else {
 		SCSC_TAG_DEBUG(BT_COMMON, "Bluetooth service running\n");
 		bt_service.service_started = true;
+#ifdef CONFIG_SCSC_QOS
+		scsc_bt_qos_service_start();
+#endif
+
 		slsi_kic_system_event(
 			slsi_kic_system_event_category_initialisation,
 			slsi_kic_system_events_bt_on, 0);
@@ -1101,10 +1107,6 @@ int slsi_sm_bt_service_start(void)
 #endif
 		mutex_unlock(&bt_audio_mutex);
 	}
-
-	if (bt_service.bsmhcp_protocol->header.firmware_features &
-	    BSMHCP_FEATURE_M4_INTERRUPTS)
-		SCSC_TAG_DEBUG(BT_COMMON, "features enabled: M4_INTERRUPTS\n");
 
 exit:
 	if (err < 0) {
@@ -2057,6 +2059,22 @@ static void scsc_update_btlog_params(void)
 				SCSC_MIFINTR_TARGET_R4);
 	}
 	mutex_unlock(&bt_start_mutex);
+
+#ifdef CONFIG_SCSC_ANT
+	mutex_lock(&ant_start_mutex);
+	if (ant_service.service) {
+		ant_service.asmhcp_protocol->header.btlog_enables0_low = firmware_btlog_enables0_low;
+		ant_service.asmhcp_protocol->header.btlog_enables0_high = firmware_btlog_enables0_high;
+		ant_service.asmhcp_protocol->header.btlog_enables1_low = firmware_btlog_enables1_low;
+		ant_service.asmhcp_protocol->header.btlog_enables1_high = firmware_btlog_enables1_high;
+
+		/* Trigger the interrupt in the mailbox */
+		scsc_service_mifintrbit_bit_set(ant_service.service,
+				ant_service.asmhcp_protocol->header.ap_to_bg_int_src,
+				SCSC_MIFINTR_TARGET_R4);
+	}
+	mutex_unlock(&ant_start_mutex);
+#endif
 }
 
 static int scsc_mxlog_filter_set_param_cb(const char *buffer,
@@ -2556,7 +2574,9 @@ static int __init scsc_bt_module_init(void)
 	SCSC_TAG_DEBUG(BT_COMMON, "dev=%u class=%p\n",
 			   ant_service.device, common_service.class);
 #endif
-	scsc_bt_qos_init();
+#ifdef CONFIG_SCSC_QOS
+	scsc_bt_qos_service_init();
+#endif
 
 	return 0;
 
@@ -2621,8 +2641,6 @@ static void __exit scsc_bt_module_exit(void)
 
 	unregister_chrdev_region(ant_service.device, SCSC_TTY_MINORS);
 #endif
-
-	scsc_bt_qos_deinit();
 
 	SCSC_TAG_INFO(BT_COMMON, "exit, module unloaded\n");
 }

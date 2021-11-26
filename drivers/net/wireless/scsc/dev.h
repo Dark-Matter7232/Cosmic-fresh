@@ -96,6 +96,15 @@
 #define SLSI_MAX_ARP_SEND_FRAME  8
 #endif
 
+#define HOME_TIME_BIT                BIT(0)
+#define HOME_AWAY_TIME_BIT           BIT(1)
+#define MAX_CHANNEL_TIME_BIT         BIT(2)
+#define MAX_CHANNEL_PASSIVE_TIME_BIT BIT(3)
+#define LATENCY_ALL_SET_MASK (HOME_TIME_BIT| \
+			      HOME_AWAY_TIME_BIT| \
+			      MAX_CHANNEL_TIME_BIT| \
+			      MAX_CHANNEL_PASSIVE_TIME_BIT)
+
 /* indices: 3= BW20->idx_0, BW40->idx_1, BW80->idx_2.
  *             2= noSGI->idx_0, SGI->idx_1
  *             10= mcs index
@@ -350,7 +359,7 @@ struct slsi_ba_session_rx {
 #define SLSI_SCAN_MAX         3
 
 #define SLSI_SCAN_SSID_MAP_MAX         10 /* Arbitrary value */
-#define SLSI_SCAN_SSID_MAP_EXPIRY_AGE  2  /* If hidden bss not found these many scan cycles, remove map. Arbitrary value*/
+#define SLSI_SCAN_SSID_MAP_EXPIRY_AGE  2  /*If hidden bss not found these many scan cycles,remove map.Arbitrary value*/
 #define SLSI_FW_SCAN_DONE_TIMEOUT_MSEC (20 * 1000)
 #define MAX_CHANNEL_COUNT              40
 
@@ -376,13 +385,13 @@ struct slsi_bssid_info {
 	int rssi;
 	bool connect_attempted;
 };
+#endif
 
 struct slsi_bssid_blacklist_info {
 	struct list_head list;
 	u8 bssid[ETH_ALEN];
 	int end_time;
 };
-#endif
 
 struct slsi_scan_result {
 	u8 bssid[ETH_ALEN];
@@ -694,10 +703,8 @@ struct slsi_vif_sta {
 	u8                      bssid[ETH_ALEN];
 	u8                      ssid[IEEE80211_MAX_SSID_LEN];
 	u8                      ssid_len;
-#ifdef CONFIG_SCSC_WLAN_SAE_CONFIG
 	u8                      *rsn_ie;
 	int                     rsn_ie_len;
-#endif
 
 	/* Storing channel bitmap to use it for setting cached channels */
 	u16                     channels_24_ghz;
@@ -987,6 +994,7 @@ struct netdev_vif {
 	u64                         mgmt_tx_cookie; /* Cookie id for mgmt tx */
 	struct slsi_vif_mgmt_tx     mgmt_tx_data;
 	struct delayed_work         scan_timeout_work;     /* Work on scan timeout */
+	struct delayed_work         blacklist_del_work;
 	bool                        delete_probe_req_ies;    /* Delete probe request stored at  probe_req_ies, if
 							      * connected for WAP2 at mlme_del_vif or in all cases
 							      * if STA
@@ -1038,6 +1046,9 @@ struct netdev_vif {
 	struct slsi_netif_set_tid_attr set_tid_attr;
 	struct work_struct         update_pkt_filter_work;
 	bool is_opt_out_packet;
+	struct cfg80211_acl_data *acl_data_supplicant;
+	struct cfg80211_acl_data *acl_data_hal;
+	struct list_head        acl_data_fw_list;
 };
 
 struct slsi_802_11d_reg_domain {
@@ -1139,6 +1150,7 @@ struct slsi_dev_config {
 #define SLSI_NET_INDEX_P2P  2
 #define SLSI_NET_INDEX_P2PX_SWLAN 3
 #define SLSI_NET_INDEX_NAN  4
+#define SLSI_NET_INDEX_DETECT (CONFIG_SCSC_WLAN_MAX_INTERFACES + 1)
 
 /* States used during P2P operations */
 enum slsi_p2p_states {
@@ -1302,11 +1314,13 @@ struct slsi_dev {
 	struct scsc_wake_lock			wlan_wl_mlme;
 	struct scsc_wake_lock			wlan_wl_ma;
 	struct scsc_wake_lock			wlan_wl_roam;
+	struct scsc_wake_lock			wlan_wl_init;
 #else
 	struct wake_lock                        wlan_wl;
-        struct wake_lock                        wlan_wl_mlme;
-        struct wake_lock                        wlan_wl_ma;
-        struct wake_lock                        wlan_wl_roam;
+	struct wake_lock                        wlan_wl_mlme;
+	struct wake_lock                        wlan_wl_ma;
+	struct wake_lock                        wlan_wl_roam;
+	struct wake_lock                        wlan_wl_init;
 #endif
 #endif
 	struct slsi_sig_send       sig_wait;
@@ -1426,6 +1440,11 @@ struct slsi_dev {
 	int                        max_channel_time;
 	int                        max_channel_passive_time;
 	int                        wlan_service_on;
+	struct slsi_wlan_driver_wake_reason_cnt wake_reason_stats;
+	struct slsi_spinlock       wake_stats_lock;
+	u8                         latency_param_mask;
+	bool                       detect_vif_active;
+	bool                       max_dtim_recv;
 };
 
 /* Compact representation of channels a ESS has been seen on
@@ -1493,6 +1512,9 @@ int slsi_get_nan_ndp_max_time(void);
 #endif
 void slsi_sched_scan_stopped(struct work_struct *work);
 bool slsi_dev_rtt_supported(void);
+#ifdef CONFIG_SCSC_WLAN_DEBUG_MLME_WORK_STRUCT
+struct slsi_dev *slsi_get_sdev(void);
+#endif
 
 static inline u16 slsi_tx_host_tag(struct slsi_dev *sdev, enum slsi_traffic_q tq)
 {
@@ -1530,13 +1552,13 @@ static inline struct net_device *slsi_nan_get_netdev_rcu(struct slsi_dev *sdev, 
 	case MA_BLOCKACK_IND:
 		{
 			if (fapi_get_u16(skb, u.ma_blockack_ind.reason_code) == FAPI_REASONCODE_UNSPECIFIED_REASON) {
-				struct ieee80211_bar *bar = (fapi_get_datalen(skb)) ? (struct ieee80211_bar *)fapi_get_data(skb): NULL;
+				struct ieee80211_bar *bar = (fapi_get_datalen(skb)) ? (struct ieee80211_bar *)fapi_get_data(skb) : NULL;
 
 				if (!bar)
 					return NULL;
 				dest_addr = bar->ra;
 			} else {
-				struct ieee80211_mgmt *mgmt = (fapi_get_mgmtlen(skb)) ? fapi_get_mgmt(skb): NULL;
+				struct ieee80211_mgmt *mgmt = (fapi_get_mgmtlen(skb)) ? fapi_get_mgmt(skb) : NULL;
 
 				if (!mgmt) {
 					dest_addr = bcast_addr;
@@ -1566,14 +1588,12 @@ static inline struct net_device *slsi_nan_get_netdev_rcu(struct slsi_dev *sdev, 
 		return NULL;
 	}
 
-
 	for (idx = SLSI_NAN_DATA_IFINDEX_START; idx <= CONFIG_SCSC_WLAN_MAX_INTERFACES; idx++) {
 		struct netdev_vif *ndev_vif;
 		u8 i = 0;
 
 		if (sdev->netdev[idx]) {
-			/*
-			 * In NAN, the 1:1 mapping of VIF to Netdevice does not apply.
+			/* In NAN, the 1:1 mapping of VIF to Netdevice does not apply.
 			 * The same firmware VIF may map to multiple netdevices. So derive
 			 * the Netdev here by matching the destination address of packet
 			 * to address of the Netdev.

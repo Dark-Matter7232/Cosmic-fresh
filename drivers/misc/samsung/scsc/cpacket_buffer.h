@@ -143,5 +143,9 @@ struct cpacketbuffer {
 	uint32_t       *write_index; /* Pointer to the location of the write index, which
 					*     contains the index after the last packet written. */
 };
+#define SCSC_TAG_DEV_LVL(tag, lvl, dev, fmt, args...)	\
+	scsc_printk_tag_dev_lvl(NO_FORCE_PRK, (tag), (dev), (lvl), fmt, ## args)
+#define SCSC_TAG_LVL(tag, lvl, fmt, args...)	\
+	scsc_printk_tag_lvl((tag), (lvl), fmt, ## args)
 
 #endif /* CPACKET_BUFFER_H__ */

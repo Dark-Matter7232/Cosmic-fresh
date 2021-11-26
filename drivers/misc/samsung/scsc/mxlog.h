@@ -94,4 +94,9 @@ struct mxlog {
 	struct firmware *logstrings;
 };
 
+extern int scsc_printk_tag_dev_lvl(int force, int tag, struct device *dev, int lvl, const char *fmt, ...);
+#define SCSC_TAG_DEV_LVL(tag, lvl, dev, fmt, args...)	\
+	scsc_printk_tag_dev_lvl(NO_FORCE_PRK, (tag), (dev), (lvl), fmt, ## args)
+#define SCSC_TAG_LVL(tag, lvl, fmt, args...)	\
+	scsc_printk_tag_lvl((tag), (lvl), fmt, ## args)
 #endif /* _MXLOG_H */

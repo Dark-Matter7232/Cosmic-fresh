@@ -31,7 +31,12 @@
 #include <linux/of_platform.h>
 #include <linux/types.h>
 #include <linux/oom.h>
-
+/* MALI_SEC_INTEGRATION */
+#include <linux/version.h>
+/* MALI_SEC_INTEGRATION */
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(4, 10, 0))
+#include <linux/sched/clock.h>
+#endif
 #include <mali_kbase.h>
 #include <mali_kbase_defs.h>
 #include <mali_kbase_hwaccess_instr.h>
@@ -40,6 +45,7 @@
 #include <linux/priority_control_manager.h>
 
 #include <tl/mali_kbase_timeline.h>
+#include "mali_kbase_kinstr_prfcnt.h"
 #include "mali_kbase_vinstr.h"
 #include "mali_kbase_hwcnt_context.h"
 #include "mali_kbase_hwcnt_virtualizer.h"
@@ -407,6 +413,17 @@ int kbase_device_vinstr_init(struct kbase_device *kbdev)
 void kbase_device_vinstr_term(struct kbase_device *kbdev)
 {
 	kbase_vinstr_term(kbdev->vinstr_ctx);
+}
+
+int kbase_device_kinstr_prfcnt_init(struct kbase_device *kbdev)
+{
+	return kbase_kinstr_prfcnt_init(kbdev->hwcnt_gpu_virt,
+					&kbdev->kinstr_prfcnt_ctx);
+}
+
+void kbase_device_kinstr_prfcnt_term(struct kbase_device *kbdev)
+{
+	kbase_kinstr_prfcnt_term(kbdev->kinstr_prfcnt_ctx);
 }
 
 int kbase_device_io_history_init(struct kbase_device *kbdev)

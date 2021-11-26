@@ -53,6 +53,7 @@
 #include "mali_kbase_hwcnt_context.h"
 #include "mali_kbase_hwcnt_virtualizer.h"
 #include "mali_kbase_hwcnt_legacy.h"
+#include "mali_kbase_kinstr_prfcnt.h"
 #include "mali_kbase_vinstr.h"
 #if MALI_USE_CSF
 #include "csf/mali_kbase_csf_firmware.h"
@@ -65,6 +66,9 @@
 #endif
 
 #include "mali_kbase_cs_experimental.h"
+
+/* MALI_SEC_INTEGRATION */
+#include <mali_kbase_uku.h>
 
 #ifdef CONFIG_MALI_CINSTR_GWT
 #include "mali_kbase_gwt.h"
@@ -112,6 +116,19 @@
 #include <mali_kbase_as_fault_debugfs.h>
 #include <device/mali_kbase_device.h>
 #include <context/mali_kbase_context.h>
+
+/* MALI_SEC_INTEGRATION */
+#include <backend/gpu/mali_kbase_pm_internal.h>
+
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_ASV_CALIBRATION_SUPPORT
+#include "./platform/exynos/gpu_control.h"
+#endif
+
+/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_DUMMY_JOB_WA
+#include <mali_kbase_dummy_job_wa.h>
+#endif
 
 #include <mali_kbase_caps.h>
 
@@ -337,10 +354,23 @@ static void kbase_file_delete(struct kbase_file *const kfile)
 
 	if (atomic_read(&kfile->setup_state) == KBASE_FILE_COMPLETE) {
 		struct kbase_context *kctx = kfile->kctx;
+		/* MALI_SEC_INTEGRATION */
+		struct kbase_context *lookup, *tmp;
 
 #if IS_ENABLED(CONFIG_DEBUG_FS)
 		kbasep_mem_profile_debugfs_remove(kctx);
 #endif
+
+		/* MALI_SEC_INTEGRATION
+		 * look up context list to set destroying_context
+		 */
+		mutex_lock(&kbdev->kctx_list_lock);
+		list_for_each_entry_safe(lookup, tmp, &kbdev->kctx_list, kctx_list_link) {
+			if (kctx == lookup) {
+				kctx->destroying_context = true;
+			}
+		}
+		mutex_unlock(&kbdev->kctx_list_lock);
 
 		mutex_lock(&kctx->legacy_hwcnt_lock);
 		/* If this client was performing hardware counter dumping and
@@ -350,7 +380,9 @@ static void kbase_file_delete(struct kbase_file *const kfile)
 		kctx->legacy_hwcnt_cli = NULL;
 		mutex_unlock(&kctx->legacy_hwcnt_lock);
 
+#if IS_ENABLED(CONFIG_DEBUG_FS)
 		kbase_context_debugfs_term(kctx);
+#endif
 
 		kbase_destroy_context(kctx);
 
@@ -404,6 +436,22 @@ static int kbase_api_handshake_dummy(struct kbase_file *kfile,
 		struct kbase_ioctl_version_check *version)
 {
 	return -EPERM;
+}
+
+static int kbase_api_kinstr_prfcnt_enum_info(
+	struct kbase_file *kfile,
+	struct kbase_ioctl_kinstr_prfcnt_enum_info *prfcnt_enum_info)
+{
+	return kbase_kinstr_prfcnt_enum_info(kfile->kbdev->kinstr_prfcnt_ctx,
+					     prfcnt_enum_info);
+}
+
+static int kbase_api_kinstr_prfcnt_setup(
+	struct kbase_file *kfile,
+	union kbase_ioctl_kinstr_prfcnt_setup *prfcnt_setup)
+{
+	return kbase_kinstr_prfcnt_setup(kfile->kbdev->kinstr_prfcnt_ctx,
+					 prfcnt_setup);
 }
 
 static struct kbase_device *to_kbase_device(struct device *dev)
@@ -811,16 +859,13 @@ static int kbase_api_mem_alloc(struct kbase_context *kctx,
 	u64 flags = alloc->in.flags;
 	u64 gpu_va;
 
-	rcu_read_lock();
-	/* Don't allow memory allocation until user space has set up the
-	 * tracking page (which sets kctx->process_mm). Also catches when we've
-	 * forked.
+	/* Calls to this function are inherently asynchronous, with respect to
+	 * MMU operations.
 	 */
-	if (rcu_dereference(kctx->process_mm) != current->mm) {
-		rcu_read_unlock();
+	const enum kbase_caller_mmu_sync_info mmu_sync_info = CALLER_MMU_ASYNC;
+
+	if (!kbase_mem_allow_alloc(kctx))
 		return -EINVAL;
-	}
-	rcu_read_unlock();
 
 	if (flags & BASEP_MEM_FLAGS_KERNEL_ONLY)
 		return -ENOMEM;
@@ -852,7 +897,8 @@ static int kbase_api_mem_alloc(struct kbase_context *kctx,
 #endif
 
 	reg = kbase_mem_alloc(kctx, alloc->in.va_pages, alloc->in.commit_pages,
-			      alloc->in.extension, &flags, &gpu_va);
+			      alloc->in.extension, &flags, &gpu_va,
+			      mmu_sync_info);
 
 	if (!reg)
 		return -ENOMEM;
@@ -1276,6 +1322,45 @@ static int kbase_api_soft_event_update(struct kbase_context *kctx,
 }
 #endif /* !MALI_USE_CSF */
 
+/* MALI_SEC_INTEGRATION */
+static int kbase_api_combination_boost(struct kbase_context *kctx,
+		struct kbase_ioctl_slsi_combination_boost_flags *flags)
+{
+	if (flags->flags == 0)
+		return -EINVAL;
+
+	return gpu_vendor_dispatch(kctx, flags->flags);
+}
+
+/* MALI_SEC_INTEGRATION */
+static int kbase_api_vk_boost(struct kbase_context *kctx,
+		struct kbase_ioctl_slsi_vk_boost_flags *flags)
+{
+	if (flags->flags == 0)
+		return -EINVAL;
+
+	return gpu_vendor_dispatch(kctx, flags->flags);
+}
+
+/* MALI_SEC_INTEGRATION */
+static int kbase_api_negative_boost(struct kbase_context *kctx,
+		struct kbase_ioctl_slsi_negative_boost_flags *flags)
+{
+	if (flags->flags == 0)
+		return -EINVAL;
+
+	return gpu_vendor_dispatch(kctx, flags->flags);
+}
+
+/* MALI_SEC_INTEGRATION */
+static int kbase_api_slsi_mem_usage_add(struct kbase_context *kctx,
+       struct kbase_ioctl_slsi_mem_usage_add *data)
+{
+	   kctx->mem_usage = data->gl_mem_usage;
+
+	      return 0;
+}
+
 static int kbase_api_sticky_resource_map(struct kbase_context *kctx,
 		struct kbase_ioctl_sticky_resource_map *map)
 {
@@ -1646,6 +1731,20 @@ static long kbase_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 				struct kbase_ioctl_set_flags,
 				kfile);
 		break;
+
+	case KBASE_IOCTL_KINSTR_PRFCNT_ENUM_INFO:
+		KBASE_HANDLE_IOCTL_INOUT(
+			KBASE_IOCTL_KINSTR_PRFCNT_ENUM_INFO,
+			kbase_api_kinstr_prfcnt_enum_info,
+			struct kbase_ioctl_kinstr_prfcnt_enum_info, kfile);
+		break;
+
+	case KBASE_IOCTL_KINSTR_PRFCNT_SETUP:
+		KBASE_HANDLE_IOCTL_INOUT(KBASE_IOCTL_KINSTR_PRFCNT_SETUP,
+					 kbase_api_kinstr_prfcnt_setup,
+					 union kbase_ioctl_kinstr_prfcnt_setup,
+					 kfile);
+		break;
 	}
 
 	kctx = kbase_file_get_kctx_if_setup_complete(kfile);
@@ -1987,6 +2086,36 @@ static long kbase_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		KBASE_HANDLE_IOCTL_INOUT(KBASE_IOCTL_CONTEXT_PRIORITY_CHECK,
 				kbasep_ioctl_context_priority_check,
 				struct kbase_ioctl_context_priority_check,
+				kctx);
+		break;
+
+	/* MALI_SEC_INTEGRATION */
+	case KBASE_IOCTL_SLSI_COMBINATION_BOOST_FLAGS:
+		KBASE_HANDLE_IOCTL_IN(KBASE_IOCTL_SLSI_COMBINATION_BOOST_FLAGS,
+				kbase_api_combination_boost,
+				struct kbase_ioctl_slsi_combination_boost_flags,
+				kctx);
+		break;
+
+	/* MALI_SEC_INTEGRATION */
+	case KBASE_IOCTL_SLSI_VK_BOOST_FLAGS:
+		KBASE_HANDLE_IOCTL_IN(KBASE_IOCTL_SLSI_VK_BOOST_FLAGS,
+				kbase_api_vk_boost,
+				struct kbase_ioctl_slsi_vk_boost_flags,
+				kctx);
+		break;
+	/* MALI_SEC_INTEGRATION */
+	case KBASE_IOCTL_SLSI_NEGATIVE_BOOST_FLAGS:
+		KBASE_HANDLE_IOCTL_IN(KBASE_IOCTL_SLSI_NEGATIVE_BOOST_FLAGS,
+				kbase_api_negative_boost,
+				struct kbase_ioctl_slsi_negative_boost_flags,
+				kctx);
+		break;
+	/* MALI_SEC_INTEGRATION */
+	case KBASE_IOCTL_SLSI_MEM_USAGE_ADD:
+	    KBASE_HANDLE_IOCTL_IN(KBASE_IOCTL_SLSI_MEM_USAGE_ADD,
+		            kbase_api_slsi_mem_usage_add,
+				struct kbase_ioctl_slsi_mem_usage_add,
 				kctx);
 		break;
 	case KBASE_IOCTL_SET_LIMITED_CORE_COUNT:
@@ -3428,7 +3557,7 @@ static ssize_t show_reset_timeout(struct device *dev,
 static DEVICE_ATTR(reset_timeout, S_IRUGO | S_IWUSR, show_reset_timeout,
 		set_reset_timeout);
 
-
+#if IS_ENABLED(CONFIG_DEBUG_FS)
 static ssize_t show_mem_pool_size(struct device *dev,
 		struct device_attribute *attr, char * const buf)
 {
@@ -3599,6 +3728,8 @@ static ssize_t set_lp_mem_pool_max_size(struct device *dev,
 
 static DEVICE_ATTR(lp_mem_pool_max_size, S_IRUGO | S_IWUSR, show_lp_mem_pool_max_size,
 		set_lp_mem_pool_max_size);
+
+#endif
 
 /**
  * show_simplified_mem_pool_max_size - Show the maximum size for the memory
@@ -4179,7 +4310,11 @@ int kbase_protected_mode_init(struct kbase_device *kbdev)
 	if (!kbdev->protected_dev)
 		return -ENOMEM;
 	kbdev->protected_dev->data = kbdev;
+#if IS_ENABLED(CONFIG_MALI_EXYNOS_SECURE_RENDERING_UNSUPPORTED)
+	kbdev->protected_ops = &kbasep_native_protected_ops;
+#else
 	kbdev->protected_ops = PLATFORM_PROTECTED_CALLBACKS;
+#endif
 	INIT_WORK(&kbdev->protected_mode_hwcnt_disable_work,
 		kbasep_protected_mode_hwcnt_disable_worker);
 	kbdev->protected_mode_hwcnt_desired = true;
@@ -4581,25 +4716,35 @@ MAKE_QUIRK_ACCESSORS(tiler);
 MAKE_QUIRK_ACCESSORS(mmu);
 MAKE_QUIRK_ACCESSORS(gpu);
 
-static ssize_t kbase_device_debugfs_reset_write(struct file *file,
-		const char __user *ubuf, size_t count, loff_t *ppos)
+/**
+ * kbase_device_debugfs_reset_write() - Reset the GPU
+ *
+ * @data:           Pointer to the Kbase device.
+ * @wait_for_reset: Value written to the file.
+ *
+ * This function will perform the GPU reset, and if the value written to
+ * the file is 1 it will also wait for the reset to complete.
+ *
+ * Return: 0 in case of no error otherwise a negative value.
+ */
+static int kbase_device_debugfs_reset_write(void *data, u64 wait_for_reset)
 {
-	struct kbase_device *kbdev = file->private_data;
-	CSTD_UNUSED(ubuf);
-	CSTD_UNUSED(count);
-	CSTD_UNUSED(ppos);
+	struct kbase_device *kbdev = data;
 
 	trigger_reset(kbdev);
 
-	return count;
+	if (wait_for_reset == 1)
+		return kbase_reset_gpu_wait(kbdev);
+
+	return 0;
 }
 
-static const struct file_operations fops_trigger_reset = {
-	.owner = THIS_MODULE,
-	.open = simple_open,
-	.write = kbase_device_debugfs_reset_write,
-	.llseek = default_llseek,
-};
+DEFINE_SIMPLE_ATTRIBUTE(fops_trigger_reset,
+		NULL, &kbase_device_debugfs_reset_write, "%llu\n");
+
+#ifndef MALI_SEC_INTEGRATION
+extern const struct file_operations kbasep_ktrace_debugfs_fops;
+#endif /* MALI_SEC_INTEGRATION */
 
 /**
  * debugfs_protected_debug_mode_read - "protected_debug_mode" debugfs read
@@ -4697,8 +4842,13 @@ int kbase_device_debugfs_init(struct kbase_device *kbdev)
 	const mode_t mode = 0600;
 #endif
 
+#ifdef MALI_SEC_INTEGRATION
 	kbdev->mali_debugfs_directory = debugfs_create_dir(kbdev->devname,
 			NULL);
+#else
+		kbdev->mali_debugfs_directory = debugfs_create_dir("mali",
+					NULL);
+#endif /* MALI_SEC_INTEGRATION */
 	if (IS_ERR_OR_NULL(kbdev->mali_debugfs_directory)) {
 		dev_err(kbdev->dev,
 			"Couldn't create mali debugfs directory: %s\n",
@@ -4707,8 +4857,18 @@ int kbase_device_debugfs_init(struct kbase_device *kbdev)
 		goto out;
 	}
 
+#ifdef MALI_SEC_INTEGRATION
 	kbdev->debugfs_ctx_directory = debugfs_create_dir("ctx",
 			kbdev->mali_debugfs_directory);
+#else
+	kbdev->trace_dentry = debugfs_create_file("mali_trace", S_IRUGO,
+			kbdev->mali_debugfs_directory, kbdev,
+			&kbasep_ktrace_debugfs_fops);
+
+	kbdev->debugfs_ctx_directory = debugfs_create_dir("mem",
+			kbdev->mali_debugfs_directory);
+#endif /* MALI_SEC_INTEGRATION */
+
 	if (IS_ERR_OR_NULL(kbdev->debugfs_ctx_directory)) {
 		dev_err(kbdev->dev, "Couldn't create mali debugfs ctx directory\n");
 		err = -ENOMEM;
@@ -5062,10 +5222,12 @@ static struct attribute *kbase_attrs[] = {
 #endif /* !MALI_USE_CSF */
 	&dev_attr_power_policy.attr,
 	&dev_attr_core_mask.attr,
+#if IS_ENABLED(CONFIG_DEBUG_FS)
 	&dev_attr_mem_pool_size.attr,
 	&dev_attr_mem_pool_max_size.attr,
 	&dev_attr_lp_mem_pool_size.attr,
 	&dev_attr_lp_mem_pool_max_size.attr,
+#endif
 #if !MALI_USE_CSF
 	&dev_attr_js_ctx_scheduling_mode.attr,
 #endif /* !MALI_USE_CSF */
@@ -5215,6 +5377,10 @@ static int kbase_platform_device_probe(struct platform_device *pdev)
 #endif
 	}
 
+	/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_ASV_CALIBRATION_SUPPORT
+	gpu_asv_calibration_start();
+#endif
 	return err;
 }
 
@@ -5232,8 +5398,15 @@ static int kbase_platform_device_probe(struct platform_device *pdev)
 static int kbase_device_suspend(struct device *dev)
 {
 	struct kbase_device *kbdev = to_kbase_device(dev);
+	/* MALI_SEC_INTEGRATION */
+	struct exynos_context *platform = NULL;
 
 	if (!kbdev)
+		return -ENODEV;
+
+	/* MALI_SEC_INTEGRATION */
+	platform = (struct exynos_context *)kbdev->platform_context;
+	if (!platform)
 		return -ENODEV;
 
 	kbase_pm_suspend(kbdev);
@@ -5249,6 +5422,10 @@ static int kbase_device_suspend(struct device *dev)
 		flush_workqueue(kbdev->devfreq_queue.workq);
 	}
 #endif
+
+	/* MALI_SEC_INTEGRATION */
+	KBASE_KTRACE_ADD(kbdev, KBASE_DEVICE_SUSPEND, NULL, platform->power_runtime_suspend_ret);
+
 	return 0;
 }
 
@@ -5264,8 +5441,15 @@ static int kbase_device_suspend(struct device *dev)
 static int kbase_device_resume(struct device *dev)
 {
 	struct kbase_device *kbdev = to_kbase_device(dev);
+	/* MALI_SEC_INTEGRATION */
+	struct exynos_context *platform = NULL;
 
 	if (!kbdev)
+		return -ENODEV;
+
+	/* MALI_SEC_INTEGRATION */
+	platform = (struct exynos_context *)kbdev->platform_context;
+	if (!platform)
 		return -ENODEV;
 
 	kbase_pm_resume(kbdev);
@@ -5284,6 +5468,10 @@ static int kbase_device_resume(struct device *dev)
 		flush_workqueue(kbdev->devfreq_queue.workq);
 	}
 #endif
+
+	/* MALI_SEC_INTEGRATION */
+	KBASE_KTRACE_ADD(kbdev, KBASE_DEVICE_RESUME, NULL, platform->power_runtime_resume_ret);
+
 	return 0;
 }
 
@@ -5308,6 +5496,7 @@ static int kbase_device_runtime_suspend(struct device *dev)
 		return -ENODEV;
 
 	dev_dbg(dev, "Callback %s\n", __func__);
+	KBASE_KTRACE_ADD(kbdev, PM_RUNTIME_SUSPEND_CALLBACK, NULL, 0);
 
 #if MALI_USE_CSF
 	ret = kbase_pm_handle_runtime_suspend(kbdev);
@@ -5323,6 +5512,10 @@ static int kbase_device_runtime_suspend(struct device *dev)
 	if (kbdev->devfreq)
 		kbase_devfreq_enqueue_work(kbdev, DEVFREQ_WORK_SUSPEND);
 #endif
+
+	/* MALI_SEC_INTEGRATION */
+	if (kbdev->pm.active_count > 0)
+		return -EBUSY;
 
 	if (kbdev->pm.backend.callback_power_runtime_off) {
 		kbdev->pm.backend.callback_power_runtime_off(kbdev);
@@ -5352,6 +5545,7 @@ static int kbase_device_runtime_resume(struct device *dev)
 		return -ENODEV;
 
 	dev_dbg(dev, "Callback %s\n", __func__);
+	KBASE_KTRACE_ADD(kbdev, PM_RUNTIME_RESUME_CALLBACK, NULL, 0);
 	if (kbdev->pm.backend.callback_power_runtime_on) {
 		ret = kbdev->pm.backend.callback_power_runtime_on(kbdev);
 		dev_dbg(dev, "runtime resume\n");
@@ -5394,17 +5588,17 @@ static int kbase_device_runtime_idle(struct device *dev)
 	if (kbdev->pm.backend.callback_power_runtime_idle)
 		return kbdev->pm.backend.callback_power_runtime_idle(kbdev);
 
-	/* Just need to update the device's last busy mark. Kernel will respect
-	 * the autosuspend delay and so won't suspend the device immediately.
-	 */
-	pm_runtime_mark_last_busy(kbdev->dev);
-	return 0;
+	/* MALI_SEC_INTEGRATION */
+	/* Runtime IDLE must be return 1 for turn on next time by RuntimePM API!! */
+	return 1;
+
 }
 #endif /* KBASE_PM_RUNTIME */
 
 /* The power management operations for the platform driver.
  */
 static const struct dev_pm_ops kbase_pm_ops = {
+	/* MALI_SEC_INTEGRATION */
 	.suspend = kbase_device_suspend,
 	.resume = kbase_device_resume,
 #ifdef KBASE_PM_RUNTIME
@@ -5416,6 +5610,8 @@ static const struct dev_pm_ops kbase_pm_ops = {
 
 #if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id kbase_dt_ids[] = {
+	/* MALI_SEC_INTEGRATION */
+	{ .compatible = "arm,mali", },
 	{ .compatible = "arm,malit6xx" },
 	{ .compatible = "arm,mali-midgard" },
 	{ .compatible = "arm,mali-bifrost" },

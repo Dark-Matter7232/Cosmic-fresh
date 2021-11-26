@@ -202,6 +202,15 @@ void kbasep_ktrace_dump(struct kbase_device *kbdev);
 		KBASE_KTRACE_FTRACE_ADD(kbdev, code, kctx, __info_val); \
 	} while (0)
 
+/* MALI_SEC_INTEGRATION */
+#define KBASE_KTRACE_ADD_EXYNOS(kbdev, code, kctx, info_val) \
+	do { \
+		/* capture values that could come from non-pure function calls */ \
+		u64 __info_val = info_val; \
+                KBASE_KTRACE_RBUF_ADD(kbdev, code, kctx, __info_val); \
+                KBASE_KTRACE_FTRACE_ADD(kbdev, code, kctx, __info_val); \
+	} while (0)
+
 /**
  * KBASE_KTRACE_CLEAR - Clear the trace, if applicable to the target(s)
  * @kbdev:    kbase device

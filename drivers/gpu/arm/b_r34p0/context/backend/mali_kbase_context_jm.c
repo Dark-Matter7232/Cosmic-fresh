@@ -222,6 +222,14 @@ struct kbase_context *kbase_create_context(struct kbase_device *kbdev,
 		}
 	}
 
+	/* MALI_SEC_INTEGRATION */
+	if (kbdev->vendor_callbacks->create_context)
+		kbdev->vendor_callbacks->create_context(kctx);
+
+	/* MALI_SEC_INTEGRATION */
+	atomic_set(&kctx->mem_profile_showing_state, 0);
+	init_waitqueue_head(&kctx->mem_profile_wait);
+
 	return kctx;
 }
 KBASE_EXPORT_SYMBOL(kbase_create_context);
@@ -257,6 +265,10 @@ void kbase_destroy_context(struct kbase_context *kctx)
 #endif /* CONFIG_MALI_ARBITER_SUPPORT */
 
 	kbase_mem_pool_group_mark_dying(&kctx->mem_pools);
+	
+	/* MALI_SEC_INTEGRATION */
+	if (kbdev->vendor_callbacks->destroy_context)
+		kbdev->vendor_callbacks->destroy_context(kctx);
 
 	kbase_context_term_partial(kctx, ARRAY_SIZE(context_init));
 

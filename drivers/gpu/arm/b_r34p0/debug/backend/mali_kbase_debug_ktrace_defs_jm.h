@@ -45,9 +45,12 @@
  *
  * ftrace backend now outputs kctx field (as %d_%u format).
  *
+ * 2.2:
+ * Add tracing codes for pulling, unpulling, and returns atoms to JS for
+ * diagnosing soft-stop path and preemption problems
  */
 #define KBASE_KTRACE_VERSION_MAJOR 2
-#define KBASE_KTRACE_VERSION_MINOR 1
+#define KBASE_KTRACE_VERSION_MINOR 2
 #endif /* KBASE_KTRACE_TARGET_RBUF */
 
 /*
@@ -98,7 +101,12 @@ union kbase_ktrace_backend {
 		u64 gpu_addr;
 		int atom_number; /* Only valid for KBASE_KTRACE_FLAG_JM_ATOM */
 		/* Pack smaller members together */
+		/* MALI_SEC_INTEGRATION */
+#ifdef CONFIG_MALI_EXYNOS_TRACE
+		enum kbase_ktrace_code code;
+#else
 		kbase_ktrace_code_t code;
+#endif
 		kbase_ktrace_flag_t flags;
 		u8 jobslot;
 		u8 refcount;

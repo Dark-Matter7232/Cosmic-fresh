@@ -33,7 +33,7 @@ static const u8                    slsi_extended_cap[] = {
 };
 
 static const u8                    slsi_extended_cap_mask[] = {
-	0xFF, 0xFF, 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+	0xFF, 0xFF, 0xF7, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 };
 
 static uint keep_alive_period = SLSI_P2PGO_KEEP_ALIVE_PERIOD_SEC;
@@ -306,6 +306,7 @@ int slsi_add_key(struct wiphy *wiphy, struct net_device *dev,
 			if (pairwise) {
 				if (params->cipher == WLAN_CIPHER_SUITE_SMS4) { /*WAPI */
 					slsi_mlme_connect_resp(sdev, dev);
+					slsi_set_acl(sdev, dev);
 					slsi_set_packet_filters(sdev, dev);
 					slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_CONNECTED);
 				}
@@ -550,7 +551,8 @@ int slsi_scan(struct wiphy *wiphy, struct net_device *dev,
 
 	/* Reject scan request if Group Formation is in progress */
 	if (sdev->p2p_state == P2P_ACTION_FRAME_TX_RX) {
-		SLSI_NET_INFO(dev, "Scan received in P2P Action Frame Tx/Rx state - Reject\n");
+		SLSI_NET_INFO(dev, "Scan received in P2P Action Frame Tx/Rx state - Reject (exp_frame=%s)\n",
+			      slsi_pa_subtype_text((int)ndev_vif->mgmt_tx_data.exp_frame));
 		return -EBUSY;
 	}
 
@@ -587,7 +589,9 @@ int slsi_scan(struct wiphy *wiphy, struct net_device *dev,
 			scan_type = FAPI_SCANTYPE_SINGLE_CHANNEL_SCAN;
 		else if (sdev->initial_scan) {
 			sdev->initial_scan = false;
-			scan_type = FAPI_SCANTYPE_INITIAL_SCAN;
+			if (ndev_vif->sta.vif_status != SLSI_VIF_STATUS_CONNECTING &&
+			    ndev_vif->sta.vif_status != SLSI_VIF_STATUS_CONNECTED)
+				scan_type = FAPI_SCANTYPE_INITIAL_SCAN;
 		}
 		ndev_vif->unsync.slsi_p2p_continuous_fullscan = false;
 	}
@@ -993,6 +997,15 @@ int slsi_connect(struct wiphy *wiphy, struct net_device *dev,
 	}
 #endif
 
+	/* check if ap is found in the blacklist.
+	 * if present in the blacklist return failure
+	 */
+	r = slsi_is_bssid_in_blacklist(sdev, dev, (u8 *)bssid);
+	if (r) {
+		SLSI_NET_ERR(dev, "Blacklist bssid not allowed\n");
+		goto exit_with_error;
+	}
+
 	if (ndev_vif->sta.sta_bss)
 		SLSI_ETHER_COPY(peer_address, ndev_vif->sta.sta_bss->bssid);
 
@@ -1297,12 +1310,12 @@ int slsi_connect(struct wiphy *wiphy, struct net_device *dev,
 	if (r != 0)
 		SLSI_NET_ERR(dev, "Failed to set extended capability MIB: %d\n", r);
 
-#ifdef CONFIG_SCSC_WLAN_SAE_CONFIG
 	if (SLSI_IS_VIF_INDEX_WLAN(ndev_vif)) {
 		const u8 *rsn;
 
 		SLSI_NET_DBG1(dev, SLSI_CFG80211, "N AKM Suites: : %1d\n", sme->crypto.n_akm_suites);
 		rsn = cfg80211_find_ie(WLAN_EID_RSN, sme->ie, sme->ie_len);
+#ifdef CONFIG_SCSC_WLAN_SAE_CONFIG
 		if (rsn) {
 			int pos;
 
@@ -1313,11 +1326,17 @@ int slsi_connect(struct wiphy *wiphy, struct net_device *dev,
 			 */
 			pos = 7 + 2 + (rsn[8] * 4) + 2;
 			ndev_vif->sta.crypto.akm_suites[0] = ((rsn[pos + 4] << 24) | (rsn[pos + 3] << 16) | (rsn[pos + 2] << 8) | (rsn[pos + 1]));
-			if ((rsn[pos + 1] == 0x00 && rsn[pos + 2] == 0x0f && rsn[pos + 3] == 0xac) && (rsn[pos + 4] == 0x08 || rsn[pos + 4] == 0x09))
+			if ((rsn[pos + 1] == 0x00 && rsn[pos + 2] == 0x0f && rsn[pos + 3] == 0xac) && (rsn[pos + 4] == 0x08 || rsn[pos + 4] == 0x09)) {
 				ndev_vif->sta.crypto.wpa_versions = 3;
-			else
+#ifdef CONFIG_SCSC_WLAN_BSS_SELECTION
+				ndev_vif->sta.wpa3_auth_state = SLSI_WPA3_PREAUTH;
+#endif
+			} else
 				ndev_vif->sta.crypto.wpa_versions = 0;
-
+		}
+		SLSI_NET_DBG1(dev, SLSI_CFG80211, "RSN IE: : %1d\n", ndev_vif->sta.crypto.akm_suites[0]);
+#endif
+		if (rsn) {
 			ndev_vif->sta.rsn_ie_len = rsn[1];
 			if (ndev_vif->sta.rsn_ie) {
 				kfree(ndev_vif->sta.rsn_ie);
@@ -1330,13 +1349,7 @@ int slsi_connect(struct wiphy *wiphy, struct net_device *dev,
 			if (ndev_vif->sta.rsn_ie)
 				memcpy(ndev_vif->sta.rsn_ie, rsn, ndev_vif->sta.rsn_ie_len + 2);
 		}
-#ifdef CONFIG_SCSC_WLAN_BSS_SELECTION
-		if (ndev_vif->sta.crypto.wpa_versions == 3)
-			ndev_vif->sta.wpa3_auth_state = SLSI_WPA3_PREAUTH;
-#endif
-		SLSI_NET_DBG1(dev, SLSI_CFG80211, "RSN IE: : %1d\n", ndev_vif->sta.crypto.akm_suites[0]);
 	}
-#endif
 	r = slsi_mlme_connect(sdev, dev, sme, channel, bssid);
 	if (r != 0) {
 		ndev_vif->sta.is_wps = false;
@@ -1347,9 +1360,8 @@ int slsi_connect(struct wiphy *wiphy, struct net_device *dev,
 
 	peer = slsi_peer_add(sdev, dev, (u8 *)bssid, SLSI_STA_PEER_QUEUESET + 1);
 	ndev_vif->sta.resp_id = 0;
-	if (!peer) {
+	if (!peer)
 		goto exit_with_error;
-	}
 
 #ifdef CONFIG_SCSC_WLAN_BSS_SELECTION
 	if (ndev_vif->sta.drv_bss_selection) {
@@ -1563,9 +1575,11 @@ int slsi_del_station(struct wiphy *wiphy, struct net_device *dev,
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer  *peer;
 	int               r = 0;
+	u16               reason_code = WLAN_REASON_DEAUTH_LEAVING;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0))
 	const u8          *mac = del_params->mac;
+	reason_code = del_params->reason_code;
 #endif
 
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
@@ -1629,11 +1643,11 @@ int slsi_del_station(struct wiphy *wiphy, struct net_device *dev,
 				goto exit;
 			}
 			slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_DISCONNECTED);
-			r = slsi_mlme_disconnect(sdev, dev, peer->address, WLAN_REASON_DEAUTH_LEAVING, true);
+			r = slsi_mlme_disconnect(sdev, dev, peer->address, reason_code, true);
 			if (r != 0)
 				SLSI_NET_ERR(dev, "Disconnection returned with failure\n");
 			/* Even if we fail to disconnect cleanly, tidy up. */
-			r = slsi_handle_disconnect(sdev, dev, peer->address, WLAN_REASON_DEAUTH_LEAVING, NULL, 0);
+			r = slsi_handle_disconnect(sdev, dev, peer->address, reason_code, NULL, 0);
 		}
 	}
 
@@ -1874,23 +1888,25 @@ int slsi_resume(struct wiphy *wiphy)
 int slsi_set_pmksa(struct wiphy *wiphy, struct net_device *dev,
 		   struct cfg80211_pmksa *pmksa)
 {
-#ifdef CONFIG_SCSC_WLAN_SAE_CONFIG
 	int i = 0;
 	struct slsi_dev     *sdev = SDEV_FROM_WIPHY(wiphy);
 	u8 *rsnie; /* final RSN IE with the PMKID*/
+	u8 *buf; /* Complete Buffer: RSNIE and Assoc add info elements used in connection */
 	u16 rsnie_len;
 	int left = 0;
 	u16 count = 0;
 	int ret = 0;
 	int pos = 0;
+	int buf_len = 0;
 	struct netdev_vif   *ndev_vif = netdev_priv(dev);
 
+	SLSI_NET_DBG2(dev, SLSI_CFG80211, "\n");
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	if (ndev_vif->sta.rsn_ie) {
 		rsnie_len = ndev_vif->sta.rsn_ie_len;
-		rsnie = kmalloc(rsnie_len+2+PMKID_LEN, GFP_KERNEL); /* Length of RSNIE + PMKID */
+		rsnie = kmalloc(rsnie_len + 2 + PMKID_LEN, GFP_KERNEL); /* Length of RSNIE + PMKID */
 		if (rsnie) {
-			memset(rsnie, 0, rsnie_len+2+PMKID_LEN);
+			memset(rsnie, 0, rsnie_len + 2 + PMKID_LEN);
 			/* parse the RSN IE and copy PMKID to Required position in RSN IE*/
 			left = rsnie_len + 2; //FOR RSN IE TAG and Length
 
@@ -1911,7 +1927,7 @@ int slsi_set_pmksa(struct wiphy *wiphy, struct net_device *dev,
 			while (i < 2) {
 				pos += 2;
 				left -= 2;
-				count = le16_to_cpu(*(u16 *)(&ndev_vif->sta.rsn_ie[pos-2]));
+				count = le16_to_cpu(*(u16 *)(&ndev_vif->sta.rsn_ie[pos - 2]));
 				pos += count * RSN_SELECTOR_LEN;
 				left -= count * RSN_SELECTOR_LEN;
 				i++;
@@ -1922,27 +1938,38 @@ int slsi_set_pmksa(struct wiphy *wiphy, struct net_device *dev,
 			pos += 2; /* PMKID count */
 			left -= 2;
 			memcpy(rsnie, ndev_vif->sta.rsn_ie, pos);
-			rsnie[pos-2] = 1;
-			rsnie[pos-1] = 0;
+			rsnie[pos - 2] = 1;
+			rsnie[pos - 1] = 0;
 			memcpy(&rsnie[pos], pmksa->pmkid, PMKID_LEN); /* copy PMKID */
 			pos += PMKID_LEN;
 			if (count) {
 				left -= PMKID_LEN;
 				memcpy(&rsnie[pos], &ndev_vif->sta.rsn_ie[pos], left);
 			} else {
-				memcpy(&rsnie[pos], &ndev_vif->sta.rsn_ie[pos-PMKID_LEN], left);
+				memcpy(&rsnie[pos], &ndev_vif->sta.rsn_ie[pos - PMKID_LEN], left);
 			}
 			pos += left;
 			rsnie_len = pos;
 			rsnie[1] = rsnie_len - 2;
-			ret = slsi_mlme_add_info_elements(sdev, dev, FAPI_PURPOSE_ASSOCIATION_REQUEST, rsnie, rsnie_len);
+			buf_len = rsnie_len + ndev_vif->sta.assoc_req_add_info_elem_len;
+			buf = kmalloc(buf_len, GFP_KERNEL);
+			if (!buf) {
+				SLSI_NET_ERR(dev, "Out of memory for buffer\n");
+				ret = -ENOMEM;
+				kfree(rsnie);
+				goto exit;
+			}
+			memcpy(buf, rsnie, rsnie_len);
+			if (ndev_vif->sta.assoc_req_add_info_elem_len)
+				memcpy(buf + rsnie_len, ndev_vif->sta.assoc_req_add_info_elem, ndev_vif->sta.assoc_req_add_info_elem_len);
+			ret = slsi_mlme_add_info_elements(sdev, dev, FAPI_PURPOSE_ASSOCIATION_REQUEST, buf, buf_len);
 			if (ret != 0) {
 				SLSI_NET_ERR(dev, "RSN IE with PMKID setting failed\n");
 				kfree(rsnie);
-				kfree(ndev_vif->sta.rsn_ie);
-				ndev_vif->sta.rsn_ie = NULL;
+				kfree(buf);
 				goto exit;
 			}
+			kfree(buf);
 			kfree(rsnie);
 		} else {
 			SLSI_NET_ERR(dev, "Out of memory for RSN IE\n");
@@ -1957,43 +1984,23 @@ int slsi_set_pmksa(struct wiphy *wiphy, struct net_device *dev,
 exit:
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	return ret;
-#else
-	SLSI_UNUSED_PARAMETER(wiphy);
-	SLSI_UNUSED_PARAMETER(dev);
-	SLSI_UNUSED_PARAMETER(pmksa);
-	return 0;
-
-#endif
 }
 
 int slsi_del_pmksa(struct wiphy *wiphy, struct net_device *dev,
 		   struct cfg80211_pmksa *pmksa)
 {
-#ifdef CONFIG_SCSC_WLAN_SAE_CONFIG
-	struct slsi_dev     *sdev = SDEV_FROM_WIPHY(wiphy);
 	struct netdev_vif   *ndev_vif = netdev_priv(dev);
-	int ret = 0;
 
+	SLSI_NET_DBG2(dev, SLSI_CFG80211, "\n");
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
-	if (!ndev_vif->activated) {
+	if (!ndev_vif->activated)
 		SLSI_NET_DBG1(dev, SLSI_CFG80211, "VIF not activated\n");
-		goto exit;
-	}
-	ret = slsi_mlme_add_info_elements(sdev, dev, FAPI_PURPOSE_ASSOCIATION_REQUEST, NULL, 0);
-	if (ret != 0) {
-		SLSI_NET_ERR(dev, "Clearing PMKID failed\n");
-		goto exit;
-	}
-exit:
-	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
-	return ret;
-#else
 
-	SLSI_UNUSED_PARAMETER(wiphy);
-	SLSI_UNUSED_PARAMETER(dev);
-	SLSI_UNUSED_PARAMETER(pmksa);
+	/* Just consume the DEL-PMKSA, because after DEL-PMKSA,
+	 * ADD-PMKSA will override the PMKID
+	 */
+	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	return 0;
-#endif
 }
 
 int slsi_flush_pmksa(struct wiphy *wiphy, struct net_device *dev)
@@ -2056,6 +2063,9 @@ int slsi_remain_on_channel(struct wiphy              *wiphy,
 
 	/* Unsync vif will be required, cancel any pending work of its deletion */
 	cancel_delayed_work(&ndev_vif->unsync.del_vif_work);
+	if (sdev->p2p_state == P2P_ACTION_FRAME_TX_RX)
+		queue_delayed_work(sdev->device_wq, &ndev_vif->unsync.del_vif_work,
+				   msecs_to_jiffies(duration + SLSI_P2P_UNSYNC_VIF_EXTRA_MSEC));
 
 	/* Ideally, there should not be any ROC work pending. However, supplicant can send back to back ROC in a race scenario as below.
 	 * If action frame is received while P2P social scan, the response frame tx is delayed till scan completes. After scan completion,
@@ -2792,15 +2802,7 @@ int slsi_start_ap(struct wiphy *wiphy, struct net_device *dev,
 
 	r = slsi_mlme_start(sdev, dev, dev->dev_addr, settings, wpa_ie_pos, wmm_ie_pos, append_vht_ies);
 
-	if ((indoor_channel == 1)
-#ifdef CONFIG_SCSC_WLAN_WIFI_SHARING
-	    || (wifi_sharing_channel_switched == 1)
-#endif
-#ifdef CONFIG_SCSC_WLAN_ACS_ENABLE
-	    || (sdev->acs_channel_switched == true)
-#endif
-	)
-		cfg80211_ch_switch_notify(dev, &settings->chandef);
+	cfg80211_ch_switch_notify(dev, &settings->chandef);
 
 #ifdef CONFIG_SCSC_WLAN_WIFI_SHARING
 	if (r == 0)
@@ -2816,12 +2818,6 @@ int slsi_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	} else if (ndev_vif->iftype == NL80211_IFTYPE_P2P_GO) {
 		SLSI_P2P_STATE_CHANGE(sdev, P2P_GROUP_FORMED_GO);
 	}
-#ifdef CONFIG_SCSC_WLAN_NUM_ANTENNAS
-	if (ndev_vif->iftype == NL80211_IFTYPE_AP) {
-		/* Don't care results. */
-		slsi_set_num_antennas(dev, 1 /*SISO*/);
-	}
-#endif
 	ndev_vif->ap.beacon_interval = settings->beacon_interval;
 	ndev_vif->ap.ssid_len = settings->ssid_len;
 	memcpy(ndev_vif->ap.ssid, settings->ssid, settings->ssid_len);
@@ -3149,7 +3145,6 @@ int slsi_wlan_mgmt_tx(struct slsi_dev *sdev, struct net_device *dev,
 	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *)buf;
 	u8                    exp_peer_frame = SLSI_PA_INVALID;
 	int                   subtype = SLSI_PA_INVALID;
-	u8                    action_code;
 
 	if (!ieee80211_is_auth(mgmt->frame_control))
 		slsi_wlan_dump_public_action_subtype(sdev, mgmt, true);
@@ -3160,13 +3155,7 @@ int slsi_wlan_mgmt_tx(struct slsi_dev *sdev, struct net_device *dev,
 		if (subtype != SLSI_PA_INVALID)
 			exp_peer_frame = slsi_get_exp_peer_frame_subtype(subtype);
 	}
-	if (mgmt->u.action.category == WLAN_CATEGORY_WNM) {
-		action_code = ((u8 *)&mgmt->u.action.u)[0];
-		if (action_code == SLSI_WNM_BSS_TRANS_MGMT_RESP) {
-			SLSI_NET_ERR(dev, "Drop Tx frame: BTM resp\n");
-			return r;
-		}
-	}
+
 	if (!ndev_vif->activated) {
 		if (subtype >= SLSI_PA_GAS_INITIAL_REQ_SUBTYPE && subtype <= SLSI_PA_GAS_COMEBACK_RSP_SUBTYPE) {
 			ndev_vif->mgmt_tx_gas_frame = true;

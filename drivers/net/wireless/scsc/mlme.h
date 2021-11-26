@@ -153,6 +153,8 @@ int slsi_mlme_get(struct slsi_dev *sdev, struct net_device *dev, u8 *req, int re
 
 int slsi_mlme_add_vif(struct slsi_dev *sdev, struct net_device *dev, u8 *interface_address, u8 *device_address);
 int slsi_mlme_del_vif(struct slsi_dev *sdev, struct net_device *dev);
+int slsi_mlme_add_detect_vif(struct slsi_dev *sdev, struct net_device *dev, u8 *interface_address, u8 *device_address);
+int slsi_mlme_del_detect_vif(struct slsi_dev *sdev, struct net_device *dev);
 #if defined(CONFIG_SLSI_WLAN_STA_FWD_BEACON) && (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 10)
 int slsi_mlme_set_forward_beacon(struct slsi_dev *sdev, struct net_device *dev, int action);
 #endif
@@ -283,6 +285,7 @@ int slsi_mlme_install_apf_request(struct slsi_dev *sdev, struct net_device *dev,
 #ifdef CONFIG_SCSC_WLAN_STA_ENHANCED_ARP_DETECT
 int slsi_mlme_arp_detect_request(struct slsi_dev *sdev, struct net_device *dev, u16 action, u8 *ipaddr);
 #endif
+int slsi_mlme_start_detect_request(struct slsi_dev *sdev, struct net_device *dev);
 int slsi_mlme_set_ctwindow(struct slsi_dev *sdev, struct net_device *dev, unsigned int ct_param);
 int slsi_mlme_set_p2p_noa(struct slsi_dev *sdev, struct net_device *dev, unsigned int noa_count,
 			  unsigned int interval, unsigned int duration);
@@ -311,5 +314,8 @@ void slsi_mlme_set_country_for_recovery(struct slsi_dev *sdev);
 #endif
 #ifdef CONFIG_SCSC_WLAN_ARP_FLOW_CONTROL
 void slsi_rx_send_frame_cfm_async(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
+#endif
+#ifdef CONFIG_SCSC_WLAN_NUM_ANTENNAS
+int slsi_mlme_set_num_antennas(struct net_device *dev, const u16 num_of_antennas, int frame_type);
 #endif
 #endif /*__SLSI_MLME_H__*/

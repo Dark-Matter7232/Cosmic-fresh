@@ -138,6 +138,10 @@ int dummy_array[] = {
 	/* info_val == policy number */
 	KBASE_KTRACE_CODE_MAKE_CODE(PM_CURRENT_POLICY_TERM),
 
+	KBASE_KTRACE_CODE_MAKE_CODE(PM_POWEROFF_WAIT_WQ),
+	KBASE_KTRACE_CODE_MAKE_CODE(PM_RUNTIME_SUSPEND_CALLBACK),
+	KBASE_KTRACE_CODE_MAKE_CODE(PM_RUNTIME_RESUME_CALLBACK),
+
 	/*
 	 * Context Scheduler events
 	 */
@@ -153,6 +157,9 @@ int dummy_array[] = {
 	KBASE_KTRACE_CODE_MAKE_CODE(ARB_VM_STATE),
 	KBASE_KTRACE_CODE_MAKE_CODE(ARB_VM_EVT),
 #endif
+
+/* MALI_SEC_INTEGRATION */
+#include "platform/exynos/gpu_trace_defs.h"
 
 #if MALI_USE_CSF
 #include "debug/backend/mali_kbase_debug_ktrace_codes_csf.h"

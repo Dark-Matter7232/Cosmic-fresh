@@ -84,8 +84,20 @@ int kbase_sync_fence_out_create(struct kbase_jd_atom *katom, int stream_fd)
 
 	/* create a sync_file fd representing the fence */
 	sync_file = sync_file_create(fence);
-	if (!sync_file) {
+
+/* MALI_SEC_INTEGRATION */
 #if (KERNEL_VERSION(4, 9, 67) >= LINUX_VERSION_CODE)
+	/* Take an extra reference to the fence on behalf of the sync_file.
+	 * This is only needed on older kernels where sync_file_create()
+	 * does not take its own reference. This was changed in v4.9.68,
+	 * where sync_file_create() now takes its own reference.
+	 */
+	dma_fence_put(fence);
+#endif
+
+	if (!sync_file) {
+/* MALI_SEC_INTEGRATION */
+#if (KERNEL_VERSION(4, 9, 67) < LINUX_VERSION_CODE)
 		dma_fence_put(fence);
 #endif
 		kbase_fence_out_remove(katom);

@@ -263,7 +263,7 @@ void kbase_context_common_term(struct kbase_context *kctx)
 	kbase_remove_kctx_from_process(kctx);
 	mutex_unlock(&kctx->kbdev->kctx_list_lock);
 
-	KBASE_KTRACE_ADD(kctx->kbdev, CORE_CTX_DESTROY, kctx, 0u);
+	KBASE_KTRACE_ADD(kctx->kbdev, CORE_CTX_DESTROY, kctx, kctx->tgid);
 }
 
 int kbase_context_mem_pool_group_init(struct kbase_context *kctx)
@@ -283,7 +283,7 @@ int kbase_context_mmu_init(struct kbase_context *kctx)
 {
 	return kbase_mmu_init(
 		kctx->kbdev, &kctx->mmu, kctx,
-		base_context_mmu_group_id_get(kctx->create_flags));
+		kbase_context_mmu_group_id_get(kctx->create_flags));
 }
 
 void kbase_context_mmu_term(struct kbase_context *kctx)

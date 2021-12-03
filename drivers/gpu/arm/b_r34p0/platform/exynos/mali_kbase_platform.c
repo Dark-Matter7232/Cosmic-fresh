@@ -36,7 +36,7 @@ static gpu_dvfs_info gpu_dvfs_table_default[DVFS_TABLE_ROW_MAX];
 
 #include <linux/of_platform.h>
 
-#ifdef CONFIG_EXYNOS_BTS
+#ifdef CONFIG_EXYNOS9630_BTS
 #include <soc/samsung/bts.h>
 #endif
 
@@ -318,11 +318,13 @@ static int gpu_dvfs_update_config_data_from_dt(struct kbase_device *kbdev)
 
 #ifdef CONFIG_EXYNOS_BTS
 	gpu_update_config_data_int(np, "gpu_mo_min_clock", &platform->mo_min_clock);
+#ifdef CONFIG_EXYNOS9630_BTS
 	platform->bts_scen_idx = bts_get_scenindex("g3d_performance");
 #endif
 #ifdef CONFIG_MALI_CAMERA_EXT_BTS
 	platform->bts_camera_ext_idx= bts_get_scenindex("camera_ext");
 	platform->is_set_bts_camera_ext= 0;
+#endif
 #endif
 	gpu_update_config_data_int(np, "gpu_boost_gpu_min_lock", &platform->boost_gpu_min_lock);
 	gpu_update_config_data_int(np, "gpu_boost_egl_min_lock", &platform->boost_egl_min_lock);

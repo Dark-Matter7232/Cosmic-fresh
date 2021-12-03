@@ -97,7 +97,7 @@ else
 endif
 
 
-ifneq ($(CONFIG_MALI_KUTF), n)
+ifneq ($(CONFIG_MALI_KUTF_R34P0), n)
     MALI_KERNEL_TEST_API ?= 1
 else
     MALI_KERNEL_TEST_API ?= 0
@@ -151,7 +151,7 @@ subdir-ccflags-y += $(ccflags-y)
 #
 obj-$(CONFIG_MALI_MIDGARD) += mali_kbase.o
 obj-$(CONFIG_MALI_ARBITRATION) += arbitration/
-obj-$(CONFIG_MALI_KUTF)    += tests/
+obj-$(CONFIG_MALI_KUTF_R34P0)    += tests/
 
 mali_kbase-y := \
     mali_kbase_cache_policy.o \

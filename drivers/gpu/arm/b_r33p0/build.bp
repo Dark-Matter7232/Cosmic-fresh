@@ -244,7 +244,7 @@ bob_kernel_module {
     },
     kbuild_options: [
         "CONFIG_MALI_MIDGARD=m",
-        "CONFIG_MALI_KUTF=n",
+        "CONFIG_MALI_KUTF_R33P0=n",
     ],
     buslog: {
         extra_symbols: [

@@ -70,7 +70,7 @@
 
 ENTRY(old___memcpy)
 WEAK(old_memcpy)
-#include "../copy_template.S"
+#include "copy_template.S"
 	ret
 ENDPIPROC(old_memcpy)
 ENDPROC(old___memcpy)

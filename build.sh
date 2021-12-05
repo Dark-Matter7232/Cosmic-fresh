@@ -97,7 +97,7 @@ build_kernel_image() {
         script_echo "Compilation failed..check build logs for errors"
         script_echo "------------------------------------------------------------"
         echo -e "${RST}"
-        rm -rf $(pwd)/arch/arm64/boot/Image
+        rm -rf $(pwd)/out/arch/arm64/boot/Image
     fi
 }
 build_flashable_zip() {
@@ -105,7 +105,7 @@ build_flashable_zip() {
     script_echo "I: Building kernel image..."
     echo -e "${GRN}"
     rm -f $(pwd)/CosmicFresh/{Image, *.zip}
-    cp -r $(pwd)/arch/arm64/boot/Image CosmicFresh/Image
+    cp -r $(pwd)/out/arch/arm64/boot/Image CosmicFresh/Image
     cd $(pwd)/CosmicFresh/
     zip -r9 "CosmicFresh-R$KV.zip" anykernel.sh META-INF tools version Image
     cd ../..

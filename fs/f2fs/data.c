@@ -1607,6 +1607,7 @@ static int f2fs_read_single_page(struct inode *inode, struct page *page,
 					sector_t *last_block_in_bio,
 					bool is_readahead)
 {
+	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
 	struct bio *bio = *bio_ret;
 	const unsigned blkbits = inode->i_blkbits;
 	const unsigned blocksize = 1 << blkbits;
@@ -1677,7 +1678,7 @@ zero_out:
 	if (bio && (*last_block_in_bio != block_nr - 1 ||
 		!__same_bdev(F2FS_I_SB(inode), block_nr, bio))) {
 submit_and_realloc:
-		__f2fs_submit_read_bio(F2FS_I_SB(inode), bio, DATA);
+		__submit_bio(sbi, bio, DATA);
 		bio = NULL;
 	}
 
@@ -1715,7 +1716,7 @@ submit_and_realloc:
 	goto out;
 confused:
 	if (bio) {
-		__f2fs_submit_read_bio(F2FS_I_SB(inode), bio, DATA);
+		__submit_bio(sbi, bio, DATA);
 		bio = NULL;
 	}
 	unlock_page(page);
@@ -1740,6 +1741,7 @@ static int f2fs_mpage_readpages(struct address_space *mapping,
 	struct bio *bio = NULL;
 	sector_t last_block_in_bio = 0;
 	struct inode *inode = mapping->host;
+	struct f2fs_sb_info *sbi = F2FS_I_SB(inode);
 	struct f2fs_map_blocks map;
 	int ret = 0;
 
@@ -1777,7 +1779,7 @@ next_page:
 	}
 	BUG_ON(pages && !list_empty(pages));
 	if (bio)
-		__f2fs_submit_read_bio(F2FS_I_SB(inode), bio, DATA);
+		__submit_bio(sbi, bio, DATA);
 	return pages ? 0 : ret;
 }
 

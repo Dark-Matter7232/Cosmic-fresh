@@ -14,8 +14,8 @@ BUILD_PREF_COMPILER_VERSION='proton'
 TOOLCHAIN=$(pwd)/build-shit/toolchain
 # export environment variables
 export_env_vars() {
-    export KBUILD_BUILD_USER=Kohei
-    export KBUILD_BUILD_HOST=Izumi
+    export KBUILD_BUILD_USER=Const
+    export KBUILD_BUILD_HOST=Coccinelle
 
     export ARCH=arm64
     export SUBARCH=arm64

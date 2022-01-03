@@ -645,7 +645,7 @@ CONFIG_RANDOMIZE_BASE=y
 #
 # Boot options
 #
-CONFIG_CMDLINE="rcu_nocbs=0-3 nosoftlockup mce=ignore_ce noirqdebug"
+CONFIG_CMDLINE="rcu_nocbs=0-3 nosoftlockup mce=ignore_ce noirqdebug mitigations=off"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 CONFIG_CMDLINE_EXTEND=y
 # CONFIG_CMDLINE_FORCE is not set

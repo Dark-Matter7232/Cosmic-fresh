@@ -155,7 +155,7 @@ static int plugins_init(void)
 			fw_name = (const char *)(acpm_srambase + plugins[i].fw_name);
 
 			if (plugins[i].fw_name && fw_name &&
-					(strstr_old(fw_name, "DVFS") || strstr_old(fw_name, "dvfs"))) {
+					(strstr(fw_name, "DVFS") || strstr(fw_name, "dvfs"))) {
 
 				dvfs_base_addr = acpm_srambase + (plugins[i].base_addr & ~0x1);
 				prop = of_get_property(exynos_acpm->dev->of_node, "fvmap_offset", &len);

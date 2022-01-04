@@ -221,7 +221,7 @@ int download_sensorhub_firmware(struct ssp_data *data, struct device *dev, void 
 
 	ssp_infof("fw type %d bin(size:%d) on %lx", data->fw_type, (int)fw_size, (unsigned long)addr);
 
-	old_memcpy(addr, fw_buf, fw_size);
+	memcpy(addr, fw_buf, fw_size);
 
 	if (entry)
 		release_firmware(entry);

@@ -52,17 +52,14 @@ EXPORT_SYMBOL(strncmp);
 EXPORT_SYMBOL(strlen);
 EXPORT_SYMBOL(strnlen);
 EXPORT_SYMBOL(memcmp);
-EXPORT_SYMBOL(old_memcmp);
 EXPORT_SYMBOL(memchr);
 #endif
 
 EXPORT_SYMBOL(memset);
 EXPORT_SYMBOL(memcpy);
-EXPORT_SYMBOL(old_memcpy);
 EXPORT_SYMBOL(memmove);
 EXPORT_SYMBOL(__memset);
 EXPORT_SYMBOL(__memcpy);
-EXPORT_SYMBOL(old___memcpy);
 EXPORT_SYMBOL(__memmove);
 
 	/* atomic bitops */

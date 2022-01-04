@@ -75,8 +75,6 @@ static inline __must_check char *strstrip(char *str)
 #ifndef __HAVE_ARCH_STRSTR
 extern char * strstr(const char *, const char *);
 #endif
-/* Uses old memcmp*/
-extern char * strstr_old(const char *, const char *);
 #ifndef __HAVE_ARCH_STRNSTR
 extern char * strnstr(const char *, const char *, size_t);
 #endif

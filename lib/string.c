@@ -1056,29 +1056,6 @@ char *strstr(const char *s1, const char *s2)
 EXPORT_SYMBOL(strstr);
 #endif
 
-/**
- * strstr_old - Find the first substring in a %NUL terminated string
- * @s1: The string to be searched
- * @s2: The string to search for
- * Uses old memcmp inplementation
- */
-char *strstr_old(const char *s1, const char *s2)
-{
-	size_t l1, l2;
-
-	l2 = strlen(s2);
-	if (!l2)
-		return (char *)s1;
-	l1 = strlen(s1);
-	while (l1 >= l2) {
-		l1--;
-		if (!old_memcmp(s1, s2, l2))
-			return (char *)s1;
-		s1++;
-	}
-	return NULL;
-}
-EXPORT_SYMBOL(strstr_old);
 #ifndef __HAVE_ARCH_STRNSTR
 /**
  * strnstr - Find the first substring in a length-limited string

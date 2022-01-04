@@ -96,8 +96,8 @@ static DEFINE_RWLOCK(binfmt_lock);
 
 #define HWCOMPOSER_BIN_PREFIX "/vendor/bin/hw/android.hardware.graphics.composer"
 #define SEC_WLBTD_BIN_PREFIX "/vendor/bin/wlbtd"
-#define SEC_WLAN_HAL_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.wifi"
-#define SEM_HYPER_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.hyper"
+#define SEC_WLAN_HAL_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.wifi@2.0-service"
+#define SEM_HYPER_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.hyper-service"
 #define ZYGOTE32_BIN "/system/bin/app_process32"
 #define ZYGOTE64_BIN "/system/bin/app_process64"
 static struct signal_struct *zygote32_sig;

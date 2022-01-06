@@ -19,6 +19,7 @@ dts-dirs += qcom
 dts-dirs += realtek
 dts-dirs += renesas
 dts-dirs += rockchip
+dts-dirs += samsung
 dts-dirs += socionext
 dts-dirs += sprd
 dts-dirs += xilinx
@@ -30,6 +31,11 @@ subdir-y	:= $(dts-dirs)
 dtstree		:= $(srctree)/$(src)
 
 dtb-$(CONFIG_OF_ALL_DTBS) := $(patsubst $(dtstree)/%.dts,%.dtb, $(foreach d,$(dts-dirs), $(wildcard $(dtstree)/$(d)/*.dts)))
+
+dtb-y += exynos/exynos9610.dtb
+
+dtbo-y += samsung/exynos9611-m21_swa_open_00.dtbo
+dtbo-y += samsung/exynos9611-m21_swa_open_06.dtbo
 
 always		:= $(dtb-y) $(dtbo-y)
 

@@ -51,10 +51,6 @@
 			firmware {
 				android {
 					compatible = "android,firmware";
-					vbmeta {
-						compatible = "android,vbmeta";
-						parts = "vbmeta,boot,system,vendor";
-					};
 					fstab {
 						compatible = "android,fstab";
 						vendor {
@@ -62,7 +58,7 @@
 							dev = "/dev/block/platform/13520000.ufs/by-name/vendor";
 							type = "ext4";
 							mnt_flags = "ro";
-							fsmgr_flags = "wait,avb";
+							fsmgr_flags = "wait";
 							status = "disabled";
 						};
 					};

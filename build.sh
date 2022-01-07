@@ -104,10 +104,12 @@ build_flashable_zip() {
     script_echo " "
     script_echo "I: Building kernel image..."
     echo -e "${GRN}"
-    rm -f $(pwd)/CosmicFresh/{Image, *.zip}
+    rm -f $(pwd)/CosmicFresh/{Image, *.zip, dtb, dtbo.img}
     cp -r $(pwd)/out/arch/arm64/boot/Image CosmicFresh/Image
+    cp -r $(pwd)/out/arch/arm64/boot/dtbo_exynos.img CosmicFresh/dtbo.img
+    cp -r $(pwd)/out/arch/arm64/boot/dtb_exynos.img CosmicFresh/dtb
     cd $(pwd)/CosmicFresh/
-    zip -r9 "CosmicFresh-R$KV.zip" anykernel.sh META-INF tools version Image
+    zip -r9 "CosmicFresh-R$KV.zip" anykernel.sh META-INF tools version Image dtb dtbo.img
     cd ../..
     rm -f $(pwd)/arch/arm64/boot/Image
 }

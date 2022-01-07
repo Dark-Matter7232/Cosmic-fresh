@@ -186,8 +186,6 @@ extern void dbg_snapshot_get_softlockup_info(unsigned int cpu, void *info);
 #else
 #define dbg_snapshot_get_hardlockup_info(a, b)	do { } while (0)
 #define dbg_snapshot_get_softlockup_info(a, b)	do { } while (0)
-#define dbg_snapshot_save_log(a, b)	do { } while (0)
-#define dbg_snapshot_print_notifier_call(a,b,c)	do { } while(0)
 #endif
 
 #else

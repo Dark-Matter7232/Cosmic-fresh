@@ -93,6 +93,7 @@
 #include <linux/cpufreq_times.h>
 #include <linux/devfreq_boost.h>
 #include <linux/simple_lmk.h>
+#include <linux/ems_service.h>
 
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
@@ -2146,13 +2147,18 @@ long _do_fork(unsigned long clone_flags,
 	      int __user *child_tidptr,
 	      unsigned long tls)
 {
+	static struct kpp kpp_fg;
+	static struct kpp kpp_ta;
 	struct task_struct *p;
 	int trace = 0;
 	long nr;
 
 	/* Boost DDR bus and CPU freq to the max for 70 ms when userspace launches an app */
-	if (task_is_zygote(current))
+	if (task_is_zygote(current)) {
+                kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
+                kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
                 devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 70);
+}
 	/*
 	 * Determine whether and which event to report to ptracer.  When
 	 * called from kernel_thread or CLONE_UNTRACED is explicitly

@@ -267,7 +267,7 @@ static inline void exynos_ufs_ctrl_phy_pwr(struct exynos_ufs *ufs, bool en)
 		dev_err(ufs->dev, "Unable to update PHY ISO control\n");
 }
 
-#ifndef __EXYNOS_UFS_VS_DEBUG__
+#if 0
 static void exynos_ufs_dump_std_sfr(struct ufs_hba *hba)
 {
 	struct exynos_ufs *ufs = to_exynos_ufs(hba);
@@ -297,9 +297,8 @@ static void exynos_ufs_dump_std_sfr(struct ufs_hba *hba)
  */
 static void exynos_ufs_dump_debug_info(struct ufs_hba *hba)
 {
-#ifdef __EXYNOS_UFS_VS_DEBUG__
+#if 0
 	exynos_ufs_get_uic_info(hba);
-#else
 	exynos_ufs_dump_std_sfr(hba);
 #endif
 }
@@ -628,12 +627,6 @@ static int exynos_ufs_init(struct ufs_hba *hba)
 	/* FMPSECURITY & SMU */
 	ufshcd_vops_crypto_sec_cfg(hba, true);
 
-	/* Enable log */
-	ret =  exynos_ufs_init_dbg(hba);
-
-	if (ret)
-		return ret;
-
 	ufs->misc_flags = EXYNOS_UFS_MISC_TOGGLE_LOG;
 
 	return 0;
@@ -655,7 +648,6 @@ static void exynos_ufs_host_reset(struct ufs_hba *hba)
 
 	dev_err(ufs->dev, "timeout host sw-reset\n");
 
-	exynos_ufs_dump_uic_info(hba);
 
 	goto out;
 

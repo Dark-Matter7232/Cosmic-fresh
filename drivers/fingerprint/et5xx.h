@@ -1264,8 +1264,8 @@ static inline irqreturn_t etspi_fingerprint_interrupt(int irq, void *dev_id)
 	etspi->interrupt_count++;
 
 	if (state_suspended) {
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 500);
 		cpu_input_boost_kick_max(200);
-		devfreq_boost_kick_wake(DEVFREQ_EXYNOS_MIF);
 	}
 
 	return IRQ_HANDLED;

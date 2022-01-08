@@ -12,6 +12,7 @@
 #include <linux/slab.h>
 #include <uapi/linux/sched/types.h>
 #include <linux/sched.h>
+#include <linux/moduleparam.h>
 
 static unsigned long devfreq_boost_freq =
 	CONFIG_DEVFREQ_EXYNOS_MIF_BOOST_FREQ;

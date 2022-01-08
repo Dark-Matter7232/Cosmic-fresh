@@ -346,7 +346,6 @@ static int decon_vsync_thread(void *data)
 
 int decon_create_vsync_thread(struct decon_device *decon)
 {
-         struct sched_param param = { .sched_priority = 20 };
 	int ret = 0;
 	char name[16];
 
@@ -369,8 +368,6 @@ int decon_create_vsync_thread(struct decon_device *decon)
 		ret = PTR_ERR(decon->vsync.thread);
 		goto err;
 	}
-
-         sched_setscheduler_nocheck(decon->vsync.thread, SCHED_FIFO, &param);
 
 	return 0;
 

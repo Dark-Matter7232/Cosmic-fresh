@@ -18,17 +18,14 @@
 #include <linux/errno.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
-
 #include <linux/of.h>
 #include <linux/slab.h>
 #include <linux/reboot.h>
 #include <linux/suspend.h>
-
 #include <linux/io.h>
 #include <linux/sched/clock.h>
 #include <linux/clk.h>
 #include <soc/samsung/cal-if.h>
-#include <linux/devfreq_boost.h>
 #include <soc/samsung/bts.h>
 #include <linux/of_platform.h>
 #include <dt-bindings/soc/samsung/exynos9610-devfreq.h>
@@ -36,7 +33,6 @@
 #include <soc/samsung/exynos-pd.h>
 
 #include <soc/samsung/exynos-devfreq.h>
-
 #include <soc/samsung/ect_parser.h>
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
 #include <soc/samsung/exynos-dm.h>
@@ -44,18 +40,13 @@
 #ifdef CONFIG_EXYNOS_ACPM
 #include "../../soc/samsung/acpm/acpm.h"
 #include "../../soc/samsung/acpm/acpm_ipc.h"
-
 #endif
-
 
 #include "../governor.h"
 
-
 static struct exynos_devfreq_data **devfreq_data;
 
-
 static u32 freq_array[6];
-
 static u32 boot_array[2];
 
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
@@ -279,7 +270,6 @@ static int exynos_devfreq_set_freq(struct device *dev, u32 new_freq,
 		if (data->new_freq < data->old_freq)
 			bts_update_scen(BS_MIF_CHANGE, data->new_freq);
 	}
-
 #endif
 	if (data->pm_domain) {
 		if (!exynos_pd_status(data->pm_domain)) {
@@ -416,16 +406,13 @@ static ssize_t show_exynos_devfreq_info(struct device *dev,
 			  "default_qos     : %20u\n" "initial_freq    : %20lu\n"
 			  "min_freq        : %20u\n" "max_freq        : %20u\n"
 			  "boot_timeout(s) : %20u\n" "max_state       : %20u\n",
-
 			  data->default_qos, data->devfreq_profile.initial_freq,
 			  data->min_freq, data->max_freq, data->boot_qos_timeout, data->max_state);
-
 
 	count += snprintf(buf + count, PAGE_SIZE, "\n<Governor data>\n");
 	count += snprintf(buf + count, PAGE_SIZE,
 			  "governor_name   : %20s\n",
 			  data->governor_name);
-
 	return count;
 }
 
@@ -439,9 +426,7 @@ static ssize_t show_exynos_devfreq_get_freq(struct device *dev,
 	u32 get_freq = 0;
 
 	if (exynos_devfreq_get_freq(data->dev, &get_freq, data->clk, data))
-
 		dev_err(data->dev, "failed get freq\n");
-
 
 	count = snprintf(buf, PAGE_SIZE, "%10u Khz\n", get_freq);
 
@@ -465,18 +450,15 @@ static ssize_t show_exynos_devfreq_cmu_dump(struct device *dev,
 	struct exynos_devfreq_data *data = platform_get_drvdata(pdev);
 	ssize_t count = 0;
 
-
 	mutex_lock(&data->lock);
 	if (exynos_devfreq_cmu_dump(data))
 		dev_err(data->dev, "failed CMU Dump\n");
 	mutex_unlock(&data->lock);
 
-
 	count = snprintf(buf, PAGE_SIZE, "Done\n");
 
 	return count;
 }
-
 
 static ssize_t show_debug_scaling_devfreq_max(struct device *dev,
 					struct device_attribute *attr, char *buf)
@@ -596,27 +578,22 @@ static ssize_t store_exynos_devfreq_disable_pm_qos(struct device *dev,
 
 	return count;
 }
-
 static DEVICE_ATTR(exynos_devfreq_info, 0640, show_exynos_devfreq_info, NULL);
 static DEVICE_ATTR(exynos_devfreq_get_freq, 0640, show_exynos_devfreq_get_freq, NULL);
 static DEVICE_ATTR(exynos_devfreq_cmu_dump, 0640, show_exynos_devfreq_cmu_dump, NULL);
-
 static DEVICE_ATTR(debug_scaling_devfreq_min, 0640, show_debug_scaling_devfreq_min, store_debug_scaling_devfreq_min);
 static DEVICE_ATTR(debug_scaling_devfreq_max, 0640, show_debug_scaling_devfreq_max,
 						store_debug_scaling_devfreq_max);
 static DEVICE_ATTR(disable_pm_qos, 0640, show_exynos_devfreq_disable_pm_qos,
 		   store_exynos_devfreq_disable_pm_qos);
 
-
 static struct attribute *exynos_devfreq_sysfs_entries[] = {
 	&dev_attr_exynos_devfreq_info.attr,
 	&dev_attr_exynos_devfreq_get_freq.attr,
 	&dev_attr_exynos_devfreq_cmu_dump.attr,
-
 	&dev_attr_debug_scaling_devfreq_min.attr,
 	&dev_attr_debug_scaling_devfreq_max.attr,
 	&dev_attr_disable_pm_qos.attr,
-
 	NULL,
 };
 
@@ -792,15 +769,12 @@ static ssize_t store_delay_time(struct device *dev,
 	return count;
 }
 
-
 static DEVICE_ATTR(use_delay_time, 0640, show_use_delay_time, store_use_delay_time);
 static DEVICE_ATTR(delay_time, 0640, show_delay_time, store_delay_time);
-
 
 static struct attribute *devfreq_interactive_sysfs_entries[] = {
 	&dev_attr_use_delay_time.attr,
 	&dev_attr_delay_time.attr,
-
 	NULL,
 };
 
@@ -812,12 +786,10 @@ static struct attribute_group devfreq_delay_time_attr_group = {
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
 int find_exynos_devfreq_dm_type(struct device *dev, int *dm_type)
 {
-
 	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
 	struct exynos_devfreq_data *data = platform_get_drvdata(pdev);
 
 	*dm_type = data->dm_type;
-
 
 	return 0;
 }
@@ -827,7 +799,6 @@ struct devfreq *find_exynos_devfreq_device(void *devdata)
 	struct exynos_devfreq_data *data = devdata;
 
 	if (!devdata) {
-
 		pr_err("%s: failed get Devfreq type\n", __func__);
 		return ERR_PTR(-EINVAL);
 	}
@@ -872,7 +843,6 @@ static int exynos_devfreq_parse_ect(struct exynos_devfreq_data *data, const char
 static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq_data *data)
 {
 	const char *use_acpm, *bts_update;
-
 #if defined(CONFIG_ECT)
 	const char *devfreq_domain_name;
 #endif
@@ -894,7 +864,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 		return -ENODEV;
 	if (of_property_read_u32(np, "ess_flag", &data->ess_flag))
 		return -ENODEV;
-
 
 #if defined(CONFIG_ECT)
 	if (of_property_read_string(np, "devfreq_domain_name", &devfreq_domain_name))
@@ -933,13 +902,11 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 		data->boot_freq = boot_array[1];
 	}
 
-
 	if (of_property_read_u32(np, "governor", &data->gov_type))
 		return -ENODEV;
 	if (data->gov_type == SIMPLE_INTERACTIVE)
 		data->governor_name = "interactive";
 	else {
-
 		dev_err(data->dev, "invalid governor name (%s)\n", data->governor_name);
 		return -EINVAL;
 	}
@@ -1013,7 +980,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 				data->simple_interactive_data.ndelay_time = ntokens;
 			}
 		}
-
 	} else {
 		dev_err(data->dev, "not support governor type %u\n", data->gov_type);
 		return -EINVAL;
@@ -1022,9 +988,7 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
 	if (of_property_read_u32(np, "dm-index", &data->dm_type)) {
 		dev_err(data->dev, "not support dvfs manager\n");
-
 		return -ENODEV;
-
 	}
 #endif
 	return 0;
@@ -1035,7 +999,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfrq_
 	return -EINVAL;
 }
 #endif
-
 
 s32 exynos_devfreq_get_opp_idx(struct exynos_devfreq_opp_table *table, unsigned int size, u32 freq)
 {
@@ -1049,12 +1012,10 @@ s32 exynos_devfreq_get_opp_idx(struct exynos_devfreq_opp_table *table, unsigned 
 	return -ENODEV;
 }
 
-
 static int exynos_init_freq_table(struct exynos_devfreq_data *data)
 {
 	int i, ret;
 	u32 freq, volt;
-
 
 	for (i = 0; i < data->max_state; i++) {
 		freq = data->opp_list[i].freq;
@@ -1071,32 +1032,26 @@ static int exynos_init_freq_table(struct exynos_devfreq_data *data)
 	}
 
 	ret = exynos_devfreq_init_freq_table(data);
-
 	if (ret) {
 		dev_err(data->dev, "failed init frequency table\n");
 		return ret;
 	}
 
-
 	return 0;
 }
-
 
 static int exynos_devfreq_reboot_notifier(struct notifier_block *nb, unsigned long val, void *v)
 {
 	struct exynos_devfreq_data *data = container_of(nb, struct exynos_devfreq_data,
 							reboot_notifier);
 
-
 	if (pm_qos_request_active(&data->default_pm_qos_min))
 		pm_qos_update_request(&data->default_pm_qos_min, data->reboot_freq);
 
 	if (exynos_devfreq_reboot(data)) {
-
 		dev_err(data->dev, "failed reboot\n");
 		return NOTIFY_BAD;
 	}
-
 
 	return NOTIFY_OK;
 }
@@ -1107,12 +1062,10 @@ static int exynos_devfreq_target(struct device *dev, unsigned long *target_freq,
 	struct exynos_devfreq_data *data = platform_get_drvdata(pdev);
 	struct timeval before_target, after_target, before_setfreq, after_setfreq;
 	struct dev_pm_opp *target_opp;
-
 	u32 target_volt;
 	s32 target_idx;
 	s32 target_time = 0;
 	int ret = 0;
-
 
 	if (data->devfreq_disabled)
 		return -EAGAIN;
@@ -1121,10 +1074,8 @@ static int exynos_devfreq_target(struct device *dev, unsigned long *target_freq,
 
 	mutex_lock(&data->lock);
 
-
 	target_opp = devfreq_recommended_opp(dev, target_freq, flags);
 	if (IS_ERR(target_opp)) {
-
 		dev_err(dev, "not found valid OPP table\n");
 		ret = PTR_ERR(target_opp);
 		goto out;
@@ -1153,24 +1104,19 @@ static int exynos_devfreq_target(struct device *dev, unsigned long *target_freq,
 #ifdef CONFIG_DEBUG_SNAPSHOT_FREQ
 	dbg_snapshot_freq(data->ess_flag, data->old_freq, data->new_freq, DSS_FLAG_IN);
 #endif
-
 	do_gettimeofday(&before_setfreq);
 
 	ret = exynos_devfreq_set_freq(dev, data->new_freq, data->clk, data);
-
 	if (ret) {
 		dev_err(dev, "failed set frequency (%uKhz --> %uKhz)\n",
 			data->old_freq, data->new_freq);
 		goto out;
 	}
 
-
-
 	do_gettimeofday(&after_setfreq);
 #ifdef CONFIG_DEBUG_SNAPSHOT_FREQ
 	dbg_snapshot_freq(data->ess_flag, data->old_freq, data->new_freq, DSS_FLAG_OUT);
 #endif
-
 
 	data->old_freq = data->new_freq;
 	data->old_idx = data->new_idx;
@@ -1184,14 +1130,12 @@ out:
 	target_time = (after_target.tv_sec - before_target.tv_sec) * USEC_PER_SEC +
 	    (after_target.tv_usec - before_target.tv_usec);
 
-
 	data->target_delay = target_time;
 
 	dev_dbg(dev, "target time: %d usec\n", target_time);
 
 	return ret;
 }
-
 
 static int exynos_devfreq_suspend(struct device *dev)
 {
@@ -1206,7 +1150,6 @@ static int exynos_devfreq_suspend(struct device *dev)
 #endif
 #endif
 	u32 get_freq = 0;
-
 
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
 	if (data->use_acpm) {
@@ -1252,9 +1195,7 @@ static int exynos_devfreq_suspend(struct device *dev)
 		pm_qos_update_request(&data->default_pm_qos_min,
 				data->devfreq_profile.suspend_freq);
 	if (exynos_devfreq_get_freq(data->dev, &get_freq, data->clk, data))
-
 		dev_err(data->dev, "failed get freq\n");
-
 
 
 	return ret;
@@ -1275,7 +1216,6 @@ static int exynos_devfreq_resume(struct device *dev)
 	u32 cur_freq;
 
 	if (!exynos_devfreq_get_freq(data->dev, &cur_freq, data->clk, data))
-
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
 	if (data->use_acpm) {
 		mutex_lock(&data->devfreq->lock);
@@ -1339,7 +1279,6 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 
 	mutex_init(&data->lock);
 
-
 	/* parsing devfreq dts data for exynos */
 	ret = exynos_devfreq_parse_dt(data->dev->of_node, data);
 	if (ret) {
@@ -1349,13 +1288,11 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 
 	data->devfreq_profile.max_state = data->max_state;
 	data->devfreq_profile.target = exynos_devfreq_target;
-
 	if (data->gov_type == SIMPLE_INTERACTIVE) {
 		data->simple_interactive_data.pm_qos_class = data->pm_qos_class;
 		data->simple_interactive_data.pm_qos_class_max = data->pm_qos_class_max;
 		data->governor_data = &data->simple_interactive_data;
 	}
-
 
 	data->devfreq_profile.freq_table = kzalloc(sizeof(*(data->devfreq_profile.freq_table)) * data->max_state, GFP_KERNEL);
 	if (data->devfreq_profile.freq_table == NULL) {
@@ -1373,7 +1310,6 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 	devfreq_data[data->devfreq_type] = data;
 	platform_set_drvdata(pdev, data);
 
-
 	data->old_freq = (u32)data->devfreq_profile.initial_freq;
 	data->old_idx = exynos_devfreq_get_opp_idx(data->opp_list, data->max_state, data->old_freq);
 	if (data->old_idx < 0) {
@@ -1381,11 +1317,9 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 		goto err_old_idx;
 	}
 
-
 	init_freq = (unsigned long)data->old_freq;
 	init_opp = devfreq_recommended_opp(data->dev, &init_freq, 0);
 	if (IS_ERR(init_opp)) {
-
 		dev_err(data->dev, "not found valid OPP table for sync\n");
 		ret = PTR_ERR(init_opp);
 		goto err_get_opp;
@@ -1394,11 +1328,9 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 	dev_pm_opp_put(init_opp);
 
 
-
 	data->old_volt = data->new_volt;
 #ifdef CONFIG_EXYNOS_DVFS_MANAGER
 	ret = exynos_dm_data_init(data->dm_type, data, data->min_freq, data->max_freq, data->old_freq);
-
 	if (ret) {
 		dev_err(data->dev, "failed DVFS Manager data init\n");
 		goto err_dm_data_init;
@@ -1427,9 +1359,6 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 		goto err_devfreq;
 	}
 
-	if (data->devfreq_type == DEVFREQ_MIF)
-		devfreq_register_boost_device(DEVFREQ_EXYNOS_MIF, data->devfreq);
-
 	data->devfreq->min_freq = data->min_freq;
 	data->devfreq->max_freq = data->max_freq;
 
@@ -1445,13 +1374,11 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 	pm_qos_add_request(&data->boot_pm_qos, (int)data->pm_qos_class,
 			   data->devfreq_profile.initial_freq);
 
-
 	ret = devfreq_register_opp_notifier(data->dev, data->devfreq);
 	if (ret) {
 		dev_err(data->dev, "failed register opp notifier\n");
 		goto err_opp_noti;
 	}
-
 
 	data->reboot_notifier.notifier_call = exynos_devfreq_reboot_notifier;
 	ret = register_reboot_notifier(&data->reboot_notifier);
@@ -1459,7 +1386,6 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 		dev_err(data->dev, "failed register reboot notifier\n");
 		goto err_reboot_noti;
 	}
-
 
 	ret = sysfs_create_file(&data->devfreq->dev.kobj, &dev_attr_scaling_devfreq_min.attr);
 	if (ret)
@@ -1490,12 +1416,9 @@ static int exynos_devfreq_probe(struct platform_device *pdev)
 
 	return 0;
 
-
 err_reboot_noti:
-
 	devfreq_unregister_opp_notifier(data->dev, data->devfreq);
 err_opp_noti:
-
 	pm_qos_remove_request(&data->boot_pm_qos);
 	pm_qos_remove_request(&data->default_pm_qos_min);
 	if (data->pm_qos_class_max)
@@ -1515,19 +1438,14 @@ err_devfreq:
 	}
 err_dm_table:
 err_dm_data_init:
-
 #endif
-
 err_get_opp:
 err_old_idx:
-
 	platform_set_drvdata(pdev, NULL);
 err_init_table:
 	kfree(data->devfreq_profile.freq_table);
 err_freqtable:
-
 err_parse_dt:
-
 	mutex_destroy(&data->lock);
 	kfree(data);
 err_data:
@@ -1547,10 +1465,8 @@ static int exynos_devfreq_remove(struct platform_device *pdev)
 #endif
 	sysfs_remove_group(&data->devfreq->dev.kobj, &devfreq_delay_time_attr_group);
 
-
 	unregister_reboot_notifier(&data->reboot_notifier);
 	devfreq_unregister_opp_notifier(data->dev, data->devfreq);
-
 
 	pm_qos_remove_request(&data->boot_pm_qos);
 	pm_qos_remove_request(&data->default_pm_qos_min);
@@ -1569,10 +1485,8 @@ static int exynos_devfreq_remove(struct platform_device *pdev)
 				data->constraint[nr_constraint]);
 	}
 #endif
-
 	platform_set_drvdata(pdev, NULL);
 	kfree(data->devfreq_profile.freq_table);
-
 	mutex_destroy(&data->lock);
 	kfree(data);
 

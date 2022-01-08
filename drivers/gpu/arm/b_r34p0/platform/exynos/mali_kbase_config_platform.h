@@ -71,6 +71,11 @@
 /* MALI_SEC_INTEGRATION */
 #define PLATFORM_FUNCS (&platform_funcs)
 
+/*
+ * Period for DVFS sampling
+ */
+#define DEFAULT_PM_DVFS_PERIOD 50 /* 50ms */
+
 /** Power model for IPA
  *
  * Attached value: pointer to @ref mali_pa_model_ops

@@ -244,7 +244,7 @@ int kbase_set_custom_irq_handler(struct kbase_device *kbdev,
 					kbase_handler_table[irq_type];
 
 	if (request_irq(kbdev->irqs[irq_type].irq, requested_irq_handler,
-			kbdev->irqs[irq_type].flags | IRQF_SHARED,
+			kbdev->irqs[irq_type].flags | IRQF_SHARED | IRQF_PERF_AFFINE,
 			dev_name(kbdev->dev),
 			kbase_tag(kbdev, irq_type)) != 0) {
 		result = -EINVAL;
@@ -420,7 +420,7 @@ static int kbasep_common_test_interrupt(
 
 		/* restore original interrupt */
 		if (request_irq(kbdev->irqs[tag].irq, kbase_handler_table[tag],
-				kbdev->irqs[tag].flags | IRQF_SHARED,
+				kbdev->irqs[tag].flags | IRQF_SHARED | IRQF_PERF_AFFINE,
 				dev_name(kbdev->dev), kbase_tag(kbdev, tag))) {
 			dev_err(kbdev->dev, "Can't restore original interrupt %d (index %d)\n",
 						kbdev->irqs[tag].irq, tag);

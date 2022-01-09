@@ -17,6 +17,12 @@ config ION_EXYNOS
 	  Choose this option for Exynos SoCs. Initialization of cma heap is
 	  changed.
 
+config ION_EXYNOS_DEBUG
+	bool "Debug Exynos Extension to ION"
+	depends on ION_EXYNOS
+	help
+	  Debug ION for Exynos SoCs.
+
 config ION_TEST
 	tristate "Ion Test Device"
 	depends on ION

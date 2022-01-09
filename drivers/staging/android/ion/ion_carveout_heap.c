@@ -119,8 +119,10 @@ err_free_table:
 	sg_free_table(table);
 err_free:
 	kfree(table);
+#ifdef CONFIG_ION_EXYNOS_DEBUG
 	ion_contig_heap_show_buffers(NULL, &carveout_heap->heap,
 				     carveout_heap->base, carveout_heap->size);
+#endif
 	return ret;
 }
 
@@ -210,9 +212,10 @@ static int ion_carveout_heap_debug_show(struct ion_heap *heap,
 {
 	struct ion_carveout_heap *carveout_heap =
 		container_of(heap, struct ion_carveout_heap, heap);
-
+#ifdef CONFIG_ION_EXYNOS_DEBUG
 	ion_contig_heap_show_buffers(s, &carveout_heap->heap,
 				     carveout_heap->base, carveout_heap->size);
+#endif
 
 	return 0;
 }

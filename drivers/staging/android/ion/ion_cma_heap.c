@@ -124,9 +124,11 @@ free_mem:
 err_table:
 	cma_release(cma_heap->cma, pages, nr_pages);
 err:
+#ifdef CONFIG_ION_EXYNOS_DEBUG
 	ion_contig_heap_show_buffers(NULL, &cma_heap->heap,
 				     cma_get_base(cma_heap->cma),
 				     cma_get_size(cma_heap->cma));
+#endif
 	return ret;
 }
 
@@ -173,11 +175,11 @@ static int ion_cma_heap_debug_show(struct ion_heap *heap, struct seq_file *s,
 				   void *unused)
 {
 	struct ion_cma_heap *cma_heap = to_cma_heap(heap);
-
+#ifdef CONFIG_ION_EXYNOS_DEBUG
 	ion_contig_heap_show_buffers(s, &cma_heap->heap,
 				     cma_get_base(cma_heap->cma),
 				     cma_get_size(cma_heap->cma));
-
+#endif
 	return 0;
 }
 

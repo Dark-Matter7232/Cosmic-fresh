@@ -706,9 +706,9 @@ void ion_device_add_heap(struct ion_heap *heap)
 			     path, debug_name);
 		}
 	}
-
+#ifdef CONFIG_ION_EXYNOS_DEBUG
 	ion_debug_heap_init(heap);
-
+#endif
 	dev->heap_cnt++;
 	up_write(&dev->lock);
 }
@@ -739,8 +739,9 @@ static int ion_device_create(void)
 		perr("ion: failed to create debugfs root directory.");
 		goto debugfs_done;
 	}
-
+#ifdef CONFIG_ION_EXYNOS_DEBUG
 	ion_debug_initialize(idev);
+#endif
 
 debugfs_done:
 	exynos_ion_fixup(idev);

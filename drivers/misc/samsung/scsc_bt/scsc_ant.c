@@ -55,7 +55,7 @@ static void scsc_ant_shm_irq_handler(int irqbit, void *data)
 	    ant_service.asmhcp_protocol->header.panic_deathbed_confession) {
 		ant_service.interrupt_read_count++;
 
-		wake_lock_timeout(&ant_service.read_wake_lock, HZ);
+		wake_lock_timeout(&ant_service.read_wake_lock, msecs_to_jiffies(1000));
 		wake_up(&ant_service.read_wait);
 	}
 

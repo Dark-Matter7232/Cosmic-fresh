@@ -181,7 +181,7 @@ static int q_idx_layout[6][2] = {
 #define MAX_STORM            5
 
 /* Timeout for Wakelocks in HIP  */
-#define SLSI_HIP_WAKELOCK_TIME_OUT_IN_MS   (1000)
+#define SLSI_HIP_WAKELOCK_TIME_OUT_IN_MS   (500)
 
 #ifdef CONFIG_SCSC_WLAN_DEBUG
 

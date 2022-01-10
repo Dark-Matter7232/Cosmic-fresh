@@ -635,7 +635,6 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 #else /* #ifdef CONFIG_SCSC_WLAN_RX_NAPI */
 		netif_rx_ni(rx_skb);
 #endif
-		slsi_wake_lock_timeout(&sdev->wlan_wl_ma, msecs_to_jiffies(SLSI_RX_WAKELOCK_TIME));
 	}
 }
 

@@ -55,7 +55,7 @@ add_deps() {
         script_echo $(wget -q https://github.com/kdrag0n/proton-clang/archive/refs/tags/20201212.tar.gz -O clang.tar.gz);
         bsdtar xf clang.tar.gz
         rm -rf clang.tar.gz
-        mv proton-clang* build-shit/toolchain
+        mv proton-clang* toolchain
         cd ../
     fi
     verify_toolchain_install

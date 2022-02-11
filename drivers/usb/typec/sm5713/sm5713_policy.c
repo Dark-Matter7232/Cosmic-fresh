@@ -126,7 +126,7 @@ static policy_state sm5713_usbpd_policy_src_startup(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	struct sm5713_phydrv_data *pdic_data = pd_data->phy_driver_data;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (sm5713_check_vbus_state(pd_data)) {
 		if (pdic_data->reset_done == 0) {
@@ -145,7 +145,7 @@ static policy_state sm5713_usbpd_policy_src_discovery(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	msleep(tSendSourceCap);
 	if (pd_data->counter.caps_counter <= USBPD_nCapsCount)
 		return PE_SRC_Send_Capabilities;
@@ -159,7 +159,7 @@ static policy_state sm5713_usbpd_policy_src_send_capabilities(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	struct sm5713_phydrv_data *pdic_data = pd_data->phy_driver_data;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.word = pd_data->source_msg_header.word;
 		policy->tx_data_obj[0].object = pd_data->source_data_obj.object;
@@ -177,7 +177,7 @@ static policy_state sm5713_usbpd_policy_src_send_capabilities(
 				pd_data->counter.caps_counter = 0;
 				pd_data->source_request_obj.object
 						= policy->rx_data_obj[0].object;
-				dev_info(pd_data->dev, "got Request.\n");
+				dev_dbg_once(pd_data->dev, "got Request.\n");
 				return PE_SRC_Negotiate_Capability;
 			} else if (policy->rx_msg_header.msg_type ==
 					USBPD_Get_Sink_Cap) {
@@ -217,7 +217,7 @@ static policy_state sm5713_usbpd_policy_src_negotiate_capability(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		if (policy->last_state == PE_SRC_Ready) {
@@ -253,7 +253,7 @@ static policy_state sm5713_usbpd_policy_src_transition_supply(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 		msleep(tSrcTransition);
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -281,7 +281,7 @@ static policy_state sm5713_usbpd_policy_src_ready(
 	int i = 0, data_role = 0;
 	unsigned int ret;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 #if defined(CONFIG_USB_HOST_NOTIFY)
 	if (must_block_host && !sm5713_check_vbus_state(pd_data))
@@ -317,7 +317,7 @@ static policy_state sm5713_usbpd_policy_src_disabled(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	return PE_SRC_Disabled;
 }
 
@@ -326,7 +326,7 @@ static policy_state sm5713_usbpd_policy_src_capability_response(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -345,7 +345,7 @@ static policy_state sm5713_usbpd_policy_src_hard_reset(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	struct sm5713_phydrv_data *pdic_data = pd_data->phy_driver_data;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.hard_reset(pd_data);
 		pd_data->counter.hard_reset_counter++;
@@ -362,7 +362,7 @@ static policy_state sm5713_usbpd_policy_src_hard_reset_received(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	msleep(tPSHardReset);
 
@@ -374,7 +374,7 @@ static policy_state sm5713_usbpd_policy_src_transition_to_default(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.driver_reset(pd_data);
@@ -386,7 +386,7 @@ static policy_state sm5713_usbpd_policy_src_transition_to_default(
 			sm5713_src_transition_to_pwr_on(pd_data);
 			return PE_SRC_Startup;
 		} else {
-			pr_info("%s : cable is detached!\n", __func__);
+			pr_debug_once("%s : cable is detached!\n", __func__);
 			return 0;
 		}
 	}
@@ -398,7 +398,7 @@ static policy_state sm5713_usbpd_policy_src_give_source_cap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Source_Capabilities;
@@ -438,7 +438,7 @@ static policy_state sm5713_usbpd_policy_src_give_sink_cap(
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 	pd_data->phy_ops.get_data_role(pd_data, &data_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Sink_Capabilities;
 		policy->tx_msg_header.port_data_role = data_role;
@@ -472,7 +472,7 @@ static policy_state sm5713_usbpd_policy_src_get_sink_cap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -481,7 +481,7 @@ static policy_state sm5713_usbpd_policy_src_get_sink_cap(
 		if (sm5713_usbpd_wait_msg(pd_data,
 				MSG_SNK_CAP, tSenderResponse)) {
 			if (pd_data->protocol_tx.status == MESSAGE_SENT) {
-				dev_info(pd_data->dev, "got SinkCap.\n");
+				dev_dbg_once(pd_data->dev, "got SinkCap.\n");
 				return PE_SRC_Ready;
 			} else {
 				return PE_SRC_Send_Soft_Reset;
@@ -498,7 +498,7 @@ static policy_state sm5713_usbpd_policy_src_wait_new_capabilities(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return PE_SRC_Send_Capabilities;
 }
@@ -508,7 +508,7 @@ static policy_state sm5713_usbpd_policy_src_send_soft_reset(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_init_protocol(pd_data);
@@ -550,7 +550,7 @@ static policy_state sm5713_usbpd_policy_snk_startup(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	struct sm5713_phydrv_data *pdic_data = pd_data->phy_driver_data;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (pdic_data->reset_done == 1) {
 		pdic_data->reset_done = 0;
 		return PE_SNK_Discovery;
@@ -579,7 +579,7 @@ static policy_state sm5713_usbpd_policy_snk_wait_for_capabilities(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	/* ST_PE_SNK_WAIT_CAP */
 	if (sm5713_usbpd_wait_msg(pd_data, MSG_SRC_CAP, tSinkWaitCap))
@@ -604,7 +604,7 @@ static policy_state sm5713_usbpd_policy_snk_evaluate_capability(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int sink_request_obj_num = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	pd_data->counter.hard_reset_counter = 0;
 	sm5713_cc_state_hold_on_off(pd_data, 0); /* CC State Hold Off */
 
@@ -631,7 +631,7 @@ static policy_state sm5713_usbpd_policy_snk_select_capability(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s, tx_status = %d\n",
+	dev_dbg_once(pd_data->dev, "%s, tx_status = %d\n",
 			__func__, pd_data->protocol_tx.status);
 	/* ST_PE_SNK_REQUEST */
 	if (policy->last_state != policy->state) {
@@ -669,7 +669,7 @@ static policy_state sm5713_usbpd_policy_snk_transition_sink(
 	struct sm5713_phydrv_data *pdic_data = pd_data->phy_driver_data;
 	struct sm5713_usbpd_manager_data *manager = &pd_data->manager;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_SNK_TRANSITION */
 	if (policy->last_state != policy->state) {
 		unsigned int msg;
@@ -681,7 +681,7 @@ static policy_state sm5713_usbpd_policy_snk_transition_sink(
 				MSG_PSRDY | MSG_GET_SNK_CAP, tPSTransition);
 
 		if (msg & MSG_PSRDY) {
-			dev_info(pd_data->dev, "got PS_READY.\n");
+			dev_dbg_once(pd_data->dev, "got PS_READY.\n");
 #ifdef CONFIG_USB_TYPEC_MANAGER_NOTIFIER
 			pd_noti.sink_status.current_pdo_num =
 					pd_noti.sink_status.selected_pdo_num;
@@ -701,7 +701,7 @@ static policy_state sm5713_usbpd_policy_snk_ready(
 	int data_role = 0, i = 0;
 	unsigned int ret;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	sm5713_usbpd_power_ready(pd_data->dev, TYPE_C_ATTACH_SNK);
 
@@ -730,7 +730,7 @@ static policy_state sm5713_usbpd_policy_snk_hard_reset(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	struct sm5713_phydrv_data *pdic_data = pd_data->phy_driver_data;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.hard_reset(pd_data);
 		pd_data->counter.hard_reset_counter++;
@@ -746,7 +746,7 @@ static policy_state sm5713_usbpd_policy_snk_transition_to_default(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	pd_data->phy_ops.driver_reset(pd_data);
 
@@ -760,7 +760,7 @@ static policy_state sm5713_usbpd_policy_snk_give_sink_cap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 #ifdef CONFIG_USB_TYPEC_MANAGER_NOTIFIER
 		pd_noti.sink_status.selected_pdo_num = 0;
@@ -799,7 +799,7 @@ static policy_state sm5713_usbpd_policy_snk_get_source_cap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
 				USBPD_Get_Source_Cap, USBPD_UFP, USBPD_SINK);
@@ -817,7 +817,7 @@ static policy_state sm5713_usbpd_policy_snk_send_soft_reset(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_init_protocol(pd_data);
@@ -859,7 +859,7 @@ static policy_state sm5713_usbpd_policy_snk_give_source_cap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Source_Capabilities;
 		policy->tx_msg_header.port_data_role = USBPD_UFP;
@@ -897,7 +897,7 @@ static policy_state sm5713_usbpd_policy_drs_evaluate_port(
 	int data_role = 0;
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->modal_operation) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -923,7 +923,7 @@ static policy_state sm5713_usbpd_policy_drs_evaluate_send_port(
 	int data_role = 0;
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->modal_operation) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -948,7 +948,7 @@ static policy_state sm5713_usbpd_policy_drs_dfp_ufp_evaluate_dr_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	bool drs_ok;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_DR_SWAP_EVAL */
 	drs_ok = sm5713_usbpd_data_role_swap(pd_data);
 
@@ -964,7 +964,7 @@ static policy_state sm5713_usbpd_policy_drs_dfp_ufp_accept_dr_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_DR_SWAP_ACCEPT */
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -996,7 +996,7 @@ static policy_state sm5713_usbpd_policy_drs_dfp_ufp_change_to_ufp(
 	if (pdic_data->typec_try_state_change == TRY_ROLE_SWAP_DR &&
 		pdic_data->pd_support) {
 		/* Role change try and new mode detected */
-		dev_info(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
 		pdic_data->typec_try_state_change = TRY_ROLE_SWAP_NONE;
 		complete(&pdic_data->typec_reverse_completion);
 	}
@@ -1015,7 +1015,7 @@ static policy_state sm5713_usbpd_policy_drs_dfp_ufp_send_dr_swap(
 	int power_role = 0;
 	unsigned int msg;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 	/* ST_PE_DR_SWAP_SEND */
 	if (policy->last_state != policy->state) {
@@ -1042,7 +1042,7 @@ static policy_state sm5713_usbpd_policy_drs_dfp_ufp_reject_dr_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_DR_SWAP_REJECT */
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 	if (policy->last_state != policy->state) {
@@ -1065,7 +1065,7 @@ static policy_state sm5713_usbpd_policy_drs_ufp_dfp_evaluate_dr_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	bool drs_ok;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_DR_SWAP_EVAL */
 	drs_ok = sm5713_usbpd_data_role_swap(pd_data);
 
@@ -1081,7 +1081,7 @@ static policy_state sm5713_usbpd_policy_drs_ufp_dfp_accept_dr_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_DR_SWAP_ACCEPT */
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -1110,7 +1110,7 @@ static policy_state sm5713_usbpd_policy_drs_ufp_dfp_change_to_dfp(
 	if (pdic_data->typec_try_state_change == TRY_ROLE_SWAP_DR &&
 		pdic_data->pd_support) {
 		/* Role change try and new mode detected */
-		dev_info(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
 		pdic_data->typec_try_state_change = TRY_ROLE_SWAP_NONE;
 		complete(&pdic_data->typec_reverse_completion);
 	}
@@ -1128,7 +1128,7 @@ static policy_state sm5713_usbpd_policy_drs_ufp_dfp_send_dr_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 	/* ST_PE_DR_SWAP_SEND */
 	if (policy->last_state != policy->state) {
@@ -1157,7 +1157,7 @@ static policy_state sm5713_usbpd_policy_drs_ufp_dfp_reject_dr_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_DR_SWAP_REJECT */
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -1179,7 +1179,7 @@ static policy_state sm5713_usbpd_policy_prs_src_snk_reject_pr_swap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_REJECT */
 	if (policy->last_state != policy->state)
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -1195,7 +1195,7 @@ static policy_state sm5713_usbpd_policy_prs_src_snk_evaluate_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	bool prs_ok;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_EVAL */
 	prs_ok = sm5713_usbpd_power_role_swap(pd_data);
 
@@ -1284,7 +1284,7 @@ static policy_state sm5713_usbpd_policy_prs_src_snk_wait_source_on(
 		/* need to check 'tx_done'? => tx error - error_recovery */
 		if (sm5713_usbpd_wait_msg(pd_data, MSG_PSRDY, tPSSourceOn)) {
 			pd_data->counter.swap_hard_reset_counter = 0;
-			dev_info(pd_data->dev, "got PSRDY.\n");
+			dev_dbg_once(pd_data->dev, "got PSRDY.\n");
 			/* CC State Hold Off */
 			sm5713_cc_state_hold_on_off(pd_data, 0);
 #if defined(CONFIG_TYPEC)
@@ -1293,7 +1293,7 @@ static policy_state sm5713_usbpd_policy_prs_src_snk_wait_source_on(
 				pdic_data->typec_power_role = TYPEC_SINK;
 				typec_set_pwr_role(pdic_data->port, pdic_data->typec_power_role);
 				/* Role change try and new mode detected */
-				dev_info(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
+				dev_dbg_once(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
 				pdic_data->typec_try_state_change = TRY_ROLE_SWAP_NONE;
 				complete(&pdic_data->typec_reverse_completion);
 			}
@@ -1321,7 +1321,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_reject_swap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_REJECT */
 	if (policy->last_state != policy->state)
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -1337,7 +1337,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_evaluate_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	bool prs_ok;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_EVAL */
 	prs_ok = sm5713_usbpd_power_role_swap(pd_data);
 
@@ -1352,7 +1352,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_send_swap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_SEND */
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -1378,7 +1378,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_accept_swap(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_ACCEPT */
 	if (policy->last_state != policy->state) {
 		sm5713_usbpd_send_ctrl_msg(pd_data, &policy->tx_msg_header,
@@ -1403,7 +1403,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_transition_to_off(
 		sm5713_usbpd_turn_off_power_sink(pd_data);
 		if (sm5713_usbpd_wait_msg(pd_data, MSG_PSRDY, tPSSourceOff)) {
 			pd_data->counter.swap_hard_reset_counter = 0;
-			dev_info(pd_data->dev, "got PSRDY.\n");
+			dev_dbg_once(pd_data->dev, "got PSRDY.\n");
 			manager->pn_flag = true;
 			return PE_PRS_SNK_SRC_Assert_Rp;
 		}
@@ -1422,7 +1422,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_assert_rp(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_ASSERT_RP */
 	pd_data->phy_ops.set_power_role(pd_data, USBPD_SOURCE);
 
@@ -1436,7 +1436,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_source_on(
 #if defined(CONFIG_TYPEC)
 	struct sm5713_phydrv_data *pdic_data = pd_data->phy_driver_data;
 #endif
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_PR_SWAP_SRC_ON */
 
 	if (policy->last_state != policy->state) {
@@ -1453,7 +1453,7 @@ static policy_state sm5713_usbpd_policy_prs_snk_src_source_on(
 			pdic_data->typec_power_role = TYPEC_SOURCE;
 			typec_set_pwr_role(pdic_data->port, pdic_data->typec_power_role);
 			/* Role change try and new mode detected */
-			dev_info(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
+			dev_dbg_once(pd_data->dev, "%s - typec_reverse_completion\n", __func__);
 			pdic_data->typec_try_state_change = TRY_ROLE_SWAP_NONE;
 			complete(&pdic_data->typec_reverse_completion);
 		}
@@ -1475,7 +1475,7 @@ static policy_state sm5713_usbpd_policy_vcs_evaluate_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	bool vcs_ok;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	vcs_ok = sm5713_usbpd_vconn_source_swap(pd_data);
 	/* ST_PE_VC_SWAP_EVAL */
 	if (vcs_ok)
@@ -1541,12 +1541,12 @@ static policy_state sm5713_usbpd_policy_vcs_wait_for_vconn(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 	/* ST_PE_VC_SWAP_WAIT */
 	if (sm5713_usbpd_wait_msg(pd_data, MSG_PSRDY, tVCONNSourceOn)) {
 		pd_data->counter.swap_hard_reset_counter = 0;
-		dev_info(pd_data->dev, "got PSRDY.\n");
+		dev_dbg_once(pd_data->dev, "got PSRDY.\n");
 		return PE_VCS_Turn_Off_VCONN;
 	}
 
@@ -1564,7 +1564,7 @@ static policy_state sm5713_usbpd_policy_vcs_turn_off_vconn(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_VC_SWAP_OFF */
 	pd_data->phy_ops.set_vconn_source(pd_data, USBPD_VCONN_OFF);
 
@@ -1579,7 +1579,7 @@ static policy_state sm5713_usbpd_policy_vcs_turn_on_vconn(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_VC_SWAP_ON */
 	pd_data->phy_ops.set_vconn_source(pd_data, USBPD_VCONN_ON);
 	msleep(tVCONNSourceOff);
@@ -1593,7 +1593,7 @@ static policy_state sm5713_usbpd_policy_vcs_send_ps_rdy(
 	int power_role = 0;
 	int data_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_VC_SWAP_PS_RDY */
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 	pd_data->phy_ops.get_data_role(pd_data, &data_role);
@@ -1620,7 +1620,7 @@ static policy_state sm5713_usbpd_policy_vcs_reject_vconn_swap(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/* ST_PE_VC_SWAP_REJECT */
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
@@ -1654,7 +1654,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_send_identity(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1702,7 +1702,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_get_identity_nak(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s, power_role = %d\n", __func__, power_role);
+	dev_dbg_once(pd_data->dev, "%s, power_role = %d\n", __func__, power_role);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1746,7 +1746,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_send_svids(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1784,7 +1784,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_get_svids_nak(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1827,7 +1827,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_send_modes(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1862,7 +1862,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_get_modes_nak(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1896,7 +1896,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_evaluate_mode_entry(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return PE_UFP_VDM_Mode_Entry_NAK;
 }
@@ -1909,7 +1909,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_mode_entry_ack(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1944,7 +1944,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_mode_entry_nak(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -1979,7 +1979,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_mode_exit(
 /*
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (pd_data->phy_ops.get_status(pd_data, VDM_EXIT_MODE)) {
 		if (policy->rx_data_obj[0].structured_vdm.command
@@ -2008,7 +2008,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_mode_exit_ack(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -2043,7 +2043,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_mode_exit_nak(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -2080,7 +2080,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_attention_request(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -2110,7 +2110,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_evaluate_status(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return PE_UFP_VDM_Evaluate_Status;
 }
@@ -2123,7 +2123,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_status_ack(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -2159,7 +2159,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_status_nak(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -2194,7 +2194,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_evaluate_configure(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return PE_UFP_VDM_Evaluate_Configure;
 }
@@ -2207,7 +2207,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_configure_ack(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -2243,7 +2243,7 @@ static policy_state sm5713_usbpd_policy_ufp_vdm_configure_nak(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		policy->tx_msg_header.msg_type = USBPD_Vendor_Defined;
@@ -2279,7 +2279,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_identity_request(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -2308,15 +2308,15 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_identity_request(
 					VDM_DISCOVER_IDENTITY, tVDMSenderResponse)) {
 				pd_data->counter.discover_identity_counter = 0;
 
-				dev_info(pd_data->dev, "Msg header objs(%d)\n",
+				dev_dbg_once(pd_data->dev, "Msg header objs(%d)\n",
 					policy->rx_msg_header.num_data_objs);
-				dev_info(pd_data->dev, "VDM header type(%d)\n",
+				dev_dbg_once(pd_data->dev, "VDM header type(%d)\n",
 					policy->rx_data_obj[0].structured_vdm.command_type);
-				dev_info(pd_data->dev, "ID Header VDO 0x%x\n",
+				dev_dbg_once(pd_data->dev, "ID Header VDO 0x%x\n",
 					policy->rx_data_obj[1].object);
-				dev_info(pd_data->dev, "Cert Stat VDO 0x%x\n",
+				dev_dbg_once(pd_data->dev, "Cert Stat VDO 0x%x\n",
 					policy->rx_data_obj[2].object);
-				dev_info(pd_data->dev, "Product VDO 0x%x\n",
+				dev_dbg_once(pd_data->dev, "Product VDO 0x%x\n",
 					policy->rx_data_obj[3].object);
 
 				if (policy->rx_data_obj[0].structured_vdm.command_type == Responder_ACK)
@@ -2355,7 +2355,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_identity_acked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 				MANAGER_DISCOVER_IDENTITY_ACKED);
@@ -2366,7 +2366,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_identity_naked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 				MANAGER_DISCOVER_IDENTITY_NAKED);
@@ -2378,7 +2378,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_svids_request(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -2419,7 +2419,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_svids_acked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 				MANAGER_DISCOVER_SVID_ACKED);
@@ -2430,7 +2430,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_svids_naked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 				MANAGER_DISCOVER_SVID_NAKED);
@@ -2443,7 +2443,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_modes_request(
 	struct sm5713_usbpd_manager_data *manager = &pd_data->manager;
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -2472,26 +2472,26 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_modes_request(
 						if ((policy->rx_data_obj[1].displayport_capabilities.port_capability == UFP_D_Capable) &&
 								(policy->rx_data_obj[1].displayport_capabilities.receptacle_indication == USB_TYPE_C_Receptacle)) {
 							manager->pin_assignment = policy->rx_data_obj[1].displayport_capabilities.ufp_d_pin_assignments;
-							dev_info(pd_data->dev, "1. support UFP_D 0x%08x\n", manager->pin_assignment);
+							dev_dbg_once(pd_data->dev, "1. support UFP_D 0x%08x\n", manager->pin_assignment);
 						} else if ((policy->rx_data_obj[1].displayport_capabilities.port_capability == UFP_D_Capable) &&
 								(policy->rx_data_obj[1].displayport_capabilities.receptacle_indication == USB_TYPE_C_PLUG)) {
 							manager->pin_assignment = policy->rx_data_obj[1].displayport_capabilities.dfp_d_pin_assignments;
-							dev_info(pd_data->dev, "2. support DFP_D 0x%08x\n", manager->pin_assignment);
+							dev_dbg_once(pd_data->dev, "2. support DFP_D 0x%08x\n", manager->pin_assignment);
 						} else if (policy->rx_data_obj[1].displayport_capabilities.port_capability == DFP_D_and_UFP_D_Capable) {
 							if (policy->rx_data_obj[1].displayport_capabilities.receptacle_indication == USB_TYPE_C_PLUG) {
 								manager->pin_assignment = policy->rx_data_obj[1].displayport_capabilities.dfp_d_pin_assignments;
-								dev_info(pd_data->dev, "3. support DFP_D 0x%08x\n", manager->pin_assignment);
+								dev_dbg_once(pd_data->dev, "3. support DFP_D 0x%08x\n", manager->pin_assignment);
 							} else {
 								manager->pin_assignment = policy->rx_data_obj[1].displayport_capabilities.ufp_d_pin_assignments;
-								dev_info(pd_data->dev, "4. support UFP_D 0x%08x\n", manager->pin_assignment);
+								dev_dbg_once(pd_data->dev, "4. support UFP_D 0x%08x\n", manager->pin_assignment);
 							}
 						} else if (policy->rx_data_obj[1].displayport_capabilities.port_capability == DFP_D_Capable) {
 							manager->pin_assignment = DE_SELECT_PIN;
-							dev_info(pd_data->dev, "do not support Port_Capability DFP_D_Capable\n");
+							dev_dbg_once(pd_data->dev, "do not support Port_Capability DFP_D_Capable\n");
 							return PE_DFP_VDM_Modes_NAKed;
 						} else {
 							manager->pin_assignment = DE_SELECT_PIN;
-							dev_info(pd_data->dev, "there is not valid object information\n");
+							dev_dbg_once(pd_data->dev, "there is not valid object information\n");
 							return PE_DFP_VDM_Modes_NAKed;
 						}
 					}
@@ -2512,7 +2512,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_modes_acked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 				MANAGER_DISCOVER_MODE_ACKED);
@@ -2523,7 +2523,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_modes_naked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 				MANAGER_DISCOVER_MODE_NAKED);
@@ -2536,7 +2536,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_entry_request(
 	struct sm5713_usbpd_manager_data *manager = &pd_data->manager;
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -2579,7 +2579,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_entry_acked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_ENTER_MODE_ACKED);
@@ -2590,7 +2590,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_entry_naked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_ENTER_MODE_NAKED);
@@ -2602,7 +2602,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_exit_request(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -2641,7 +2641,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_exit_acked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_EXIT_MODE_ACKED);
@@ -2652,7 +2652,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_exit_naked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_EXIT_MODE_NAKED);
@@ -2667,7 +2667,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_attention_request(
 	int hpd = 0;
 	int hpdirq = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		if (manager->SVID_0 == PD_SID_1) {
@@ -2679,7 +2679,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_attention_request(
 			if (policy->rx_data_obj[1].displayport_status.irq_hpd == 1)
 				hpdirq = 2;
 
-			pr_info("%s : dp_selected_pin : %d, hpd : %d, hpdirq : %d\n",
+			pr_debug_once("%s : dp_selected_pin : %d, hpd : %d, hpdirq : %d\n",
 					__func__, manager->dp_selected_pin,
 					hpd, hpdirq);
 			sm5713_ccic_event_work(pdic_data,
@@ -2703,7 +2703,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update(
 	int hpd = 0;
 	int hpdirq = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -2729,14 +2729,14 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update(
 		policy->tx_data_obj[1].object = 0;
 		policy->tx_data_obj[1].displayport_status.port_connected =
 				Connect_DFP_D;
-		dev_info(pd_data->dev, "%s %d\n", __func__, __LINE__);
+		dev_dbg_once(pd_data->dev, "%s %d\n", __func__, __LINE__);
 
 		sm5713_usbpd_send_msg(pd_data, &policy->tx_msg_header,
 				policy->tx_data_obj);
 	} else if (pd_data->protocol_tx.status != DEFAULT_PROTOCOL_NONE) {
 		if (pd_data->protocol_tx.status == MESSAGE_SENT) {
 			if (sm5713_usbpd_wait_msg(pd_data, VDM_DP_STATUS_UPDATE, tVDMSenderResponse)) {
-				pr_info("%s : command(%d), command_type(%d), obj_pos(%d), version(%d), vdm_type(%d)\n",
+				pr_debug_once("%s : command(%d), command_type(%d), obj_pos(%d), version(%d), vdm_type(%d)\n",
 					__func__, policy->rx_data_obj[0].structured_vdm.command,
 				policy->rx_data_obj[0].structured_vdm.command_type,
 				policy->rx_data_obj[0].structured_vdm.obj_pos,
@@ -2745,7 +2745,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update(
 
 				if (policy->rx_data_obj[0].structured_vdm.command_type == Responder_ACK) {
 					if (policy->rx_data_obj[1].displayport_status.port_connected == 0x00) {
-						pr_info("%s : port disconnected!\n", __func__);
+						pr_debug_once("%s : port disconnected!\n", __func__);
 					} else {
 						if (policy->rx_data_obj[1].displayport_status.multi_function_preferred == 1) {
 							if (manager->pin_assignment & PIN_ASSIGNMENT_D)
@@ -2755,7 +2755,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update(
 							else if (manager->pin_assignment & PIN_ASSIGNMENT_F)
 								manager->dp_selected_pin = 6;
 							else
-								pr_info("%s : Wrong pin assignment value\n", __func__);
+								pr_debug_once("%s : Wrong pin assignment value\n", __func__);
 						} else {
 							if (manager->pin_assignment & PIN_ASSIGNMENT_C)
 								manager->dp_selected_pin = 3;
@@ -2770,7 +2770,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update(
 							else if (manager->pin_assignment & PIN_ASSIGNMENT_F)
 								manager->dp_selected_pin = 6;
 							else
-								pr_info("%s : Wrong pin assignment value\n", __func__);
+								pr_debug_once("%s : Wrong pin assignment value\n", __func__);
 						}
 
 						if (policy->rx_data_obj[1].displayport_status.hpd_state == 1)
@@ -2782,7 +2782,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update(
 							hpdirq = 2;
 
 						/* Notify to DP */
-						pr_info("%s : dp_selected_pin : %d, hpd : %d, hpdirq : %d\n",
+						pr_debug_once("%s : dp_selected_pin : %d, hpd : %d, hpdirq : %d\n",
 								__func__, manager->dp_selected_pin,
 								hpd, hpdirq);
 						sm5713_ccic_event_work(pdic_data,
@@ -2807,7 +2807,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update_acked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_STATUS_UPDATE_ACKED);
@@ -2818,7 +2818,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_status_update_naked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_STATUS_UPDATE_NAKED);
@@ -2833,7 +2833,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_displayport_configure(
 	int power_role = 0;
 	int pin_assignment = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	if (policy->last_state != policy->state) {
 		pd_data->phy_ops.get_power_role(pd_data, &power_role);
@@ -2919,7 +2919,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_displayport_configure_acked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_DisplayPort_Configure_ACKED);
@@ -2930,7 +2930,7 @@ static policy_state sm5713_usbpd_policy_dfp_vdm_displayport_configure_naked(
 {
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	return sm5713_usbpd_policy_dfp_vdm_response(policy,
 			MANAGER_DisplayPort_Configure_NACKED);
@@ -2943,7 +2943,7 @@ static policy_state sm5713_usbpd_policy_dfp_uvdm_send_message(
 	struct sm5713_usbpd_manager_data *manager = &pd_data->manager;
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	pd_data->phy_ops.set_check_msg_pass(pd_data, CHECK_MSG_PASS);
 
@@ -2964,7 +2964,7 @@ static policy_state sm5713_usbpd_policy_dfp_uvdm_receive_message(
 	struct sm5713_usbpd_data *pd_data = policy_to_usbpd(policy);
 	int power_role = 0;
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	sm5713_usbpd_inform_event(pd_data,
 		MANAGER_UVDM_RECEIVE_MESSAGE);
@@ -2982,17 +2982,17 @@ void sm5713_usbpd_policy_reset(
 {
 	if (flag == HARDRESET_RECEIVED) {
 		pd_data->policy.rx_hardreset = 1;
-		dev_info(pd_data->dev, "%s Hard reset\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s Hard reset\n", __func__);
 	} else if (flag == SOFTRESET_RECEIVED) {
 		pd_data->policy.rx_softreset = 1;
-		dev_info(pd_data->dev, "%s Soft reset\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s Soft reset\n", __func__);
 	} else if (flag == PLUG_EVENT) {
 		pd_data->policy.plug = 1;
 		pd_data->policy.plug_valid = 1;
-		dev_info(pd_data->dev, "%s ATTACHED\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s ATTACHED\n", __func__);
 	} else if (flag == PLUG_DETACHED) {
 		pd_data->policy.plug_valid = 0;
-		dev_info(pd_data->dev, "%s DETACHED\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s DETACHED\n", __func__);
 	}
 }
 
@@ -3004,7 +3004,7 @@ static policy_state sm5713_usbpd_policy_bist_carrier_m2(
 
 	pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	sm5713_set_bist_carrier_m2(pd_data);
 
@@ -3036,12 +3036,12 @@ void sm5713_usbpd_policy_work(struct work_struct *work)
 #endif
 	policy_state next_state = 0;
 
-	dev_info(pd_data->dev, "%s Start, last_state = %x, state = %x\n",
+	dev_dbg_once(pd_data->dev, "%s Start, last_state = %x, state = %x\n",
 		__func__, policy->last_state, policy->state);
 
 	do {
 		if (!policy->plug_valid) {
-			pr_info("%s : usbpd cable is empty\n", __func__);
+			pr_debug_once("%s : usbpd cable is empty\n", __func__);
 			break;
 		}
 		next_state = policy->state;
@@ -3051,7 +3051,7 @@ void sm5713_usbpd_policy_work(struct work_struct *work)
 			next_state = 0;
 		}
 
-		dev_info(pd_data->dev, "%s last_state = %x, next_state = %x, state = %x\n",
+		dev_dbg_once(pd_data->dev, "%s last_state = %x, next_state = %x, state = %x\n",
 				__func__, policy->last_state,
 				next_state, policy->state);
 		switch (next_state) {
@@ -3585,7 +3585,7 @@ void sm5713_usbpd_policy_work(struct work_struct *work)
 			pd_data->phy_ops.get_power_role(pd_data, &power_role);
 
 			if (power_role == USBPD_SINK) {
-				pr_info("%s, SINK\n", __func__);
+				pr_debug_once("%s, SINK\n", __func__);
 				if (policy->rx_hardreset) {
 					policy->rx_hardreset = 0;
 					policy->state =
@@ -3600,7 +3600,7 @@ void sm5713_usbpd_policy_work(struct work_struct *work)
 					policy->state = PE_SNK_Startup;
 				}
 			} else {
-				pr_info("%s, SOURCE\n", __func__);
+				pr_debug_once("%s, SOURCE\n", __func__);
 				if (policy->rx_hardreset) {
 					policy->rx_hardreset = 0;
 					policy->state =
@@ -3621,7 +3621,7 @@ void sm5713_usbpd_policy_work(struct work_struct *work)
 		policy->last_state = next_state;
 	} while (policy->state != next_state);
 
-	dev_info(pd_data->dev, "%s Finished, last_state = %x\n",
+	dev_dbg_once(pd_data->dev, "%s Finished, last_state = %x\n",
 			__func__, policy->last_state);
 }
 
@@ -3630,7 +3630,7 @@ void sm5713_usbpd_init_policy(struct sm5713_usbpd_data *pd_data)
 	int i;
 	struct sm5713_policy_data *policy = &pd_data->policy;
 
-	dev_info(pd_data->dev, "%s policy state = %x\n",
+	dev_dbg_once(pd_data->dev, "%s policy state = %x\n",
 			__func__, policy->state);
 
 	policy->state = 0;

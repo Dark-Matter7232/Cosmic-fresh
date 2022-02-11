@@ -25,7 +25,7 @@ extern struct pdic_notifier_struct pd_noti;
 void usbpd_timer1_start(struct usbpd_data *pd_data)
 {
 	do_gettimeofday(&pd_data->time1);
-	pr_info("%s, sec = %lld, usec = %lld\n", __func__,
+	pr_debug_once("%s, sec = %lld, usec = %lld\n", __func__,
 							pd_data->time1.tv_sec, pd_data->time1.tv_usec);
 }
 
@@ -130,7 +130,7 @@ void usbpd_init_protocol(struct usbpd_data *pd_data)
 
 void usbpd_init_counters(struct usbpd_data *pd_data)
 {
-	pr_info("%s: init counter\n", __func__);
+	pr_debug_once("%s: init counter\n", __func__);
 	pd_data->counter.retry_counter = 0;
 	pd_data->counter.message_id_counter = 0;
 	pd_data->counter.caps_counter = 0;
@@ -145,18 +145,18 @@ void usbpd_policy_reset(struct usbpd_data *pd_data, unsigned flag)
 {
 	if (flag == HARDRESET_RECEIVED) {
 		pd_data->policy.rx_hardreset = 1;
-		dev_info(pd_data->dev, "%s Hard reset\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s Hard reset\n", __func__);
 	} else if (flag == SOFTRESET_RECEIVED) {
 		pd_data->policy.rx_softreset = 1;
-		dev_info(pd_data->dev, "%s Soft reset\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s Soft reset\n", __func__);
 	} else if (flag == PLUG_EVENT) {
 		if (!pd_data->policy.plug_valid)
 			pd_data->policy.plug = 1;
 		pd_data->policy.plug_valid = 1;
-		dev_info(pd_data->dev, "%s ATTACHED\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s ATTACHED\n", __func__);
 	} else if (flag == PLUG_DETACHED) {
 		pd_data->policy.plug_valid = 0;
-		dev_info(pd_data->dev, "%s DETACHED\n", __func__);
+		dev_dbg_once(pd_data->dev, "%s DETACHED\n", __func__);
 		pd_data->counter.hard_reset_counter = 0;
 	}
 }
@@ -201,7 +201,7 @@ protocol_state usbpd_protocol_tx_layer_reset_for_transmit(struct protocol_data *
 {
 	struct usbpd_data *pd_data = protocol_tx_to_usbpd(tx);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 
 	pd_data->counter.message_id_counter = 0;
 	pd_data->protocol_rx.state = PRL_Rx_Wait_for_PHY_Message;
@@ -239,9 +239,9 @@ protocol_state usbpd_protocol_tx_wait_for_phy_response(struct protocol_data *tx)
 
 	for (CrcCheck_cnt = 0; CrcCheck_cnt < 2; CrcCheck_cnt++) {
 		if (pd_data->phy_ops.get_status(pd_data, MSG_GOODCRC)) {
-			pr_info("%s : %p\n", __func__, pd_data);
+			pr_debug_once("%s : %p\n", __func__, pd_data);
 			state = PRL_Tx_Message_Sent;
-			dev_info(pd_data->dev, "got GoodCRC.\n");
+			dev_dbg_once(pd_data->dev, "got GoodCRC.\n");
 			return state;
 		}
 
@@ -262,7 +262,7 @@ protocol_state usbpd_protocol_tx_match_messageid(struct protocol_data *tx)
 	struct usbpd_data *pd_data = protocol_tx_to_usbpd(protocol_tx);
 	protocol_state state = PRL_Tx_Match_MessageID;
 
-	dev_info(pd_data->dev, "%s\n",__func__);
+	dev_dbg_once(pd_data->dev, "%s\n",__func__);
 
 	if (pd_data->protocol_rx.msg_header.msg_id
 			== pd_data->counter.message_id_counter)
@@ -382,7 +382,7 @@ protocol_state usbpd_protocol_rx_layer_reset_for_receive(struct protocol_data *r
 {
 	struct usbpd_data *pd_data = protocol_rx_to_usbpd(rx);
 
-	dev_info(pd_data->dev, "%s\n", __func__);
+	dev_dbg_once(pd_data->dev, "%s\n", __func__);
 	/*
 	rx_layer_init(protocol_rx);
 	pd_data->protocol_tx.state = PRL_Tx_PHY_Layer_Reset;
@@ -594,7 +594,7 @@ inline unsigned usbpd_wait_msg(struct usbpd_data *pd_data,
 		return ret;
 	}
 
-	pr_info("%s, %d\n", __func__, __LINE__);
+	pr_debug_once("%s, %d\n", __func__, __LINE__);
 	/* wait */
 	reinit_completion(&pd_data->msg_arrived);
 	pd_data->wait_for_msg_arrived = msg_status;

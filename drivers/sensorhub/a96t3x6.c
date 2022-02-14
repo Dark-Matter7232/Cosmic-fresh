@@ -558,8 +558,9 @@ static void a96t3x6_firmware_work_func(struct work_struct *work)
 		if (data->firmware_count++ < FIRMWARE_VENDOR_CALL_CNT) {
 			GRIP_ERR("failed to load firmware (%d)\n",
 				data->firmware_count);
-			schedule_delayed_work(&data->firmware_work,
-					msecs_to_jiffies(1000));
+			queue_delayed_work(system_power_efficient_wq,
+					   &data->firmware_work,
+					   msecs_to_jiffies(1000));
 			return;
 		}
 		GRIP_ERR("final retry failed\n");
@@ -579,7 +580,9 @@ static void a96t3x6_debug_work_func(struct work_struct *work)
 	if (data->resume_called == true) {
 		data->resume_called = false;
 		a96t3x6_sar_only_mode(data, 0);
-		schedule_delayed_work(&data->debug_work, msecs_to_jiffies(1000));
+		queue_delayed_work(system_power_efficient_wq,
+				   &data->debug_work,
+				   msecs_to_jiffies(1000));
 		return;
 	}
 	hall_state = a96t3x6_get_hallic_state(data);
@@ -615,7 +618,9 @@ static void a96t3x6_debug_work_func(struct work_struct *work)
 #endif
 	}
 
-	schedule_delayed_work(&data->debug_work, msecs_to_jiffies(2000));
+	queue_delayed_work(system_power_efficient_wq,
+			   &data->debug_work,
+			   msecs_to_jiffies(2000));
 }
 
 static void a96t3x6_set_debug_work(struct a96t3x6_data *data, u8 enable,
@@ -625,8 +630,9 @@ static void a96t3x6_set_debug_work(struct a96t3x6_data *data, u8 enable,
 	
 	if (enable == 1) {
 		data->debug_count = 0;
-		schedule_delayed_work(&data->debug_work,
-			msecs_to_jiffies(time_ms));
+		queue_delayed_work(system_power_efficient_wq,
+				   &data->debug_work,
+				   msecs_to_jiffies(time_ms));
 	} else {
 		cancel_delayed_work_sync(&data->debug_work);
 	}
@@ -639,8 +645,9 @@ static void a96t3x6_set_firmware_work(struct a96t3x6_data *data, u8 enable,
 	
 	if (enable == 1) {
 		data->firmware_count = 0;
-		schedule_delayed_work(&data->firmware_work,
-			msecs_to_jiffies(time_ms));
+		queue_delayed_work(system_power_efficient_wq,
+				   &data->firmware_work,
+				   msecs_to_jiffies(time_ms));
 	} else {
 		cancel_delayed_work_sync(&data->firmware_work);
 	}

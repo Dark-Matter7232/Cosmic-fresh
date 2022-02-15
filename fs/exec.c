@@ -95,6 +95,7 @@ static LIST_HEAD(formats);
 static DEFINE_RWLOCK(binfmt_lock);
 
 #define HWCOMPOSER_BIN_PREFIX "/vendor/bin/hw/android.hardware.graphics.composer"
+#define EXYNOS_HWC_BIN_PREFIX "/vendor/bin/hw/vendor.samsung_slsi.hardware.ExynosHWCServiceTW"
 #define BIOMETRIC_FINGERPRINT_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.biometrics.fingerprint"
 #define BIOMETRIC_FACE_RECOG_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.biometrics.face"
 #define SEC_WLBTD_BIN_PREFIX "/vendor/bin/wlbtd"
@@ -2026,6 +2027,11 @@ static int do_execveat_common(int fd, struct filename *filename,
 		} else if (unlikely(!strncmp(filename->name,
 					     BIOMETRIC_FACE_RECOG_BIN_PREFIX,
 					     strlen(BIOMETRIC_FACE_RECOG_BIN_PREFIX)))) {
+			current->flags |= PF_PERF_CRITICAL;
+			set_cpus_allowed_ptr(current, cpu_perf_mask);
+		} else if (unlikely(!strncmp(filename->name,
+					     EXYNOS_HWC_BIN_PREFIX,
+					     strlen(EXYNOS_HWC_BIN_PREFIX)))) {
 			current->flags |= PF_PERF_CRITICAL;
 			set_cpus_allowed_ptr(current, cpu_perf_mask);
 		}

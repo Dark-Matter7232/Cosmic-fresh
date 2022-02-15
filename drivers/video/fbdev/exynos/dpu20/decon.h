@@ -109,6 +109,7 @@ extern struct decon_bts_ops decon_bts_control;
 #define MAX_DSC_SLICE_CNT	4
 
 void dpu_debug_printk(const char *function_name, const char *format, ...);
+#ifdef CONFIG_DEBUG_KERNEL
 #define decon_err(fmt, ...)							\
 	do {									\
 		if (decon_log_level >= 3) {					\
@@ -176,6 +177,19 @@ void dpu_debug_printk(const char *function_name, const char *format, ...);
 		if (dpu_mres_log_level >= 3)					\
 			dpu_debug_printk("MRES", fmt, ##args);			\
 	} while (0)
+#else
+#define decon_err(fmt, ...)		do { } while (0)
+#define decon_warn(fmt, ...)		do { } while (0)
+#define decon_info(fmt, ...)		do { } while (0)
+#define decon_dbg(fmt, ...)		do { } while (0)
+#define DPU_DEBUG_WIN(fmt, args...)	do { } while (0)
+#define DPU_DEBUG_BTS(fmt, args...)	do { } while (0)
+#define DPU_INFO_BTS(fmt, args...)	do { } while (0)
+#define DPU_ERR_BTS(fmt, args...)	do { } while (0)
+#define DPU_DEBUG_MRES(fmt, args...)	do { } while (0)
+#define DPU_INFO_MRES(fmt, args...)	do { } while (0)
+#define DPU_ERR_MRES(fmt, args...)	do { } while (0)
+#endif
 
 /* DECON systrace related */
 void tracing_mark_write(struct decon_device *decon, char id, char *str1, int value);

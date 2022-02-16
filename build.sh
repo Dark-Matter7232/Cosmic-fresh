@@ -12,7 +12,6 @@ ORIGIN_DIR=$(pwd)
 BUILD_PREF_COMPILER='clang'
 BUILD_PREF_COMPILER_VERSION='proton'
 TOOLCHAIN=$(pwd)/build-shit/toolchain
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
 # export environment variables
 export_env_vars() {
     export KBUILD_BUILD_USER=Const

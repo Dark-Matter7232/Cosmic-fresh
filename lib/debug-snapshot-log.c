@@ -248,9 +248,10 @@ unsigned long sec_debug_get_kevent_index_addr(int type)
 	case DSS_KEVENT_IRQ:
 		return virt_to_phys(&(dss_idx.irq_log_idx[0]));
 
+#ifdef CONFIG_DEBUG_SNAPSHOT_FREQ
 	case DSS_KEVENT_FREQ:
 		return virt_to_phys(&(dss_idx.freq_log_idx));
-
+#endif
 	case DSS_KEVENT_IDLE:
 		return virt_to_phys(&(dss_idx.cpuidle_log_idx[0]));
 

@@ -115,12 +115,14 @@ void sec_debug_get_kevent_info(struct ess_info_offset *p, int type)
 		p->per_core = 1;
 		break;
 
+#ifdef CONFIG_DEBUG_SNAPSHOT_FREQ
 	case DSS_KEVENT_FREQ:
 		p->base = kevent_base_pa + (unsigned long)(dss_log->freq) - kevent_base_va;
 		p->nr = DSS_LOG_MAX_NUM;
 		p->size = sizeof(struct __freq_log);
 		p->per_core = 0;
 		break;
+#endif
 
 	case DSS_KEVENT_IDLE:
 		p->base = kevent_base_pa + (unsigned long)(dss_log->cpuidle) - kevent_base_va;

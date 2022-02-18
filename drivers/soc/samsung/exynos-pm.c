@@ -679,12 +679,13 @@ static __init int exynos_pm_drvinit(void)
 			pr_err("%s %s: unabled to get wakeup_stat value from DT\n",
 					EXYNOS_PM_PREFIX, __func__);
 			BUG();
-		} else if (ret > 0) {
+		} 
+#ifdef CONFIG_SEC_PM_DEBUG
+		else if (ret > 0) {
 			pm_info->num_wakeup_stat = ret;
 			pm_info->wakeup_stat = kzalloc(sizeof(unsigned int) * ret, GFP_KERNEL);
 			of_property_read_u32_array(np, "wakeup_stat", pm_info->wakeup_stat, ret);
 		}
-#ifdef CONFIG_SEC_PM_DEBUG
 		parse_dt_wakeup_stat_names(np);
 #endif /* CONFIG_SEC_PM_DEBUG */
 	} else {

@@ -2786,7 +2786,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(device_move);
 
-static void *get_cls_shutdown_func(struct device *dev)
+static void __maybe_unused *get_cls_shutdown_func (struct device *dev)
 {
 	if (!dev || !dev->class)
 		return NULL;
@@ -2794,7 +2794,7 @@ static void *get_cls_shutdown_func(struct device *dev)
 	return dev->class->shutdown_pre;
 }
 
-static void *get_bus_shutdown_func(struct device *dev)
+static void __maybe_unused *get_bus_shutdown_func (struct device *dev)
 {
 	if (!dev || !dev->bus || !dev->driver)
 		return NULL;
@@ -2805,7 +2805,7 @@ static void *get_bus_shutdown_func(struct device *dev)
 		return dev->bus->shutdown;
 }
 
-static void *get_drv_shutdown_func(struct device *dev)
+static void __maybe_unused *get_drv_shutdown_func (struct device *dev)
 {
 	if (!dev || !dev->bus || !dev->driver)
 		return NULL;

@@ -104,7 +104,7 @@ static int request_spu_firmware(struct ssp_data *data, u8 **fw_buf)
 		kfree(file_buf);
 		return 0;
 	}
-
+#ifdef CONFIG_SPU_VERIFY
 	// check signing
 	fw_size = spu_firmware_signature_verify("SENSORHUB", file_buf, file_size);
 	if (fw_size < 0) {
@@ -140,7 +140,7 @@ static int request_spu_firmware(struct ssp_data *data, u8 **fw_buf)
 			fw_size = 0;
 	}
 	kfree(file_buf);
-
+#endif
 	return (int)fw_size;
 }
 

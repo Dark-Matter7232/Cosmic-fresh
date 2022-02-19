@@ -1084,7 +1084,9 @@ ERROR:
 /**
  * Update firmware from external storage
  */
+#ifdef CONFIG_SPU_VERIFY
 extern int long spu_firmware_signature_verify(const char* fw_name, const u8* fw_data, const long fw_size);
+#endif
 int mms_fw_update_from_storage(struct mms_ts_info *info, bool force, bool signing, const char *file_path)
 {
 	struct file *fp;
@@ -1153,7 +1155,7 @@ int mms_fw_update_from_storage(struct mms_ts_info *info, bool force, bool signin
 				vfree(fw_data);
 				goto ERROR;
 			}
-
+#ifdef CONFIG_SPU_VERIFY
 			spu_ret = spu_firmware_signature_verify("TSP", spu_fw_data, spu_fw_size);
 			if (spu_ret != fw_size) {
 				input_err(true, &info->client->dev, "%s: signature verify failed, %zu\n",
@@ -1163,7 +1165,7 @@ int mms_fw_update_from_storage(struct mms_ts_info *info, bool force, bool signin
 				vfree(fw_data);
 				goto ERROR;
 			}
-
+#endif
 			memcpy(fw_data, spu_fw_data, fw_size);
 			vfree(spu_fw_data);
 		} else {

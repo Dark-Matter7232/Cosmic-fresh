@@ -96,11 +96,11 @@ static int isc_read_status(struct mms_ts_info *info)
 		},
 	};
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	do {
 		if (i2c_transfer(info->client->adapter, msg, ARRAY_SIZE(msg)) != ARRAY_SIZE(msg)) {
-			input_err(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
+			input_silence(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
 			ret = -1;
 			goto error;
 		}
@@ -112,25 +112,25 @@ static int isc_read_status(struct mms_ts_info *info)
 			ret = -1;
 			usleep_range(1 * 1000, 1 * 1000);
 		} else {
-			input_err(true, &info->client->dev, "%s [ERROR] wrong status [0x%02X]\n", __func__, result);
+			input_silence(true, &info->client->dev, "%s [ERROR] wrong status [0x%02X]\n", __func__, result);
 			ret = -1;
 			usleep_range(1 * 1000, 1 * 1000);
 		}
 	} while (--cnt);
 
 	if (!cnt) {
-		input_err(true, &info->client->dev,
+		input_silence(true, &info->client->dev,
 			"%s [ERROR] count overflow - cnt [%d] status [0x%02X]\n",
 			__func__, cnt, result);
 		goto error;
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 
 	return ret;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return ret;
 }
 
@@ -149,10 +149,10 @@ static int isc_erase_mass(struct mms_ts_info *info)
 		},
 	};
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	if (i2c_transfer(info->client->adapter, msg, ARRAY_SIZE(msg)) != ARRAY_SIZE(msg)) {
-		input_err(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
 		goto error;
 	}
 
@@ -160,12 +160,12 @@ static int isc_erase_mass(struct mms_ts_info *info)
 		goto error;
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 
 	return 0;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return -1;
 }
 
@@ -189,24 +189,24 @@ static int isc_read_page(struct mms_ts_info *info, int addr, u8 *data)
 		},
 	};
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	write_buf[4] = (u8)((addr >> 24) & 0xFF);
 	write_buf[5] = (u8)((addr >> 16) & 0xFF);
 	write_buf[6] = (u8)((addr >> 8) & 0xFF);
 	write_buf[7] = (u8)(addr & 0xFF);
 	if (i2c_transfer(info->client->adapter, msg, ARRAY_SIZE(msg)) != ARRAY_SIZE(msg)) {
-		input_err(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
 		goto error;
 	}
 
-	input_dbg(false, &info->client->dev, "%s - addr[0x%04X]\n", __func__, addr);
+	input_silence(false, &info->client->dev, "%s - addr[0x%04X]\n", __func__, addr);
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return -1;
 }
 
@@ -217,10 +217,10 @@ static int isc_write_page(struct mms_ts_info *info, int addr, const u8 *data, in
 {
 	u8 write_buf[8 + ISC_PAGE_SIZE] = ISC_CMD_PAGE_WRITE;
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	if (length > ISC_PAGE_SIZE) {
-		input_err(true, &info->client->dev, "%s [ERROR] page size limit [%d]\n", __func__, length);
+		input_silence(true, &info->client->dev, "%s [ERROR] page size limit [%d]\n", __func__, length);
 		goto error;
 	}
 
@@ -232,7 +232,7 @@ static int isc_write_page(struct mms_ts_info *info, int addr, const u8 *data, in
 	memcpy(&write_buf[8], data, length);
 
 	if (i2c_master_send(info->client, write_buf, (8 + length)) != (8 + length)) {
-		input_err(true, &info->client->dev, "%s [ERROR] i2c_master_send\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] i2c_master_send\n", __func__);
 		goto error;
 	}
 
@@ -240,13 +240,13 @@ static int isc_write_page(struct mms_ts_info *info, int addr, const u8 *data, in
 		goto error;
 	}
 
-	input_dbg(false, &info->client->dev, "%s - addr[0x%04X] length[%d]\n", __func__, addr, length);
+	input_silence(false, &info->client->dev, "%s - addr[0x%04X] length[%d]\n", __func__, addr, length);
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return -1;
 }
 
@@ -270,18 +270,18 @@ static int isc_read_ecc(struct mms_ts_info *info, u8 *data)
 		},
 	};
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	if (i2c_transfer(info->client->adapter, msg, ARRAY_SIZE(msg)) != ARRAY_SIZE(msg)) {
-		input_err(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] i2c_transfer\n", __func__);
 		goto error;
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return -1;
 }
 
@@ -292,12 +292,12 @@ static int isc_enter(struct mms_ts_info *info, u8 option)
 {
 	u8 write_buf[8] = ISC_CMD_ENTER;
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	write_buf[7] = option;
 
 	if (i2c_master_send(info->client, write_buf, 8) != 8) {
-		input_err(true, &info->client->dev, "%s [ERROR] i2c_master_send\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] i2c_master_send\n", __func__);
 		goto error;
 	}
 
@@ -305,11 +305,11 @@ static int isc_enter(struct mms_ts_info *info, u8 option)
 		goto error;
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return -1;
 }
 
@@ -320,18 +320,18 @@ static int isc_exit(struct mms_ts_info *info)
 {
 	u8 write_buf[8] = ISC_CMD_EXIT;
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	if (i2c_master_send(info->client, write_buf, 8) != 8) {
-		input_err(true, &info->client->dev, "%s [ERROR] i2c_master_send\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] i2c_master_send\n", __func__);
 		goto error;
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return -1;
 }
 
@@ -354,26 +354,26 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 	u8 ecc_error[4] = ISC_ECC_ERROR;
 	int i;
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	/* Check tail size */
 	tail_size = (fw_data[fw_size - 5] << 8) | fw_data[fw_size - 6];
 	if (tail_size != MELFAS_BIN_TAIL_SIZE) {
-		input_err(true, &info->client->dev, "%s [ERROR] Wrong tail size [%d]\n", __func__, tail_size);
+		input_silence(true, &info->client->dev, "%s [ERROR] Wrong tail size [%d]\n", __func__, tail_size);
 		ret = FW_ERR_FILE_TYPE;
 		goto error_file;
 	}
 
 	/* Check bin format */
 	if (memcmp(&fw_data[fw_size - tail_size], tail_mark, 4)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Wrong tail mark\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Wrong tail mark\n", __func__);
 		ret = FW_ERR_FILE_TYPE;
 		goto error_file;
 	}
 
 	/* Read bin info */
 	bin_info = (struct melfas_bin_tail *) &fw_data[fw_size - tail_size];
-	input_dbg(false, &info->client->dev, "%s - bin_info : bin_len[%d] hw_cat[0x%2X] date[%4X] time[%4X] tail_size[%d]\n", __func__, bin_info->bin_length, bin_info->hw_category, bin_info->build_date, bin_info->build_time, bin_info->tail_size);
+	input_silence(false, &info->client->dev, "%s - bin_info : bin_len[%d] hw_cat[0x%2X] date[%4X] time[%4X] tail_size[%d]\n", __func__, bin_info->bin_length, bin_info->hw_category, bin_info->build_date, bin_info->build_time, bin_info->tail_size);
 
 #if MMS_FW_UPDATE_DEBUG
 	print_hex_dump(KERN_ERR, MIP4_TS_DEVICE_NAME " Bin Info : ", DUMP_PREFIX_OFFSET, 16, 1, bin_info, tail_size, false);
@@ -381,7 +381,7 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 
 	/* Check chip code */
 	if (memcmp(bin_info->chip_name, FW_CHIP_CODE, 4)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Firmware binary is not for %s\n", __func__, CHIP_NAME);
+		input_silence(true, &info->client->dev, "%s [ERROR] Firmware binary is not for %s\n", __func__, CHIP_NAME);
 		ret = FW_ERR_FILE_TYPE;
 		goto error_file;
 	}
@@ -405,11 +405,11 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 			info->fw_ver_bin[i] = bin_info->version[i];
 	}
 	/* Check F/W version */
-	input_dbg(true, &info->client->dev, "%s - Firmware binary version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, bin_info->version[0], bin_info->version[1], bin_info->version[2], bin_info->version[3], bin_info->version[4], bin_info->version[5], bin_info->version[6], bin_info->version[7]);
+	input_silence(true, &info->client->dev, "%s - Firmware binary version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, bin_info->version[0], bin_info->version[1], bin_info->version[2], bin_info->version[3], bin_info->version[4], bin_info->version[5], bin_info->version[6], bin_info->version[7]);
 
 	if (force == 1) {
 		/* Force update */
-		input_dbg(true, &info->client->dev, "%s - Force update\n", __func__);
+		input_silence(true, &info->client->dev, "%s - Force update\n", __func__);
 	} else {
 		while (retry--) {
 			if (!mms_get_fw_version(info, ver_chip)) {
@@ -421,9 +421,9 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 			}
 		}
 		if (retry <= 0) {
-			input_err(true, &info->client->dev, "%s [ERROR] Failed to read chip firmware version\n", __func__);
+			input_silence(true, &info->client->dev, "%s [ERROR] Failed to read chip firmware version\n", __func__);
 		} else {
-			input_dbg(true, &info->client->dev, "%s - Chip firmware version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, ver_chip[0], ver_chip[1], ver_chip[2], ver_chip[3], ver_chip[4], ver_chip[5], ver_chip[6], ver_chip[7]);
+			input_silence(true, &info->client->dev, "%s - Chip firmware version [%02X%02X %02X%02X %02X%02X %02X%02X]\n", __func__, ver_chip[0], ver_chip[1], ver_chip[2], ver_chip[3], ver_chip[4], ver_chip[5], ver_chip[6], ver_chip[7]);
 
 			/* check f/w version
 			 * ver[0][1] : boot version
@@ -435,27 +435,27 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 			 */
 
 			if (info->dtdata->bringup == 2) {
-				input_err(true, &info->client->dev, "%s: bringup. do not update\n", __func__);
+				input_silence(true, &info->client->dev, "%s: bringup. do not update\n", __func__);
 				ret = FW_ERR_UPTODATE;
 				goto error_update;
 			} else if (info->dtdata->bringup == 3) {
 				if (memcmp(bin_info->version, ver_chip, 8) != 0) {
-					input_err(true, &info->client->dev, "%s: bringup. force update\n", __func__);
+					input_silence(true, &info->client->dev, "%s: bringup. force update\n", __func__);
 					goto update;
 				}
 			}
 
 			if (ver_chip[5] == 0xFF || ver_chip[6] == 0xFF) {
-				input_err(true, &info->client->dev, "%s: crc error\n", __func__);
+				input_silence(true, &info->client->dev, "%s: crc error\n", __func__);
 				goto update;
 			}
 #ifdef CONFIG_SAMSUNG_PRODUCT_SHIP
 			if (info->check_version) {
 				if ((bin_info->version[4] == ver_chip[4]) && (bin_info->version[5] == ver_chip[5])) { /* user ship ums update */
-					input_err(true, &info->client->dev, "%s: force update\n", __func__);
+					input_silence(true, &info->client->dev, "%s: force update\n", __func__);
 					goto update;
 				} else {
-					input_err(true, &info->client->dev, "%s: do not matched project version\n", __func__);
+					input_silence(true, &info->client->dev, "%s: do not matched project version\n", __func__);
 					ret = FW_ERR_UPTODATE;
 					goto error_update;
 				}
@@ -465,24 +465,24 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 				if (bin_info->version[i] != ver_chip[i]) {
 					
 					if (i == 5) { 
-						input_err(true, &info->client->dev, "%s: do not matched project version - force update.\n", __func__);
+						input_silence(true, &info->client->dev, "%s: do not matched project version - force update.\n", __func__);
 						goto update;
 					}
 
 					if (info->dtdata->support_dual_fw) {/* for panel recovery */
 						if (i == 6) {
-							input_err(true, &info->client->dev, "%s: do not matched panel version - force update.\n", __func__);
+							input_silence(true, &info->client->dev, "%s: do not matched panel version - force update.\n", __func__);
 							goto update;
 						}
 					}
-					input_err(true, &info->client->dev, "%s: do not matched version info\n", __func__);
+					input_silence(true, &info->client->dev, "%s: do not matched version info\n", __func__);
 					ret = FW_ERR_UPTODATE;
 					goto error_update;
 				}
 			}
 
 			if (bin_info->version[7] <= ver_chip[7]) {
-				input_dbg(true, &info->client->dev, "%s - Chip firmware is already up-to-date\n", __func__);
+				input_silence(true, &info->client->dev, "%s - Chip firmware is already up-to-date\n", __func__);
 				ret = FW_ERR_UPTODATE;
 				goto error_update;
 			}
@@ -491,10 +491,10 @@ int mip4_ts_flash_fw(struct mms_ts_info *info, const u8 *fw_data, size_t fw_size
 
 update:
 	/* Enter ISC mode */
-	input_dbg(false, &info->client->dev, "%s - Enter ISC mode\n", __func__);
+	input_silence(false, &info->client->dev, "%s - Enter ISC mode\n", __func__);
 	ret = isc_enter(info, ISC_ENTER_ECC_ON);
 	if (ret != 0) {
-		input_err(true, &info->client->dev, "%s [ERROR] isc_enter[0x%02X]\n", __func__, ISC_ENTER_NORMAL);
+		input_silence(true, &info->client->dev, "%s [ERROR] isc_enter[0x%02X]\n", __func__, ISC_ENTER_NORMAL);
 		ret = FW_ERR_DOWNLOAD;
 		goto error_update;
 	}
@@ -502,44 +502,44 @@ update:
 	if (force == 0) {
 		/* Check ECC */
 		if (isc_read_ecc(info, rbuf)) {
-			input_err(true, &info->client->dev, "%s [ERROR] isc_read_ecc\n", __func__);
+			input_silence(true, &info->client->dev, "%s [ERROR] isc_read_ecc\n", __func__);
 			ret = FW_ERR_DOWNLOAD;
 			goto error_update;
 		}
-		input_dbg(true, &info->client->dev, "%s - ECC [0x%02X%02X%02X%02X]\n", __func__, rbuf[0], rbuf[1], rbuf[2], rbuf[3]);
+		input_silence(true, &info->client->dev, "%s - ECC [0x%02X%02X%02X%02X]\n", __func__, rbuf[0], rbuf[1], rbuf[2], rbuf[3]);
 
 		if (memcmp(ecc_error, rbuf, 4) == 0)
-			input_dbg(true, &info->client->dev, "%s - ECC error\n", __func__);
+			input_silence(true, &info->client->dev, "%s - ECC error\n", __func__);
 	}
 
 	/* Erase */
-	input_dbg(false, &info->client->dev, "%s - Erase\n", __func__);
+	input_silence(false, &info->client->dev, "%s - Erase\n", __func__);
 	ret = isc_erase_mass(info);
 	if (ret != 0) {
-		input_err(true, &info->client->dev, "%s [ERROR] isc_erase_mass\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] isc_erase_mass\n", __func__);
 		ret = FW_ERR_DOWNLOAD;
 		goto error_update;
 	}
 
 	/* Write & Verify */
-	input_dbg(false, &info->client->dev, "%s - Write & Verify\n", __func__);
+	input_silence(false, &info->client->dev, "%s - Write & Verify\n", __func__);
 	addr = bin_size - ISC_PAGE_SIZE;
 	while (addr >= addr_start) {
 		/* Write page */
 		if (isc_write_page(info, addr, &bin_data[addr], ISC_PAGE_SIZE)) {
-			input_err(true, &info->client->dev, "%s [ERROR] isc_write_page : addr[0x%04X]\n", __func__, addr);
+			input_silence(true, &info->client->dev, "%s [ERROR] isc_write_page : addr[0x%04X]\n", __func__, addr);
 			ret = FW_ERR_DOWNLOAD;
 			goto error_update;
 		}
-		input_dbg(false, &info->client->dev, "%s - isc_write_page : addr[0x%04X]\n", __func__, addr);
+		input_silence(false, &info->client->dev, "%s - isc_write_page : addr[0x%04X]\n", __func__, addr);
 
 		/* Verify page */
 		if (isc_read_page(info, addr, rbuf)) {
-			input_err(true, &info->client->dev, "%s [ERROR] isc_read_page : addr[0x%04X]\n", __func__, addr);
+			input_silence(true, &info->client->dev, "%s [ERROR] isc_read_page : addr[0x%04X]\n", __func__, addr);
 			ret = FW_ERR_DOWNLOAD;
 			goto error_update;
 		}
-		input_dbg(false, &info->client->dev, "%s - isc_read_page : addr[0x%04X]\n", __func__, addr);
+		input_silence(false, &info->client->dev, "%s - isc_read_page : addr[0x%04X]\n", __func__, addr);
 
 #if MMS_FW_UPDATE_DEBUG
 		print_hex_dump(KERN_ERR, MIP4_TS_DEVICE_NAME " Write : ", DUMP_PREFIX_OFFSET, 16, 1, &bin_data[addr], ISC_PAGE_SIZE, false);
@@ -547,7 +547,7 @@ update:
 #endif
 
 		if (memcmp(rbuf, &bin_data[addr], ISC_PAGE_SIZE)) {
-			input_err(true, &info->client->dev, "%s [ERROR] Verify failed : addr[0x%04X]\n", __func__, addr);
+			input_silence(true, &info->client->dev, "%s [ERROR] Verify failed : addr[0x%04X]\n", __func__, addr);
 			ret = FW_ERR_DOWNLOAD;
 			goto error_update;
 		}
@@ -557,7 +557,7 @@ update:
 	}
 
 	/* Exit ISC mode */
-	input_dbg(false, &info->client->dev, "%s - Exit ISC mode\n", __func__);
+	input_silence(false, &info->client->dev, "%s - Exit ISC mode\n", __func__);
 	isc_exit(info);
 
 	/* Reset */
@@ -569,7 +569,7 @@ update:
 
 	/* Check chip firmware version */
 	if (mms_get_fw_version(info, ver_chip)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Unknown chip firmware version\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Unknown chip firmware version\n", __func__);
 		ret = FW_ERR_DOWNLOAD;
 		goto error_update;
 	}
@@ -579,17 +579,17 @@ update:
 	if (!on_probe) {
 		ret = mms_reinit(info);
 		if (ret < 0)
-			input_dbg(true, &info->client->dev, "%s: failed\n", __func__);
+			input_silence(true, &info->client->dev, "%s: failed\n", __func__);
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	goto exit;
 
 error_update:
 	kfree(bin_data);
 err_mem_alloc:
 error_file:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 exit:
 	return ret;
 }
@@ -604,18 +604,18 @@ int mip4_ts_bin_fw_version(struct mms_ts_info *info, const u8 *fw_data, size_t f
 	u8 tail_mark[4] = MELFAS_BIN_TAIL_MARK;
 	int i = 0;
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	/* Check tail size */
 	tail_size = (fw_data[fw_size - 5] << 8) | fw_data[fw_size - 6];
 	if (tail_size != MELFAS_BIN_TAIL_SIZE) {
-		input_err(true, &info->client->dev, "%s [ERROR] wrong tail size [%d]\n", __func__, tail_size);
+		input_silence(true, &info->client->dev, "%s [ERROR] wrong tail size [%d]\n", __func__, tail_size);
 		goto error;
 	}
 
 	/* Check bin format */
 	if (memcmp(&fw_data[fw_size - tail_size], tail_mark, 4)) {
-		input_err(true, &info->client->dev, "%s [ERROR] wrong tail mark\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] wrong tail mark\n", __func__);
 		goto error;
 	}
 
@@ -627,10 +627,10 @@ int mip4_ts_bin_fw_version(struct mms_ts_info *info, const u8 *fw_data, size_t f
 		ver_buf[i] = bin_info->version[i];
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 
 error:
-	input_err(true, &info->client->dev, "%s [ERROR]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [ERROR]\n", __func__);
 	return 1;
 }

@@ -24,10 +24,10 @@ static ssize_t scrub_position_show(struct device *dev,
 	char buff[256] = { 0 };
 
 #ifdef CONFIG_SAMSUNG_PRODUCT_SHIP
-	input_dbg(true, &info->client->dev,
+	input_silence(true, &info->client->dev,
 			"%s: scrub_id: %d\n", __func__, info->scrub_id);
 #else
-	input_dbg(true, &info->client->dev,
+	input_silence(true, &info->client->dev,
 			"%s: scrub_id: %d, X:%d, Y:%d\n", __func__,
 			info->scrub_id, info->scrub_x, info->scrub_y);
 #endif
@@ -47,7 +47,7 @@ static ssize_t prox_power_off_show(struct device *dev,
 	struct sec_cmd_data *sec = dev_get_drvdata(dev);
 	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
 
-	input_dbg(true, &info->client->dev, "%s: %d\n", __func__,
+	input_silence(true, &info->client->dev, "%s: %d\n", __func__,
 			info->prox_power_off);
 
 	return snprintf(buf, SEC_CMD_BUF_SIZE, "%ld", info->prox_power_off);
@@ -66,7 +66,7 @@ static ssize_t prox_power_off_store(struct device *dev,
 	if (ret < 0)
 		return ret;
 
-	input_dbg(true, &info->client->dev, "%s: %ld\n", __func__, data);
+	input_silence(true, &info->client->dev, "%s: %ld\n", __func__, data);
 
 	info->prox_power_off = data;
 
@@ -89,7 +89,7 @@ static ssize_t read_support_feature(struct device *dev,
 	if (info->dtdata->support_open_short_test)
 		feature |= INPUT_FEATURE_SUPPORT_OPEN_SHORT_TEST;
 
-	input_dbg(true, &info->client->dev, "%s: %d%s%s%s%s\n",
+	input_silence(true, &info->client->dev, "%s: %d%s%s%s%s\n",
 			__func__, feature,
 			feature & INPUT_FEATURE_ENABLE_SETTINGS_AOT ? " aot" : "",
 			feature & INPUT_FEATURE_ENABLE_PRESSURE ? " pressure" : "",
@@ -109,18 +109,18 @@ static ssize_t fod_position_show(struct device *dev,
 	int i, ret;
 
 	if (!info->dtdata->support_fod) {
-		input_err(true, &info->client->dev, "%s: fod is not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s: fod is not supported\n", __func__);
 		return snprintf(buf, SEC_CMD_BUF_SIZE, "NG");
 	}
 
 	if (!info->fod_vi_size) {
-		input_err(true, &info->client->dev, "%s: not read fod_info yet\n", __func__);
+		input_silence(true, &info->client->dev, "%s: not read fod_info yet\n", __func__);
 		return snprintf(buf, SEC_CMD_BUF_SIZE, "NG");
 	}
 
 	ret = sponge_read(info, SPONGE_FOD_POSITION, data, info->fod_vi_size);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: Failed to read\n", __func__);
+		input_silence(true, &info->client->dev, "%s: Failed to read\n", __func__);
 		return snprintf(buf, SEC_CMD_BUF_SIZE, "NG");
 	}
 
@@ -139,11 +139,11 @@ static ssize_t fod_info_show(struct device *dev,
 	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
 
 	if (!info->dtdata->support_fod) {
-		input_err(true, &info->client->dev, "%s: fod is not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s: fod is not supported\n", __func__);
 		return snprintf(buf, SEC_CMD_BUF_SIZE, "NG");
 	}
 
-	input_dbg(true, &info->client->dev, "%s: tx:%d, rx:%d, size:%d\n",
+	input_silence(true, &info->client->dev, "%s: tx:%d, rx:%d, size:%d\n",
 			__func__, info->fod_tx, info->fod_rx, info->fod_vi_size);
 
 	return snprintf(buf, SEC_CMD_BUF_SIZE, "%d,%d,%d,%d,%d",
@@ -157,7 +157,7 @@ static ssize_t protos_event_show(struct device *dev,
 	struct sec_cmd_data *sec = dev_get_drvdata(dev);
 	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
 
-	input_dbg(true, &info->client->dev, "%s: %d\n", __func__,
+	input_silence(true, &info->client->dev, "%s: %d\n", __func__,
 			info->hover_event);
 
 	return snprintf(buf, SEC_CMD_BUF_SIZE, "%d", info->hover_event != 3 ? 0 : 3);
@@ -177,10 +177,10 @@ static ssize_t protos_event_store(struct device *dev,
 	if (ret < 0)
 		return ret;
 
-	input_dbg(true, &info->client->dev, "%s: %d\n", __func__, data);
+	input_silence(true, &info->client->dev, "%s: %d\n", __func__, data);
 
 	if (data != 0 && data != 1) {
-		input_err(true, &info->client->dev, "%s: incorrect data\n", __func__);
+		input_silence(true, &info->client->dev, "%s: incorrect data\n", __func__);
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ static ssize_t protos_event_store(struct device *dev,
 	wbuf[2] = data;
 
 	if (mms_i2c_write(info, wbuf, 3))
-		input_err(true, &info->client->dev, "%s: failed to set ed_enable\n", __func__);
+		input_silence(true, &info->client->dev, "%s: failed to set ed_enable\n", __func__);
 
 	return count;
 }
@@ -208,7 +208,7 @@ static void cmd_fw_update(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (info->ic_status == PWR_OFF) {
-		input_err(true, &info->client->dev, "%s: Touch is stopped!\n", __func__);
+		input_silence(true, &info->client->dev, "%s: Touch is stopped!\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "NG");
 		sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
 		sec->cmd_state = SEC_CMD_STATUS_FAIL;
@@ -263,7 +263,7 @@ ERROR:
 
 EXIT:
 	sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buff, sec->cmd_state);
 }
 
@@ -304,7 +304,7 @@ static void cmd_get_fw_ver_ic(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (info->ic_status == PWR_OFF) {
-		input_err(true, &info->client->dev, "%s: Touch is stopped!\n", __func__);
+		input_silence(true, &info->client->dev, "%s: Touch is stopped!\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "NG");
 		sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
 		sec->cmd_state = SEC_CMD_STATUS_FAIL;
@@ -332,7 +332,7 @@ static void cmd_get_fw_ver_ic(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 EXIT:
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buff, sec->cmd_state);
 }
 
@@ -355,7 +355,7 @@ static void cmd_get_chip_vendor(void *device_data)
 	
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 
 	return;
@@ -369,7 +369,7 @@ static void check_connection(void *device_data)
 
 	sec_cmd_set_default_result(sec);
 
-	input_dbg(true, &info->client->dev, "%s: connection check(%d)\n", __func__, info->image_buf[0]);
+	input_silence(true, &info->client->dev, "%s: connection check(%d)\n", __func__, info->image_buf[0]);
 
 	if (!info->image_buf[0])
 		goto EXIT;
@@ -378,7 +378,7 @@ static void check_connection(void *device_data)
 	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 
 	return;
@@ -387,7 +387,7 @@ EXIT:
 	sprintf(buf, "%s", "NG");
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -410,7 +410,7 @@ static void cmd_get_chip_name(void *device_data)
 
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 
 	return;
@@ -429,7 +429,7 @@ static void cmd_get_config_ver(void *device_data)
 
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -461,7 +461,7 @@ static void get_checksum_data(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 EXIT:
-	input_err(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -485,7 +485,7 @@ static void cmd_get_crc_check(void *device_data)
 	}
 
 	if (info->fw_ver_ic == 0xFFFF) {
-		input_dbg(true, &info->client->dev, "%s: fw version fail\n", __func__);
+		input_silence(true, &info->client->dev, "%s: fw version fail\n", __func__);
 		snprintf(buf, sizeof(buf), "%s", "NG");
 		sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
 		sec->cmd_state = SEC_CMD_STATUS_FAIL;
@@ -510,7 +510,7 @@ static void cmd_get_crc_check(void *device_data)
 		goto EXIT;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: checksum1:%02X, checksum2:%02X\n",
+	input_silence(true, &info->client->dev, "%s: checksum1:%02X, checksum2:%02X\n",
 		__func__, precal[0], realtime[0]);
 
 	if (precal[0] == realtime[0]) {
@@ -524,7 +524,7 @@ static void cmd_get_crc_check(void *device_data)
 	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
 
 EXIT:
-	input_err(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -559,7 +559,7 @@ static void cmd_get_x_num(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 EXIT:
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -594,7 +594,7 @@ static void cmd_get_y_num(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 EXIT:
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -629,7 +629,7 @@ static void cmd_get_max_x(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 EXIT:
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -664,7 +664,7 @@ static void cmd_get_max_y(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 EXIT:
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -685,7 +685,7 @@ static void cmd_module_off_master(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -706,7 +706,7 @@ static void cmd_module_on_master(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_OK;
 
 	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	input_dbg(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -1020,7 +1020,7 @@ static void cmd_run_prox_intensity_read_all(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (mms_get_image(info, MIP_IMG_TYPE_PROX_INTENSITY)) {
-		input_err(true, &info->client->dev, "%s: failed to read, %d\n", __func__);
+		input_silence(true, &info->client->dev, "%s: failed to read, %d\n", __func__);
 		sprintf(data, "%s", "NG");
 		sec->cmd_state = SEC_CMD_STATUS_FAIL;
 		goto out;
@@ -1047,7 +1047,7 @@ static void run_cs_delta_read_all(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (mms_get_image(info, MIP_IMG_TYPE_INTENSITY)) {
-		input_err(true, &info->client->dev, "%s: failed to read, %d\n", __func__);
+		input_silence(true, &info->client->dev, "%s: failed to read, %d\n", __func__);
 		sprintf(info->print_buf, "%s", "NG");
 		sec->cmd_state = SEC_CMD_STATUS_FAIL;
 		goto out;
@@ -1136,7 +1136,7 @@ static void cmd_get_threshold(void *device_data)
 
 exit:
 	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	input_err(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
+	input_silence(true, &info->client->dev, "%s - cmd[%s] state[%d]\n",
 		__func__, buf, sec->cmd_state);
 }
 
@@ -1316,7 +1316,7 @@ static void run_trx_short_test(void *device_data)
 		snprintf(test, sizeof(test), "TEST=%d", sec->cmd_param[0]);
 
 	if (sec->cmd_param[0] == OPEN_SHORT_TEST && sec->cmd_param[1] == 0) {
-		input_err(true, &info->client->dev,
+		input_silence(true, &info->client->dev,
 				"%s: seperate cm1 test open / short test result\n", __func__);
 
 		snprintf(info->print_buf, sizeof(info->print_buf), "%s", "CONT");
@@ -1335,7 +1335,7 @@ static void run_trx_short_test(void *device_data)
 		sec->cmd_param[1] == CHECK_ONLY_SHORT_TEST) {
 		info->open_short_type = CHECK_ONLY_SHORT_TEST;
 	} else {
-		input_err(true, &info->client->dev, "%s: not support\n", __func__);
+		input_silence(true, &info->client->dev, "%s: not support\n", __func__);
 		snprintf(info->print_buf, PAGE_SIZE, "%s", "NA");
 		sec->cmd_state = SEC_CMD_STATUS_NOT_APPLICABLE;
 		snprintf(result, sizeof(result), "RESULT=FAIL");
@@ -1351,7 +1351,7 @@ static void run_trx_short_test(void *device_data)
 		wbuf[2] = 0;
 
 		if (mms_i2c_write(info, wbuf, 3)) {
-			input_err(true, &info->client->dev, "%s [ERROR] failed to write async cmd\n", __func__);
+			input_silence(true, &info->client->dev, "%s [ERROR] failed to write async cmd\n", __func__);
 			snprintf(info->print_buf, PAGE_SIZE, "%s", "NG");
 			sec->cmd_state = SEC_CMD_STATUS_FAIL;
 			snprintf(result, sizeof(result), "RESULT=FAIL");
@@ -1359,7 +1359,7 @@ static void run_trx_short_test(void *device_data)
 			sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 			return;
 		} else {
-			input_dbg(true, &info->client->dev, "%s success to write async cmd\n", __func__);
+			input_silence(true, &info->client->dev, "%s success to write async cmd\n", __func__);
 		}
 	}
 
@@ -1387,7 +1387,7 @@ static void dead_zone_enable(void *device_data)
 
 	sec_cmd_set_default_result(sec);
 
-	input_dbg(true, &info->client->dev, "%s %d\n", __func__, enable);
+	input_silence(true, &info->client->dev, "%s %d\n", __func__, enable);
 
 	if (enable)
 		status = 0;
@@ -1400,15 +1400,15 @@ static void dead_zone_enable(void *device_data)
 
 	if ((enable == 0) || (enable == 1)) {
 		if (mms_i2c_write(info, wbuf, 3)) {
-			input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
+			input_silence(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 			goto out;
 		} else
-			input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, wbuf[2]);
+			input_silence(true, &info->client->dev, "%s - value[%d]\n", __func__, wbuf[2]);
 	} else {
-		input_err(true, &info->client->dev, "%s [ERROR] Unknown value[%d]\n", __func__, status);
+		input_silence(true, &info->client->dev, "%s [ERROR] Unknown value[%d]\n", __func__, status);
 		goto out;
 	}
-	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [DONE]\n", __func__);
 
 	snprintf(buff, sizeof(buff), "%s", "OK");
 	sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -1433,7 +1433,7 @@ static void glove_mode(void *device_data)
 
 	sec_cmd_set_default_result(sec);
 
-	input_dbg(true, &info->client->dev, "%s %d\n", __func__, enable);
+	input_silence(true, &info->client->dev, "%s %d\n", __func__, enable);
 
 	info->glove_mode = enable;
 
@@ -1443,15 +1443,15 @@ static void glove_mode(void *device_data)
 
 	if ((enable == 0) || (enable == 1)) {
 		if (mms_i2c_write(info, wbuf, 3)) {
-			input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
+			input_silence(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 			goto out;
 		} else
-			input_dbg(true, &info->client->dev, "%s - value[%d]\n", __func__, wbuf[2]);
+			input_silence(true, &info->client->dev, "%s - value[%d]\n", __func__, wbuf[2]);
 	} else {
-		input_err(true, &info->client->dev, "%s [ERROR] Unknown value[%d]\n", __func__, enable);
+		input_silence(true, &info->client->dev, "%s [ERROR] Unknown value[%d]\n", __func__, enable);
 		goto out;
 	}
-	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [DONE]\n", __func__);
 
 	snprintf(buff, sizeof(buff), "%s", "OK");
 	sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -1479,7 +1479,7 @@ int set_cover_type(struct mms_ts_info *info) {
 		break;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: cover state, %d %d\n",
+	input_silence(true, &info->client->dev, "%s: cover state, %d %d\n",
 		__func__, info->cover_mode, info->cover_type);
 
 	wbuf[0] = MIP_R0_CTRL;
@@ -1488,7 +1488,7 @@ int set_cover_type(struct mms_ts_info *info) {
 	wbuf[3] = info->cover_type;
 
 	if (mms_i2c_write(info, wbuf, 4)) {
-		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		return -EIO;
 	}
 
@@ -1516,7 +1516,7 @@ static void clear_cover_mode(void *device_data)
 		}
 
 		if (!info->enabled) {
-			input_err(true, &info->client->dev,
+			input_silence(true, &info->client->dev,
 				"%s : tsp disabled\n", __func__);
 			goto out;
 		}
@@ -1526,7 +1526,7 @@ static void clear_cover_mode(void *device_data)
 			goto out;
 	}
 
-	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [DONE]\n", __func__);
 
 	snprintf(buff, sizeof(buff), "%s", "OK");
 	sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -1564,7 +1564,7 @@ void set_grip_data_to_ic(struct mms_ts_info *info, u8 flag)
 {
 	u8 data[17] = { 0 };
 
-	input_dbg(true, &info->client->dev, "%s: flag: %02X (clr,lan,nor,edg,han)\n", __func__, flag);
+	input_silence(true, &info->client->dev, "%s: flag: %02X (clr,lan,nor,edg,han)\n", __func__, flag);
 
 	if (flag & G_SET_EDGE_HANDLER) {
 		if (info->grip_edgehandler_direction == 0) {
@@ -1583,7 +1583,7 @@ void set_grip_data_to_ic(struct mms_ts_info *info, u8 flag)
 			data[5] = (((info->grip_edgehandler_end_y >> 8)  & 0xF) << 4) | ((info->grip_edgehandler_start_y >> 8) & 0xF);
 		}
 		mms_i2c_write(info, data, 6);
-		input_dbg(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X,%02X\n",
+		input_silence(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X,%02X\n",
 				__func__, MIP_R1_SEC_EDGE_HANDLER, data[2], data[3], data[4], data[5]);
 	}
 
@@ -1593,7 +1593,7 @@ void set_grip_data_to_ic(struct mms_ts_info *info, u8 flag)
 		data[2] = info->grip_edge_range  & 0xFF;
 		data[3] = (info->grip_edge_range >> 8) & 0xFF;
 		mms_i2c_write(info, data, 4);
-		input_dbg(true, &info->client->dev, "%s: 0x%02X %02X,%02X\n",
+		input_silence(true, &info->client->dev, "%s: 0x%02X %02X,%02X\n",
 				__func__, MIP_R1_SEC_EDGE_AREA, data[2], data[3]);
 	}
 
@@ -1608,7 +1608,7 @@ void set_grip_data_to_ic(struct mms_ts_info *info, u8 flag)
 		data[7] = (info->grip_deadzone_dn_x >> 8 & 0xFF);
 
 		mms_i2c_write(info, data, 8);
-		input_dbg(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X,%02X,%02X,%02X\n",
+		input_silence(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X,%02X,%02X,%02X\n",
 				__func__, MIP_R1_SEC_DEAD_ZONE, data[2], data[3], data[4], data[5],
 				data[6],data[7],data[8]);
 
@@ -1616,7 +1616,7 @@ void set_grip_data_to_ic(struct mms_ts_info *info, u8 flag)
 		data[2] = 0x1;
 
 		mms_i2c_write(info, data, 3);
-		input_dbg(true, &info->client->dev, "%s: 0x%02X %02X,%02X\n",
+		input_silence(true, &info->client->dev, "%s: 0x%02X %02X,%02X\n",
 				__func__, MIP_R1_SEC_DEAD_ZONE_ENABLE, data[1], data[2]);
 	}
 
@@ -1641,7 +1641,7 @@ void set_grip_data_to_ic(struct mms_ts_info *info, u8 flag)
 		
 
 		mms_i2c_write(info, data, 17);
-		input_dbg(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X,%02X, %02X,%02X,%02X,%02X,%02X,%02X,%02X"
+		input_silence(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X,%02X, %02X,%02X,%02X,%02X,%02X,%02X,%02X"
 			"%02X,%02X,%02X,%02X \n",
 				__func__, MIP_R1_SEC_LANDSCAPE_MODE, data[2], data[3], data[4],
 				data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12],
@@ -1655,7 +1655,7 @@ void set_grip_data_to_ic(struct mms_ts_info *info, u8 flag)
 		data[3] = 0x0;
 		data[4] = 0x0;
 		mms_i2c_write(info, data, 5);
-		input_dbg(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X\n",
+		input_silence(true, &info->client->dev, "%s: 0x%02X %02X,%02X,%02X\n",
 				__func__, MIP_R1_SEC_LANDSCAPE_MODE_CLR, data[2], data[3], data[4]);
 	}
 }
@@ -1681,7 +1681,7 @@ static void set_grip_data(void *device_data)
 			info->grip_edgehandler_start_y = sec->cmd_param[2];
 			info->grip_edgehandler_end_y = sec->cmd_param[3];
 		} else {
-			input_err(true, &info->client->dev, "%s: cmd1 is abnormal, %d (%d)\n",
+			input_silence(true, &info->client->dev, "%s: cmd1 is abnormal, %d (%d)\n",
 					__func__, sec->cmd_param[1], __LINE__);
 			goto err_grip_data;
 		}
@@ -1718,13 +1718,13 @@ static void set_grip_data(void *device_data)
 			info->grip_landscape_bottom_gripzone = sec->cmd_param[7];
 			mode = mode | G_SET_LANDSCAPE_MODE;
 		} else {
-			input_err(true, &info->client->dev, "%s: cmd1 is abnormal, %d (%d)\n",
+			input_silence(true, &info->client->dev, "%s: cmd1 is abnormal, %d (%d)\n",
 					__func__, sec->cmd_param[1], __LINE__);
 			goto err_grip_data;
 		}
 		set_grip_data_to_ic(info, mode);
 	} else {
-		input_err(true, &info->client->dev, "%s: cmd0 is abnormal, %d", __func__, sec->cmd_param[0]);
+		input_silence(true, &info->client->dev, "%s: cmd0 is abnormal, %d", __func__, sec->cmd_param[0]);
 		goto err_grip_data;
 	}
 
@@ -1755,7 +1755,7 @@ static void pocket_mode_enable(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (!info->dtdata->support_protos) {
-		input_err(true, &info->client->dev,
+		input_silence(true, &info->client->dev,
 			"%s : not support protos\n", __func__);
 		goto out;
 	}
@@ -1767,7 +1767,7 @@ static void pocket_mode_enable(void *device_data)
 	wbuf[2] = info->pocket_enable;
 
 	if (mms_i2c_write(info, wbuf, 3)) {
-		input_err(true, &info->client->dev, "%s: failed to set pocket mode enable\n", __func__);
+		input_silence(true, &info->client->dev, "%s: failed to set pocket mode enable\n", __func__);
 		goto out;
 	}
 
@@ -1783,7 +1783,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);
 }
 
 static void ear_detect_enable(void *device_data)
@@ -1802,7 +1802,7 @@ static void ear_detect_enable(void *device_data)
 	wbuf[2] = info->ed_enable;
 
 	if (mms_i2c_write(info, wbuf, 3)) {
-		input_err(true, &info->client->dev, "%s: failed to set ed_enable\n", __func__);
+		input_silence(true, &info->client->dev, "%s: failed to set ed_enable\n", __func__);
 		goto out;
 	}
 
@@ -1818,7 +1818,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);
 }
 
 static void fod_lp_mode(void *device_data)
@@ -1831,7 +1831,7 @@ static void fod_lp_mode(void *device_data)
 
 	info->fod_lp_mode = sec->cmd_param[0];
 
-	input_dbg(true, &info->client->dev, "%s: fod_lp_mode %d\n", __func__, info->fod_lp_mode);
+	input_silence(true, &info->client->dev, "%s: fod_lp_mode %d\n", __func__, info->fod_lp_mode);
 
 	snprintf(buff, sizeof(buff), "%s", "OK");
 	sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -1850,7 +1850,7 @@ static void fod_enable(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (!info->dtdata->support_lpm || !info->dtdata->support_fod) {
-		input_err(true, &info->client->dev, "%s not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s not supported\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "NA");
 		sec->cmd_state = SEC_CMD_STATUS_NOT_APPLICABLE;
 		sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -1869,18 +1869,18 @@ static void fod_enable(void *device_data)
 
 	fod_property = !!sec->cmd_param[1];
 
-	input_dbg(true, &info->client->dev, "%s: fast: %d, %x\n",
+	input_silence(true, &info->client->dev, "%s: fast: %d, %x\n",
 			__func__, fod_property, info->lowpower_flag);
 
 	ret = mms_set_custom_library(info, SPONGE_AOD_ENABLE_OFFSET, &(info->lowpower_flag), 1);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
 		goto out;
 	}
 
 	ret = mms_set_custom_library(info, SPONGE_FOD_PROPERTY, &fod_property, 1);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: fail set property \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set property \n", __func__);
 		goto out;
 	}
 
@@ -1896,7 +1896,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);
 }
 
 int mms_set_fod_rect(struct mms_ts_info *info)
@@ -1914,13 +1914,13 @@ int mms_set_fod_rect(struct mms_ts_info *info)
 	if (!sum) /* no data */
 		return 0;
 
-	input_dbg(true, &info->client->dev, "%s: l:%d, t:%d, r:%d, b:%d\n",
+	input_silence(true, &info->client->dev, "%s: l:%d, t:%d, r:%d, b:%d\n",
 			__func__, info->fod_rect_data[0], info->fod_rect_data[1],
 			info->fod_rect_data[2], info->fod_rect_data[3]);
 
 	ret = mms_set_custom_library(info, SPONGE_FOD_RECT, data, sizeof(data));
 	if (ret < 0)
-		input_err(true, &info->client->dev, "%s: failed. ret: %d\n", __func__, ret);
+		input_silence(true, &info->client->dev, "%s: failed. ret: %d\n", __func__, ret);
 
 	return ret;
 }
@@ -1938,11 +1938,11 @@ static void set_fod_rect(void *device_data)
 			|| sec->cmd_param[1] > info->dtdata->display_y
 			|| sec->cmd_param[2] > info->dtdata->display_x
 			|| sec->cmd_param[3] > info->dtdata->display_y) {
-		input_err(true, &info->client->dev, "%s: Abnormal fod_rect data\n", __func__);
+		input_silence(true, &info->client->dev, "%s: Abnormal fod_rect data\n", __func__);
 		goto NG;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: l:%d, t:%d, r:%d, b:%d\n",
+	input_silence(true, &info->client->dev, "%s: l:%d, t:%d, r:%d, b:%d\n",
 			__func__, sec->cmd_param[0], sec->cmd_param[1],
 			sec->cmd_param[2], sec->cmd_param[3]);
 
@@ -1951,7 +1951,7 @@ static void set_fod_rect(void *device_data)
 
 	ret = mms_set_fod_rect(info);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: failed. ret: %d\n", __func__, ret);
+		input_silence(true, &info->client->dev, "%s: failed. ret: %d\n", __func__, ret);
 		goto NG;
 	}
 
@@ -1978,7 +1978,7 @@ static void aot_enable(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (!info->dtdata->support_lpm) {
-		input_err(true, &info->client->dev, "%s not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s not supported\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "NA");
 		sec->cmd_state = SEC_CMD_STATUS_NOT_APPLICABLE;
 		sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -1995,13 +1995,13 @@ static void aot_enable(void *device_data)
 			info->lowpower_mode = false;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: %s mode, %x\n",
+	input_silence(true, &info->client->dev, "%s: %s mode, %x\n",
 			__func__, info->lowpower_mode ? "LPM" : "normal",
 			info->lowpower_flag);
 
 	ret = mms_set_custom_library(info, SPONGE_AOD_ENABLE_OFFSET, &(info->lowpower_flag), 1);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
 		goto out;
 	}
 
@@ -2017,7 +2017,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);
 }
 
 static void spay_enable(void *device_data)
@@ -2030,7 +2030,7 @@ static void spay_enable(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (!info->dtdata->support_lpm) {
-		input_err(true, &info->client->dev, "%s not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s not supported\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "NA");
 		sec->cmd_state = SEC_CMD_STATUS_NOT_APPLICABLE;
 		sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -2047,13 +2047,13 @@ static void spay_enable(void *device_data)
 			info->lowpower_mode = false;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: %s mode, %x\n",
+	input_silence(true, &info->client->dev, "%s: %s mode, %x\n",
 			__func__, info->lowpower_mode ? "LPM" : "normal",
 			info->lowpower_flag);
 
 	ret = mms_set_custom_library(info, SPONGE_AOD_ENABLE_OFFSET, &(info->lowpower_flag), 1);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
 		goto out;
 	}
 
@@ -2069,7 +2069,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);
 }
 
 static void singletap_enable(void *device_data)
@@ -2082,7 +2082,7 @@ static void singletap_enable(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (!info->dtdata->support_lpm) {
-		input_err(true, &info->client->dev, "%s not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s not supported\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "NA");
 		sec->cmd_state = SEC_CMD_STATUS_NOT_APPLICABLE;
 		sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -2099,13 +2099,13 @@ static void singletap_enable(void *device_data)
 			info->lowpower_mode = false;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: %s mode, %x\n",
+	input_silence(true, &info->client->dev, "%s: %s mode, %x\n",
 			__func__, info->lowpower_mode ? "LPM" : "normal",
 			info->lowpower_flag);
 
 	ret = mms_set_custom_library(info, SPONGE_AOD_ENABLE_OFFSET, &(info->lowpower_flag), 1);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
 		goto out;
 	}
 
@@ -2121,7 +2121,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);
 }
 
 static void aod_enable(void *device_data)
@@ -2134,7 +2134,7 @@ static void aod_enable(void *device_data)
 	sec_cmd_set_default_result(sec);
 
 	if (!info->dtdata->support_lpm) {
-		input_err(true, &info->client->dev, "%s not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s not supported\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "NA");
 		sec->cmd_state = SEC_CMD_STATUS_NOT_APPLICABLE;
 		sec_cmd_set_cmd_result(sec, buff, strnlen(buff, sizeof(buff)));
@@ -2150,13 +2150,13 @@ static void aod_enable(void *device_data)
 		if (!info->lowpower_flag)
 			info->lowpower_mode = false;
 	}
-	input_dbg(true, &info->client->dev, "%s: %s mode, %x\n",
+	input_silence(true, &info->client->dev, "%s: %s mode, %x\n",
 			__func__, info->lowpower_mode ? "LPM" : "normal",
 			info->lowpower_flag);
 
 	ret = mms_set_custom_library(info, SPONGE_AOD_ENABLE_OFFSET, &(info->lowpower_flag), 1);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
 		goto out;
 	}
 
@@ -2172,7 +2172,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);
 }
 
 int mms_set_aod_rect(struct mms_ts_info *info)
@@ -2188,7 +2188,7 @@ int mms_set_aod_rect(struct mms_ts_info *info)
 
 	ret = mms_set_custom_library(info, SPONGE_TOUCHBOX_W_OFFSET, data, 8);
 	if (ret < 0)
-		input_err(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set custom lib \n", __func__);
 
 	return ret;
 }
@@ -2206,13 +2206,13 @@ static void set_aod_rect(void *device_data)
 	disable_irq(info->client->irq);
 
 	if (!info->enabled) {
-		input_err(true, &info->client->dev,
+		input_silence(true, &info->client->dev,
 			  "%s: [ERROR] Touch is stopped\n", __func__);
 		snprintf(buff, sizeof(buff), "%s", "TSP turned off");
 		goto out;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: w:%d, h:%d, x:%d, y:%d\n",
+	input_silence(true, &info->client->dev, "%s: w:%d, h:%d, x:%d, y:%d\n",
 			__func__, sec->cmd_param[0], sec->cmd_param[1],
 			sec->cmd_param[2], sec->cmd_param[3]);
 
@@ -2221,7 +2221,7 @@ static void set_aod_rect(void *device_data)
 
 	ret = mms_set_aod_rect(info);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: fail set aod rect \n", __func__);
+		input_silence(true, &info->client->dev, "%s: fail set aod rect \n", __func__);
 		goto out;
 	}
 
@@ -2241,7 +2241,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);	
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);	
 }
 
 
@@ -2263,7 +2263,7 @@ static void get_aod_rect(void *device_data)
 	wbuf[1] = MIP_R0_AOT_BOX_W;
 
 	if (mms_i2c_read(info, wbuf, 2, rbuf, 8)) {
-		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		goto out;
 	}
 
@@ -2272,7 +2272,7 @@ static void get_aod_rect(void *device_data)
 	for (i = 0; i < 4; i++)
 		rect_data[i] = (rbuf[i * 2 + 1] & 0xFF) << 8 | (rbuf[i * 2] & 0xFF);
 
-	input_dbg(true, &info->client->dev, "%s: w:%d, h:%d, x:%d, y:%d\n",
+	input_silence(true, &info->client->dev, "%s: w:%d, h:%d, x:%d, y:%d\n",
 			__func__, rect_data[0], rect_data[1], rect_data[2], rect_data[3]);
 
 	snprintf(buff, sizeof(buff), "%s", "OK");
@@ -2288,7 +2288,7 @@ out:
 	sec->cmd_state = SEC_CMD_STATUS_FAIL;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, buff);	
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, buff);	
 }
 
 /**
@@ -2306,7 +2306,7 @@ static void cmd_unknown_cmd(void *device_data)
 	sec->cmd_state = SEC_CMD_STATUS_NOT_APPLICABLE;
 	sec_cmd_set_cmd_exit(sec);
 
-	input_dbg(true, &info->client->dev, "%s: \"%s\"\n", __func__, buff);
+	input_silence(true, &info->client->dev, "%s: \"%s\"\n", __func__, buff);
 }
 
 static void factory_cmd_result_all(void *device_data)
@@ -2318,7 +2318,7 @@ static void factory_cmd_result_all(void *device_data)
 	memset(sec->cmd_result_all, 0x00, SEC_CMD_RESULT_STR_LEN);
 
 	if (!info->enabled) {
-		input_err(true, &info->client->dev, "%s: IC is power off\n", __func__);
+		input_silence(true, &info->client->dev, "%s: IC is power off\n", __func__);
 		sec->cmd_all_factory_state = SEC_CMD_STATUS_FAIL;
 		goto out;
 	}
@@ -2355,7 +2355,7 @@ static void factory_cmd_result_all(void *device_data)
 	sec->cmd_all_factory_state = SEC_CMD_STATUS_OK;
 
 out:
-	input_dbg(true, &info->client->dev, "%s: %d%s\n", __func__, sec->item_count, sec->cmd_result_all);
+	input_silence(true, &info->client->dev, "%s: %d%s\n", __func__, sec->item_count, sec->cmd_result_all);
 }
 
 /**
@@ -2429,7 +2429,7 @@ static ssize_t read_multi_count_show(struct device *dev,
 	struct sec_cmd_data *sec = dev_get_drvdata(dev);
 	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
 
-	input_dbg(true, &info->client->dev, "%s: %d\n", __func__, info->multi_count);
+	input_silence(true, &info->client->dev, "%s: %d\n", __func__, info->multi_count);
 
 	return snprintf(buf, PAGE_SIZE, "%d", info->multi_count);
 }
@@ -2442,7 +2442,7 @@ static ssize_t clear_multi_count_store(struct device *dev,
 	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
 
 	info->multi_count = 0;
-	input_dbg(true, &info->client->dev, "%s: clear\n", __func__);
+	input_silence(true, &info->client->dev, "%s: clear\n", __func__);
 
 	return count;
 }
@@ -2453,7 +2453,7 @@ static ssize_t read_comm_err_count_show(struct device *dev,
 	struct sec_cmd_data *sec = dev_get_drvdata(dev);
 	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
 
-	input_dbg(true, &info->client->dev, "%s: %d\n", __func__, info->comm_err_count);
+	input_silence(true, &info->client->dev, "%s: %d\n", __func__, info->comm_err_count);
 
 	return snprintf(buf, PAGE_SIZE, "%d", info->comm_err_count);
 }
@@ -2467,7 +2467,7 @@ static ssize_t clear_comm_err_count_store(struct device *dev,
 
 	info->comm_err_count = 0;
 
-	input_dbg(true, &info->client->dev, "%s: clear\n", __func__);
+	input_silence(true, &info->client->dev, "%s: clear\n", __func__);
 
 	return count;
 }
@@ -2495,11 +2495,11 @@ static ssize_t sensitivity_mode_show(struct device *dev,
 	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
 	
 	if (mms_get_image(info, MIP_IMG_TYPE_5POINT_INTENSITY)) {
-		input_err(true, &info->client->dev, "%s: mms_get_image fail!\n", __func__);
+		input_silence(true, &info->client->dev, "%s: mms_get_image fail!\n", __func__);
 		return -1;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: %s\n", __func__, info->print_buf);
+	input_silence(true, &info->client->dev, "%s: %s\n", __func__, info->print_buf);
 		
 	return snprintf(buf, PAGE_SIZE, "%s\n", info->print_buf);
 }
@@ -2525,40 +2525,40 @@ static ssize_t sensitivity_mode_store(struct device *dev,
 	if (ret != 0)
 		return ret;
 
-	input_err(true, &info->client->dev, "%s: enable:%d\n", __func__, value);
+	input_silence(true, &info->client->dev, "%s: enable:%d\n", __func__, value);
 	
 	if (value == 1) {
 		wbuf[1] = MIP_R1_CTRL_NP_ACTIVE_MODE;
 		wbuf[2] = 1;
 		if (mms_i2c_write(info, wbuf, 3)) {
-			input_err(true, &info->client->dev, "%s: send sensitivity mode on fail!\n", __func__);
+			input_silence(true, &info->client->dev, "%s: send sensitivity mode on fail!\n", __func__);
 			return ret;
 		}
 
 		wbuf[1] = MIP_R1_CTRL_5POINT_TEST_MODE;
 		wbuf[2] = 1;
 		if (mms_i2c_write(info, wbuf, 3)) {
-			input_err(true, &info->client->dev, "%s: send sensitivity mode on fail!\n", __func__);
+			input_silence(true, &info->client->dev, "%s: send sensitivity mode on fail!\n", __func__);
 			return ret;
 		}
-		input_dbg(true, &info->client->dev, "%s: enable end\n", __func__);
+		input_silence(true, &info->client->dev, "%s: enable end\n", __func__);
 	} else {
 		wbuf[1] = MIP_R1_CTRL_NP_ACTIVE_MODE;
 		wbuf[2] = 0;
 		if (mms_i2c_write(info, wbuf, 3)) {
-			input_err(true, &info->client->dev, "%s: send sensitivity mode off fail!\n", __func__);
+			input_silence(true, &info->client->dev, "%s: send sensitivity mode off fail!\n", __func__);
 			return ret;
 		}
 
 		wbuf[1] = MIP_R1_CTRL_5POINT_TEST_MODE;
 		wbuf[2] = 0;
 		if (mms_i2c_write(info, wbuf, 3)) {
-			input_err(true, &info->client->dev, "%s: send sensitivity mode off fail!\n", __func__);
+			input_silence(true, &info->client->dev, "%s: send sensitivity mode off fail!\n", __func__);
 			return ret;
 		}
-		input_dbg(true, &info->client->dev, "%s: disable end\n", __func__);
+		input_silence(true, &info->client->dev, "%s: disable end\n", __func__);
 	}
-	input_dbg(true, &info->client->dev, "%s: done\n", __func__);
+	input_silence(true, &info->client->dev, "%s: done\n", __func__);
 
 	return count;
 }
@@ -2574,17 +2574,17 @@ static ssize_t get_lp_dump_show(struct device *dev, struct device_attribute *att
 	int i, ret;
 
 	if (info->ic_status == PWR_OFF) {
-		input_err(true, &info->client->dev, "%s: Touch is stopped!\n", __func__);
+		input_silence(true, &info->client->dev, "%s: Touch is stopped!\n", __func__);
 		return snprintf(buf, SEC_CMD_BUF_SIZE, "TSP turned off");
 	}
 
-	input_dbg(true, &info->client->dev, "%s : start\n", __func__);
+	input_silence(true, &info->client->dev, "%s : start\n", __func__);
 
 	disable_irq(info->client->irq);
 
 	ret = sponge_read(info, SPONGE_LP_DUMP_REG_ADDR, string_data, 4);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s: Failed to read rect\n", __func__);
+		input_silence(true, &info->client->dev, "%s: Failed to read rect\n", __func__);
 		snprintf(buf, SEC_CMD_STR_LEN, "NG, Failed to read rect");
 		goto exit;
 	}
@@ -2595,14 +2595,14 @@ static ssize_t get_lp_dump_show(struct device *dev, struct device_attribute *att
 
 	current_index = (string_data[3] & 0xFF) << 8 | (string_data[2] & 0xFF);
 	if (current_index > dump_end || current_index < dump_start) {
-		input_err(true, &info->client->dev, "Failed to Sponge LP log %d\n", current_index);
+		input_silence(true, &info->client->dev, "Failed to Sponge LP log %d\n", current_index);
 		snprintf(buf, SEC_CMD_STR_LEN,
 				"NG, Failed to Sponge LP log, current_index=%d",
 				current_index);
 		goto exit;
 	}
 
-	input_dbg(true, &info->client->dev, "%s: DEBUG format=%d, num=%d, start=%d, end=%d, current_index=%d\n",
+	input_silence(true, &info->client->dev, "%s: DEBUG format=%d, num=%d, start=%d, end=%d, current_index=%d\n",
 				__func__, dump_format, dump_num, dump_start, dump_end, current_index);
 
 	for (i = dump_num - 1 ; i >= 0 ; i--) {
@@ -2620,7 +2620,7 @@ static ssize_t get_lp_dump_show(struct device *dev, struct device_attribute *att
 
 		ret = sponge_read(info, string_addr, string_data, 10);
 		if (ret < 0) {
-			input_err(true, &info->client->dev, "%s: Failed to read rect\n", __func__);
+			input_silence(true, &info->client->dev, "%s: Failed to read rect\n", __func__);
 			snprintf(buf, SEC_CMD_STR_LEN,
 					"NG, Failed to read rect, addr=%d",
 					string_addr);
@@ -2650,7 +2650,7 @@ static ssize_t get_lp_dump_show(struct device *dev, struct device_attribute *att
 exit:
 	enable_irq(info->client->irq);
 
-	input_dbg(true, &info->client->dev, "%s : end\n", __func__);
+	input_silence(true, &info->client->dev, "%s : end\n", __func__);
 
 	return strlen(buf);
 }
@@ -2709,7 +2709,7 @@ int mms_sysfs_cmd_create(struct mms_ts_info *info)
 	retval = sec_cmd_init(&info->sec, sec_cmds,
 			ARRAY_SIZE(sec_cmds), SEC_CLASS_DEVT_TSP);
 	if (retval < 0) {
-		input_err(true, &info->client->dev,
+		input_silence(true, &info->client->dev,
 				"%s: Failed to sec_cmd_init\n", __func__);
 		goto exit;
 	}
@@ -2717,7 +2717,7 @@ int mms_sysfs_cmd_create(struct mms_ts_info *info)
 	retval = sysfs_create_group(&info->sec.fac_dev->kobj,
 			&cmd_attr_group);
 	if (retval < 0) {
-		input_err(true, &info->client->dev,
+		input_silence(true, &info->client->dev,
 				"%s: Failed to create sysfs attributes\n", __func__);
 		goto exit;
 	}
@@ -2725,7 +2725,7 @@ int mms_sysfs_cmd_create(struct mms_ts_info *info)
 	retval = sysfs_create_link(&info->sec.fac_dev->kobj,
 			&info->input_dev->dev.kobj, "input");
 	if (retval < 0) {
-		input_err(true, &info->client->dev,
+		input_silence(true, &info->client->dev,
 				"%s: Failed to create input symbolic link\n",
 				__func__);
 		goto exit;
@@ -2741,7 +2741,7 @@ exit:
  */
 void mms_sysfs_cmd_remove(struct mms_ts_info *info)
 {
-	input_err(true, &info->client->dev, "%s\n", __func__);
+	input_silence(true, &info->client->dev, "%s\n", __func__);
 
 	sysfs_delete_link(&info->sec.fac_dev->kobj, &info->input_dev->dev.kobj, "input");
 

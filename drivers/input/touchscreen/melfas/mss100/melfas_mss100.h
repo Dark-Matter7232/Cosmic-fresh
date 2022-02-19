@@ -259,6 +259,7 @@ typedef enum {
 
 #define OUT_POCKET 10
 #define IN_POCKET 11
+#define input_silence(mode, dev, fmt, ...)
 
 enum grip_write_mode {
 	G_NONE				= 0,
@@ -619,11 +620,11 @@ static inline int mms_power_control(struct mms_ts_info *info, int enable)
 	static bool on;
 	static bool first_flag = true;
 
-	input_dbg(true, &info->client->dev, "%s [START %s]\n",
+	input_silence(true, &info->client->dev, "%s [START %s]\n",
 			__func__, enable ? "on":"off");
 
 	if (on == enable) {
-		input_err(true, &client->dev, "%s : TSP power already %s\n",
+		input_silence(true, &client->dev, "%s : TSP power already %s\n",
 			__func__, (on) ? "on":"off");
 		return ret;
 	}
@@ -631,7 +632,7 @@ static inline int mms_power_control(struct mms_ts_info *info, int enable)
 	if (info->dtdata->gpio_io_en) {
 		regulator_dvdd = regulator_get(NULL, info->dtdata->gpio_io_en);
 		if (IS_ERR_OR_NULL(regulator_dvdd)) {
-			input_dbg(true, &client->dev, "%s: Failed to get %s regulator.\n",
+			input_silence(true, &client->dev, "%s: Failed to get %s regulator.\n",
 				 __func__, info->dtdata->gpio_io_en);
 			ret = PTR_ERR(regulator_dvdd);
 			goto out;
@@ -640,7 +641,7 @@ static inline int mms_power_control(struct mms_ts_info *info, int enable)
 
 	regulator_avdd = regulator_get(NULL, info->dtdata->gpio_vdd_en);
 	if (IS_ERR_OR_NULL(regulator_avdd)) {
-		input_dbg(true, &client->dev, "%s: Failed to get %s regulator.\n",
+		input_silence(true, &client->dev, "%s: Failed to get %s regulator.\n",
 			 __func__, info->dtdata->gpio_vdd_en);
 		ret = PTR_ERR(regulator_avdd);
 		goto out;
@@ -649,13 +650,13 @@ static inline int mms_power_control(struct mms_ts_info *info, int enable)
 	if (enable) {
 		ret = regulator_enable(regulator_avdd);
 		if (ret) {
-			input_dbg(true, &client->dev, "%s: Failed to enable avdd: %d\n", __func__, ret);
+			input_silence(true, &client->dev, "%s: Failed to enable avdd: %d\n", __func__, ret);
 			goto out;
 		}
 		if (info->dtdata->gpio_io_en) {
 			ret = regulator_enable(regulator_dvdd);
 			if (ret) {
-				input_dbg(true, &client->dev, "%s: Failed to enable vdd: %d\n", __func__, ret);
+				input_silence(true, &client->dev, "%s: Failed to enable vdd: %d\n", __func__, ret);
 				goto out;
 			}
 		}
@@ -672,11 +673,11 @@ static inline int mms_power_control(struct mms_ts_info *info, int enable)
 	}
 
 	if (IS_ERR_OR_NULL(pinctrl_state)) {
-		input_dbg(true, &client->dev, "%s: Failed to lookup pinctrl.\n", __func__);
+		input_silence(true, &client->dev, "%s: Failed to lookup pinctrl.\n", __func__);
 	} else {
 		ret = pinctrl_select_state(info->pinctrl, pinctrl_state);
 		if (ret)
-			input_dbg(true, &client->dev, "%s: Failed to configure pinctrl.\n", __func__);
+			input_silence(true, &client->dev, "%s: Failed to configure pinctrl.\n", __func__);
 	}
 
 	on = enable;
@@ -695,7 +696,7 @@ out:
 
 	first_flag = false;
 
-	input_dbg(true, &info->client->dev, "%s [DONE %s]\n",
+	input_silence(true, &info->client->dev, "%s [DONE %s]\n",
 			__func__, enable ? "on":"off");
 	return ret;
 }
@@ -706,7 +707,7 @@ static inline void mms_clear_input(struct mms_ts_info *info)
 {
 	int i;
 
-	input_dbg(true, &info->client->dev, "%s\n", __func__);
+	input_silence(true, &info->client->dev, "%s\n", __func__);
 
 	input_report_key(info->input_dev, BTN_TOUCH, 0);
 	input_report_key(info->input_dev, BTN_TOOL_FINGER, 0);
@@ -781,8 +782,8 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 	int virtual_key_info = 0;
 	int touch_type = -1;
 
-	input_dbg(false, &client->dev, "%s [START]\n", __func__);
-	input_dbg(false, &client->dev, "%s - sz[%d] buf[0x%02X]\n", __func__, sz, buf[0]);
+	input_silence(false, &client->dev, "%s [START]\n", __func__);
+	input_silence(false, &client->dev, "%s - sz[%d] buf[0x%02X]\n", __func__, sz, buf[0]);
 
 	for (i = 0; i < sz; i += info->event_size) {
 		u8 *packet = &buf[i];
@@ -805,11 +806,11 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 			type = MIP4_EVENT_INPUT_TYPE_KEY;
 			break;
 		default:
-			input_dbg(true, &client->dev, "%s [ERROR] Unknown event format [%d]\n", __func__, info->event_format);
+			input_silence(true, &client->dev, "%s [ERROR] Unknown event format [%d]\n", __func__, info->event_format);
 			goto error;
 		}
 
-		input_dbg(false, &client->dev, "%s - Type[%d]\n", __func__, type);
+		input_silence(false, &client->dev, "%s - Type[%d]\n", __func__, type);
 
 		/* Report input event */
 		if (type == MIP4_EVENT_INPUT_TYPE_SCREEN) {
@@ -886,12 +887,12 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 				palm = (touch_type == TOUCHTYPE_PALM);
 				break;
 			default:
-				input_err(true, &client->dev, "%s [ERROR] Unknown event format [%d]\n", __func__, info->event_format);
+				input_silence(true, &client->dev, "%s [ERROR] Unknown event format [%d]\n", __func__, info->event_format);
 				goto error;
 			}
 
 			if (id >= MAX_FINGER_NUM) {
-				input_err(true, &client->dev, "%s [ERROR] id error [%d]\n", __func__, id);
+				input_silence(true, &client->dev, "%s [ERROR] id error [%d]\n", __func__, id);
 				continue;
 			}
 
@@ -908,7 +909,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 				(state == MMS_TS_COORDINATE_ACTION_NONE)) {
 
 				if ((state == 0) && (info->event_format == EVENT_FORMAT_16BYTE)) {
-					input_dbg(false, &client->dev, "%s state = 0 , no event: 0x%02x\n", __func__, state);
+					input_silence(false, &client->dev, "%s state = 0 , no event: 0x%02x\n", __func__, state);
 				} else {			
 					/* Release */
 					input_mt_slot(info->input_dev, id);
@@ -930,7 +931,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 
 						mms_ts_location_detect(info, location, info->coord[id].x, info->coord[id].y);
 #ifdef CONFIG_SAMSUNG_PRODUCT_SHIP
-						input_dbg(true, &info->client->dev,
+						input_silence(true, &info->client->dev,
 								"[R] tID:%d loc:%s dd:%d,%d mc:%d tc:%d\n",
 								id, location,
 								info->coord[id].x - info->coord[id].p_x,
@@ -938,7 +939,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 								info->coord[id].mcount, info->touch_count);
 
 #else
-						input_dbg(true, &info->client->dev,
+						input_silence(true, &info->client->dev,
 								"[R] tID:%d loc:%s dd:%d,%d mc:%d tc:%d lx:%d ly:%d\n",
 								id, location,
 								info->coord[id].x - info->coord[id].p_x,
@@ -977,7 +978,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 
 					mms_ts_location_detect(info, location, info->coord[id].x, info->coord[id].y);
 #ifdef CONFIG_SAMSUNG_PRODUCT_SHIP
-					input_dbg(true, &info->client->dev,
+					input_silence(true, &info->client->dev,
 							"[P] tID:%d.%d z:%d major:%d minor:%d loc:%s tc:%d p:%d nlvl:%d maxS:%d hid:%d\n",
 							id, (info->input_dev->mt->trkid - 1) & TRKID_MAX,
 							info->coord[id].z,
@@ -986,7 +987,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 							noise_level, max_strength, hover_id_num);
 
 #else
-					input_dbg(true, &info->client->dev,
+					input_silence(true, &info->client->dev,
 							"[P] tID:%d.%d x:%d y:%d z:%d major:%d minor:%d loc:%s tc:%d p:%d nlvl:%d maxS:%d hid:%d\n",
 							id, (info->input_dev->mt->trkid - 1) & TRKID_MAX,
 							info->coord[id].x, info->coord[id].y, info->coord[id].z,
@@ -1012,7 +1013,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 			}
 
 			if (info->coord[id].pre_type != info->coord[id].type)
-				input_dbg(true, &info->client->dev, "%s: tID:%d ttype(%c->%c) : %s\n",
+				input_silence(true, &info->client->dev, "%s: tID:%d ttype(%c->%c) : %s\n",
 						__func__, id, finger_mode[info->coord[id].pre_type],
 						finger_mode[info->coord[id].type], pos);
 
@@ -1033,7 +1034,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 				state = (packet[1] & 0x01);
 				break;
 			default:
-				input_err(true, &client->dev, "%s [ERROR] Unknown event format [%d]\n", __func__, info->event_format);
+				input_silence(true, &client->dev, "%s [ERROR] Unknown event format [%d]\n", __func__, info->event_format);
 				goto error;
 			}
 
@@ -1044,7 +1045,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 
 			if (id == 1 || id ==2) {
 				input_report_key(info->input_dev, key_code, state);
-				input_dbg(false, &client->dev, "%s - Key : ID[%d] Code[%d] State[%d]\n",
+				input_silence(false, &client->dev, "%s - Key : ID[%d] Code[%d] State[%d]\n",
 					__func__, id, key_code, state);
 			}
 		} else if (type == MIP4_EVENT_INPUT_TYPE_PROXIMITY) {
@@ -1059,9 +1060,9 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 
 				if (info->dtdata->support_ear_detect && info->ed_enable) {
 					if (info->ic_status >= LP_MODE) {
-						input_dbg(true, &client->dev, "%s: LPM : SKIP HOVER DETECT(%d)\n", __func__, hover_state);
+						input_silence(true, &client->dev, "%s: LPM : SKIP HOVER DETECT(%d)\n", __func__, hover_state);
 					} else {
-						input_dbg(true, &client->dev, "%s: HOVER DETECT(%d)\n", __func__, hover_state);
+						input_silence(true, &client->dev, "%s: HOVER DETECT(%d)\n", __func__, hover_state);
 						input_report_abs(info->input_dev_proximity, ABS_MT_CUSTOM, hover_state);
 						input_sync(info->input_dev_proximity);
 					}
@@ -1071,7 +1072,7 @@ static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *
 	}
 
 	input_sync(info->input_dev);
-	input_dbg(false, &client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &client->dev, "%s [DONE]\n", __func__);
 error:
 	return;
 }
@@ -1088,7 +1089,7 @@ static inline int mms_custom_event_handler(struct mms_ts_info *info, u8 *rbuf, u
 	u8 gesture_data[4] = {0, };
 	u8 left_event = 0;
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	s_feature = (rbuf[2] >> 6) & 0x03;
 	gesture_type = (rbuf[2] >> 2) & 0x0F;
@@ -1100,8 +1101,8 @@ static inline int mms_custom_event_handler(struct mms_ts_info *info, u8 *rbuf, u
 	gesture_data[3] = rbuf[7];
 	left_event = rbuf[9] & 0x3F;
 
-	input_dbg(false, &info->client->dev, "%s - sf[%u] eid[%u] left[%u]\n", __func__, s_feature, event_id, left_event);
-	input_dbg(true, &info->client->dev, "%s - gesture type[%u] id[%u] data[0x%02X 0x%02X 0x%02X 0x%02X]\n", __func__, gesture_type, gesture_id, gesture_data[0], gesture_data[1], gesture_data[2], gesture_data[3]);
+	input_silence(false, &info->client->dev, "%s - sf[%u] eid[%u] left[%u]\n", __func__, s_feature, event_id, left_event);
+	input_silence(true, &info->client->dev, "%s - gesture type[%u] id[%u] data[0x%02X 0x%02X 0x%02X 0x%02X]\n", __func__, gesture_type, gesture_id, gesture_data[0], gesture_data[1], gesture_data[2], gesture_data[3]);
 
 	if (s_feature) {
 		/* Samsung */
@@ -1109,7 +1110,7 @@ static inline int mms_custom_event_handler(struct mms_ts_info *info, u8 *rbuf, u
 			/* Swipe up */
 			if (gesture_id == 0) {
 				info->scrub_id = SPONGE_EVENT_TYPE_SPAY;
-				input_dbg(true, &info->client->dev, "%s: SPAY: %d\n", __func__, info->scrub_id);
+				input_silence(true, &info->client->dev, "%s: SPAY: %d\n", __func__, info->scrub_id);
 				input_report_key(info->input_dev, KEY_BLACK_UI_GESTURE, 1);
 				input_sync(info->input_dev);
 			}
@@ -1118,12 +1119,12 @@ static inline int mms_custom_event_handler(struct mms_ts_info *info, u8 *rbuf, u
 				info->scrub_id = SPONGE_EVENT_TYPE_AOD_DOUBLETAB;
 				info->scrub_x = (gesture_data[0] << 4)|(gesture_data[2] >> 4);
 				info->scrub_y = (gesture_data[1] << 4)|(gesture_data[2] & 0x0F);
-				input_dbg(true, &info->client->dev, "%s - AOD: id[%d] x[%d] y[%d]\n",
+				input_silence(true, &info->client->dev, "%s - AOD: id[%d] x[%d] y[%d]\n",
 									__func__, info->scrub_id, info->scrub_x, info->scrub_y);
 				input_report_key(info->input_dev, KEY_BLACK_UI_GESTURE, 1);
 				input_sync(info->input_dev);
 			} else if (gesture_id == MMS_GESTURE_ID_DOUBLETAP_TO_WAKEUP) {
-				input_dbg(true, &info->client->dev, "%s: AOT\n", __func__);
+				input_silence(true, &info->client->dev, "%s: AOT\n", __func__);
 				input_report_key(info->input_dev, KEY_WAKEUP, 1);
 				input_sync(info->input_dev);
 				input_report_key(info->input_dev, KEY_WAKEUP, 0);
@@ -1132,23 +1133,23 @@ static inline int mms_custom_event_handler(struct mms_ts_info *info, u8 *rbuf, u
 			info->scrub_id = SPONGE_EVENT_TYPE_SINGLE_TAP;
 			info->scrub_x = (gesture_data[0] << 4)|(gesture_data[2] >> 4);
 			info->scrub_y = (gesture_data[1] << 4)|(gesture_data[2] & 0x0F);
-			input_dbg(true, &info->client->dev, "%s: SINGLE TAP: %d\n", __func__, info->scrub_id);
+			input_silence(true, &info->client->dev, "%s: SINGLE TAP: %d\n", __func__, info->scrub_id);
 			input_report_key(info->input_dev, KEY_BLACK_UI_GESTURE, 1);
 			input_sync(info->input_dev);
 		} else if (gesture_type == MMS_GESTURE_CODE_PRESS) {
 			if (gesture_id == MMS_GESTURE_ID_FOD_LONG || gesture_id == MMS_GESTURE_ID_FOD_NORMAL) {
 				info->scrub_id = SPONGE_EVENT_TYPE_FOD;
-				input_dbg(true, &info->client->dev, "%s: FOD: %s\n", __func__, gesture_id ? "normal" : "long");
+				input_silence(true, &info->client->dev, "%s: FOD: %s\n", __func__, gesture_id ? "normal" : "long");
 				input_report_key(info->input_dev, KEY_BLACK_UI_GESTURE, 1);
 				input_sync(info->input_dev);
 			} else if (gesture_id == MMS_GESTURE_ID_FOD_RELEASE) {
 				info->scrub_id = SPONGE_EVENT_TYPE_FOD_RELEASE;
-				input_dbg(true, &info->client->dev, "%s: FOD release\n", __func__);
+				input_silence(true, &info->client->dev, "%s: FOD release\n", __func__);
 				input_report_key(info->input_dev, KEY_BLACK_UI_GESTURE, 1);
 				input_sync(info->input_dev);
 			} else if (gesture_id == MMS_GESTURE_ID_FOD_OUT) {
 				info->scrub_id = SPONGE_EVENT_TYPE_FOD_OUT;
-				input_dbg(true, &info->client->dev, "%s: FOD OUT\n", __func__);
+				input_silence(true, &info->client->dev, "%s: FOD OUT\n", __func__);
 				input_report_key(info->input_dev, KEY_BLACK_UI_GESTURE, 1);
 				input_sync(info->input_dev);
 			}
@@ -1158,7 +1159,7 @@ static inline int mms_custom_event_handler(struct mms_ts_info *info, u8 *rbuf, u
 	input_report_key(info->input_dev, KEY_BLACK_UI_GESTURE, 0);
 	input_sync(info->input_dev);
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return ret;
 }
 
@@ -1172,7 +1173,7 @@ static inline int sponge_read(struct mms_ts_info *info, u16 addr, u8 *buf, u8 le
 
 	mip4_addr = MIP_LIB_ADDR_START + addr;
 	if (mip4_addr > MIP_LIB_ADDR_END) {
-		input_err(true, &info->client->dev, "%s [ERROR] sponge addr range\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] sponge addr range\n", __func__);
 		ret = -1;
 		goto exit;
 	}
@@ -1180,7 +1181,7 @@ static inline int sponge_read(struct mms_ts_info *info, u16 addr, u8 *buf, u8 le
 	rbuf[0] = (u8)((mip4_addr >> 8) & 0xFF);
 	rbuf[1] = (u8)(mip4_addr & 0xFF);
 	if (mms_i2c_read(info, rbuf, 2, buf, len)) {
-		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_read\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] mms_i2c_read\n", __func__);
 		ret = -1;
 	}
 
@@ -1197,7 +1198,7 @@ static inline int sponge_write(struct mms_ts_info *info, u16 addr, u8 *buf, u8 l
 
 	mip4_addr = MIP_LIB_ADDR_START + addr;
 	if (mip4_addr > MIP_LIB_ADDR_END) {
-		input_err(true, &info->client->dev, "%s [ERROR] sponge addr range\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] sponge addr range\n", __func__);
 		ret = -1;
 		goto exit;
 	}
@@ -1209,7 +1210,7 @@ static inline int sponge_write(struct mms_ts_info *info, u16 addr, u8 *buf, u8 l
 	memcpy(&wbuf[2], buf, len);
 
 	if (mms_i2c_write(info, wbuf, 2 + len)) {
-		input_err(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] mms_i2c_write\n", __func__);
 		ret = -1;
 	}
 
@@ -1235,7 +1236,7 @@ static inline int mms_set_custom_library(struct mms_ts_info *info, u16 addr, u8 
 	wbuf[2] = 1;
 
 	if (mms_i2c_write(info, wbuf, 3)) {
-	  input_err(true,&info->client->dev, "%s [ERROR] mms_i2c_write\n",__func__);
+	  input_silence(true,&info->client->dev, "%s [ERROR] mms_i2c_write\n",__func__);
 	  ret = -1;
 	  goto exit;
 	}
@@ -1273,8 +1274,8 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 	int table_size;
 	int ret = 0;
 
-	input_dbg(true, &info->client->dev, "%s [START]\n", __func__);
-	input_dbg(true, &info->client->dev, "%s - image_type[%d]\n", __func__, image_type);
+	input_silence(true, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(true, &info->client->dev, "%s - image_type[%d]\n", __func__, image_type);
 
 	while (busy_cnt--) {
 		if (info->test_busy == false)
@@ -1290,7 +1291,7 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 	wbuf[1] = MIP_R1_CTRL_EVENT_TRIGGER_TYPE;
 	wbuf[2] = MIP_CTRL_TRIGGER_NONE;
 	if (mms_i2c_write(info, wbuf, 3)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Disable event\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Disable event\n", __func__);
 		return 1;
 	}
 
@@ -1302,25 +1303,25 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 	//check image type
 	switch (image_type) {
 	case MIP_IMG_TYPE_INTENSITY:
-		input_dbg(true, &info->client->dev, "=== Intensity Image ===\n");
+		input_silence(true, &info->client->dev, "=== Intensity Image ===\n");
 		break;
 	case MIP_IMG_TYPE_RAWDATA:
-		input_dbg(true, &info->client->dev, "=== Rawdata Image ===\n");
+		input_silence(true, &info->client->dev, "=== Rawdata Image ===\n");
 		break;
 	case MIP_IMG_TYPE_HSELF_RAWDATA:
-		input_dbg(true, &info->client->dev, "=== self Rawdata Image ===\n");
+		input_silence(true, &info->client->dev, "=== self Rawdata Image ===\n");
 		break;
 	case MIP_IMG_TYPE_HSELF_INTENSITY:
-		input_dbg(true, &info->client->dev, "=== self intensity Image ===\n");
+		input_silence(true, &info->client->dev, "=== self intensity Image ===\n");
 		break;
 	case MIP_IMG_TYPE_PROX_INTENSITY:
-		input_dbg(true, &info->client->dev, "=== PROX intensity Image ===\n");
+		input_silence(true, &info->client->dev, "=== PROX intensity Image ===\n");
 		break;
 	case MIP_IMG_TYPE_5POINT_INTENSITY:
-		input_dbg(true, &info->client->dev, "=== sensitivity Image ===\n");
+		input_silence(true, &info->client->dev, "=== sensitivity Image ===\n");
 		break;		
 	default:
-		input_err(true, &info->client->dev, "%s [ERROR] Unknown image type\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Unknown image type\n", __func__);
 		goto ERROR;
 	}
 
@@ -1329,11 +1330,11 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 	wbuf[1] = MIP_R1_IMAGE_TYPE;
 	wbuf[2] = image_type;
 	if (mms_i2c_write(info, wbuf, 3)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Write image type\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Write image type\n", __func__);
 		goto ERROR;
 	}
 
-	input_dbg(true, &info->client->dev, "%s - set image type\n", __func__);
+	input_silence(true, &info->client->dev, "%s - set image type\n", __func__);
 
 	//wait ready status
 	wait_cnt = 200;
@@ -1343,21 +1344,21 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 
 		msleep(10);
 
-		input_dbg(true, &info->client->dev, "%s - wait [%d]\n", __func__, wait_cnt);
+		input_silence(true, &info->client->dev, "%s - wait [%d]\n", __func__, wait_cnt);
 	}
 
 	if (wait_cnt <= 0) {
-		input_err(true, &info->client->dev, "%s [ERROR] Wait timeout\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Wait timeout\n", __func__);
 		goto ERROR;
 	}
 
-	input_dbg(true, &info->client->dev, "%s - ready\n", __func__);
+	input_silence(true, &info->client->dev, "%s - ready\n", __func__);
 
 	//data format
 	wbuf[0] = MIP_R0_IMAGE;
 	wbuf[1] = MIP_R1_IMAGE_DATA_FORMAT;
 	if (mms_i2c_read(info, wbuf, 2, rbuf, 7)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Read data format\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Read data format\n", __func__);
 		goto ERROR;
 	}
 
@@ -1371,10 +1372,10 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 	data_type_size = data_type & 0x7F;
 	vector_num = rbuf[6];
 
-	input_dbg(true, &info->client->dev,
+	input_silence(true, &info->client->dev,
 		"%s - row_num[%d] col_num[%d] buffer_col_num[%d] rotate[%d] key_num[%d]\n",
 		__func__, row_num, col_num, buffer_col_num, rotate, key_num);
-	input_dbg(true, &info->client->dev,
+	input_silence(true, &info->client->dev,
 		"%s - data_type[0x%02X] data_sign[%d] data_size[%d]\n",
 		__func__, data_type, data_type_sign, data_type_size);
 
@@ -1382,13 +1383,13 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 		wbuf[0] = MIP_R0_IMAGE;
 		wbuf[1] = MIP_R1_IMAGE_VECTOR_INFO;
 		if (mms_i2c_read(info, wbuf, 2, rbuf, (vector_num * 4))) {
-			input_err(true, &info->client->dev, "%s [ERROR] Read vector info\n", __func__);
+			input_silence(true, &info->client->dev, "%s [ERROR] Read vector info\n", __func__);
 			goto ERROR;
 		}
 		for (i = 0; i < vector_num; i++) {
 			vector_id[i] = rbuf[i * 4 + 0] | (rbuf[i * 4 + 1] << 8);
 			vector_elem_num[i] = rbuf[i * 4 + 2] | (rbuf[i * 4 + 3] << 8);
-			input_dbg(true, &info->client->dev, "%s - vector[%d] : id[%d] elem_num[%d]\n", __func__, i, vector_id[i], vector_elem_num[i]);
+			input_silence(true, &info->client->dev, "%s - vector[%d] : id[%d] elem_num[%d]\n", __func__, i, vector_id[i], vector_elem_num[i]);
 		}
 	}
 
@@ -1396,13 +1397,13 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 	wbuf[0] = MIP_R0_IMAGE;
 	wbuf[1] = MIP_R1_IMAGE_BUF_ADDR;
 	if (mms_i2c_read(info, wbuf, 2, rbuf, 2)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Read buf addr\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Read buf addr\n", __func__);
 		goto ERROR;
 	}
 
 	buf_addr_l = rbuf[0];
 	buf_addr_h = rbuf[1];
-	input_dbg(true, &info->client->dev, "%s - buf_addr[0x%02X 0x%02X]\n",
+	input_silence(true, &info->client->dev, "%s - buf_addr[0x%02X 0x%02X]\n",
 		__func__, buf_addr_h, buf_addr_l);
 
 	if ((key_num > 0) || (vector_num > 0)) {
@@ -1411,7 +1412,7 @@ static inline int mms_get_image(struct mms_ts_info *info, u8 image_type)
 
 		buf_addr_l = buf_addr & 0xFF;
 		buf_addr_h = (buf_addr >> 8) & 0xFF;
-		input_dbg(true, &info->client->dev, "%s - vector buf_addr[0x%02X 0x%02X][0x%04X]\n", __func__, buf_addr_h, buf_addr_l, buf_addr);
+		input_silence(true, &info->client->dev, "%s - vector buf_addr[0x%02X 0x%02X][0x%04X]\n", __func__, buf_addr_h, buf_addr_l, buf_addr);
 
 	}
 	goto EXIT;
@@ -1424,7 +1425,7 @@ EXIT:
 	wbuf[1] = MIP_R1_IMAGE_TYPE;
 	wbuf[2] = MIP_IMG_TYPE_NONE;
 	if (mms_i2c_write(info, wbuf, 3)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Clear image type\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Clear image type\n", __func__);
 		ret = 1;
 	}
 
@@ -1433,7 +1434,7 @@ EXIT:
 	wbuf[1] = MIP_R1_CTRL_EVENT_TRIGGER_TYPE;
 	wbuf[2] = MIP_CTRL_TRIGGER_INTR;
 	if (mms_i2c_write(info, wbuf, 3)) {
-		input_err(true, &info->client->dev, "%s [ERROR] Enable event\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] Enable event\n", __func__);
 		ret = 1;
 	}
 
@@ -1446,7 +1447,7 @@ EXIT:
 	enable_irq(info->irq);
 	mutex_unlock(&info->lock);
 
-	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [DONE]\n", __func__);
 	return ret;
 }
 
@@ -1466,7 +1467,7 @@ static inline int mms_parse_devicetree(struct device *dev, struct mms_ts_info *i
 	u32 px_zone[3] = { 0 };
 	u32 tmp[3] = { 0 };
 
-	input_dbg(true, dev, "%s [START]\n", __func__);
+	input_silence(true, dev, "%s [START]\n", __func__);
 
 	info->dtdata->gpio_intr = of_get_named_gpio(np, "melfas,irq-gpio", 0);
 	gpio_request(info->dtdata->gpio_intr, "irq-gpio");
@@ -1474,22 +1475,22 @@ static inline int mms_parse_devicetree(struct device *dev, struct mms_ts_info *i
 	info->client->irq = gpio_to_irq(info->dtdata->gpio_intr);
 
 	if (of_property_read_string(np, "melfas,vdd_en", &info->dtdata->gpio_vdd_en))
-		input_err(true, dev,  "Failed to get regulator_dvdd name property\n");
+		input_silence(true, dev,  "Failed to get regulator_dvdd name property\n");
 
 	if (of_property_read_string(np, "melfas,io_en", &info->dtdata->gpio_io_en)) {
-		input_err(true, dev, "Failed to get regulator_avdd name property\n");
+		input_silence(true, dev, "Failed to get regulator_avdd name property\n");
 		info->dtdata->gpio_io_en = NULL;
 	}
 
 	if (of_property_read_u32_array(np, "melfas,max_x_y", tmp, 2)){
-		input_dbg(true, dev, "Failed to get max_x_y\n");
+		input_silence(true, dev, "Failed to get max_x_y\n");
 	} else {
 		info->dtdata->max_x = tmp[0];
 		info->dtdata->max_y = tmp[1];
 	}
 
 	if (of_property_read_u32_array(np, "melfas,display_resolution", tmp, 2)) {
-		input_err(true, dev,
+		input_silence(true, dev,
 				"%s: display_resolution is not set. set to same as max_coords\n",
 				__func__);
 		info->dtdata->display_x = info->dtdata->max_x;
@@ -1500,7 +1501,7 @@ static inline int mms_parse_devicetree(struct device *dev, struct mms_ts_info *i
 	}
 
 	if (of_property_read_u32_array(np, "melfas,node_info", tmp, 3)){
-		input_dbg(true, dev, "Failed to get node_info\n");
+		input_silence(true, dev, "Failed to get node_info\n");
 	} else {
 		info->dtdata->node_x = tmp[0];
 		info->dtdata->node_y = tmp[1];
@@ -1508,35 +1509,35 @@ static inline int mms_parse_devicetree(struct device *dev, struct mms_ts_info *i
 	}
 
 	if (of_property_read_u32_array(np, "melfas,event_info", tmp, 3)){
-		input_dbg(true, dev, "Failed to get event_info\n");
+		input_silence(true, dev, "Failed to get event_info\n");
 	} else {
 		info->dtdata->event_format = tmp[0];
 		info->dtdata->event_size = tmp[1];
 		info->dtdata->event_size_type = tmp[2];
 	}
-	input_dbg(true, dev, "%s : max_x:%d, max_y:%d, display:%d,%d, node_x:%d, node_y:%d, node_key:%d, event_format:%d, event_size:%d/%d\n",
+	input_silence(true, dev, "%s : max_x:%d, max_y:%d, display:%d,%d, node_x:%d, node_y:%d, node_key:%d, event_format:%d, event_size:%d/%d\n",
 		__func__, info->dtdata->max_x, info->dtdata->max_y, info->dtdata->display_x, info->dtdata->display_y, info->dtdata->node_x, info->dtdata->node_y,
 		info->dtdata->node_key, info->dtdata->event_format, info->dtdata->event_size, info->dtdata->event_size_type);
 
 	if (of_property_read_u32_array(np, "melfas,fod_info", tmp, 3)){
-		input_dbg(true, dev, "Failed to get fod_info\n");
+		input_silence(true, dev, "Failed to get fod_info\n");
 	} else {
 		info->dtdata->fod_tx = tmp[0];
 		info->dtdata->fod_rx = tmp[1];
 		info->dtdata->fod_vi_size= tmp[2];
 	}
 
-	input_dbg(true, dev, "%s : fod_tx:%d, fod_rx:%d, fod_vi_size:%d\n",
+	input_silence(true, dev, "%s : fod_tx:%d, fod_rx:%d, fod_vi_size:%d\n",
 		__func__, info->dtdata->fod_tx, info->dtdata->fod_rx, info->dtdata->fod_vi_size);
 
 	if (of_property_read_u32(np, "melfas,bringup", &info->dtdata->bringup) < 0)
 		info->dtdata->bringup = 0;
 
 	if (of_property_read_string(np, "melfas,fw_name_old", &info->dtdata->fw_name_old))
-		input_err(true, dev, "Failed to get fw_name property\n");
+		input_silence(true, dev, "Failed to get fw_name property\n");
 
 	if (of_property_read_string(np, "melfas,fw_name", &info->dtdata->fw_name))
-		input_err(true, dev, "Failed to get fw_name property\n");
+		input_silence(true, dev, "Failed to get fw_name property\n");
 
 	info->dtdata->support_lpm = of_property_read_bool(np, "melfas,support_lpm");
 	info->dtdata->support_ear_detect = of_property_read_bool(np, "support_ear_detect_mode");
@@ -1556,7 +1557,7 @@ static inline int mms_parse_devicetree(struct device *dev, struct mms_ts_info *i
 	}
 
 	if (of_property_read_u32_array(np, "melfas,area-siz", px_zone, 3)){
-		input_dbg(true, dev, "Failed to get zone's size\n");
+		input_silence(true, dev, "Failed to get zone's size\n");
 		info->dtdata->area_indicator = 133;
 		info->dtdata->area_navigation = 266;
 		info->dtdata->area_edge = 341;
@@ -1565,10 +1566,10 @@ static inline int mms_parse_devicetree(struct device *dev, struct mms_ts_info *i
 		info->dtdata->area_navigation = px_zone[1];
 		info->dtdata->area_edge = px_zone[2];
 	}
-	input_dbg(true, dev, "%s : zone's size - indicator:%d, navigation:%d, edge:%d\n",
+	input_silence(true, dev, "%s : zone's size - indicator:%d, navigation:%d, edge:%d\n",
 		__func__, info->dtdata->area_indicator, info->dtdata->area_navigation ,info->dtdata->area_edge);
 
-	input_dbg(true, dev, "%s: fw_name %s int:%d irq:%d support_LPM:%d AOT:%d FOD:%d ED:%d ProTos:%d\n",
+	input_silence(true, dev, "%s: fw_name %s int:%d irq:%d support_LPM:%d AOT:%d FOD:%d ED:%d ProTos:%d\n",
 		__func__, info->dtdata->fw_name, info->dtdata->gpio_intr, info->client->irq, info->dtdata->support_lpm,
 		info->dtdata->enable_settings_aot, info->dtdata->support_fod, info->dtdata->support_ear_detect, info->dtdata->support_protos);
 
@@ -1583,7 +1584,7 @@ static inline void mms_config_input(struct mms_ts_info *info)
 {
 	struct input_dev *input_dev = info->input_dev;
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
 
 	//Screen
 	set_bit(EV_SYN, input_dev->evbit);
@@ -1617,7 +1618,7 @@ static inline void mms_config_input(struct mms_ts_info *info)
 #endif
 	set_bit(KEY_WAKEUP, input_dev->keybit);
 	set_bit(KEY_BLACK_UI_GESTURE, input_dev->keybit);
-	input_dbg(true, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(true, &info->client->dev, "%s [DONE]\n", __func__);
 }
 
 extern inline int mms_set_power_state(struct mms_ts_info *info, u8 mode)
@@ -1625,33 +1626,33 @@ extern inline int mms_set_power_state(struct mms_ts_info *info, u8 mode)
 	u8 wbuf[3];
 	u8 rbuf[1];
 
-	input_dbg(false, &info->client->dev, "%s [START]\n", __func__);
-	input_dbg(false, &info->client->dev, "%s - mode[%u]\n", __func__, mode);
+	input_silence(false, &info->client->dev, "%s [START]\n", __func__);
+	input_silence(false, &info->client->dev, "%s - mode[%u]\n", __func__, mode);
 
 	wbuf[0] = MIP_R0_CTRL;
 	wbuf[1] = MIP_R1_CTRL_POWER_STATE;
 	wbuf[2] = mode;
 
 	if (mms_i2c_write(info, wbuf, 3)) {
-		input_err(true, &info->client->dev, "%s [ERROR] mip4_ts_i2c_write\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] mip4_ts_i2c_write\n", __func__);
 		return -EIO;
 	}
 
 	msleep(20);
 
 	if (mms_i2c_read(info, wbuf, 2, rbuf, 1)) {
-		input_err(true, &info->client->dev, "%s [ERROR] read %x %x, rbuf %x\n",
+		input_silence(true, &info->client->dev, "%s [ERROR] read %x %x, rbuf %x\n",
 				__func__, wbuf[0], wbuf[1], rbuf[0]);
 		return -EIO;
 	}
 
 	if (rbuf[0] != mode) {
-		input_err(true, &info->client->dev, "%s [ERROR] not changed to %s mode, rbuf %x\n",
+		input_silence(true, &info->client->dev, "%s [ERROR] not changed to %s mode, rbuf %x\n",
 				__func__, mode ? "LPM" : "normal", rbuf[0]);
 		return -EIO;
 	}
 
-	input_dbg(false, &info->client->dev, "%s [DONE]\n", __func__);
+	input_silence(false, &info->client->dev, "%s [DONE]\n", __func__);
 	return 0;
 }
 
@@ -1660,7 +1661,7 @@ extern inline void mip4_ts_sponge_write_time(struct mms_ts_info *info, u32 val)
 	int ret = 0;
 	u8 data[4];
 
-	input_dbg(true, &info->client->dev, "%s - time[%u]\n", __func__, val);
+	input_silence(true, &info->client->dev, "%s - time[%u]\n", __func__, val);
 
 	data[0] = (val >> 0) & 0xFF; /* Data */
 	data[1] = (val >> 8) & 0xFF; /* Data */
@@ -1669,7 +1670,7 @@ extern inline void mip4_ts_sponge_write_time(struct mms_ts_info *info, u32 val)
 
 	ret = mms_set_custom_library(info, SPONGE_UTC_OFFSET, data, 4);
 	if (ret < 0) {
-		input_err(true, &info->client->dev, "%s [ERROR] sponge_write\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] sponge_write\n", __func__);
 		return;
 	}
 }
@@ -1690,7 +1691,7 @@ extern inline int mms_lowpower_mode(struct mms_ts_info *info, u8 on)
 	u8 wbuf[3];
 
 	if (!info->dtdata->support_lpm) {
-		input_err(true, &info->client->dev, "%s not supported\n", __func__);
+		input_silence(true, &info->client->dev, "%s not supported\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1705,11 +1706,11 @@ extern inline int mms_lowpower_mode(struct mms_ts_info *info, u8 on)
 	wbuf[2] = info->prox_power_off;
 
 	if (mms_i2c_write(info, wbuf, 3))
-		input_err(true, &info->client->dev, "%s [ERROR] mip4_ts_i2c_write\n", __func__);
+		input_silence(true, &info->client->dev, "%s [ERROR] mip4_ts_i2c_write\n", __func__);
 
 	ret = mms_set_power_state(info, on);
 	if (ret < 0)
-		input_err(true, &info->client->dev, "%s [ERROR] write power mode %s\n",
+		input_silence(true, &info->client->dev, "%s [ERROR] write power mode %s\n",
 				__func__, on ? "LP" : "NP");
 
 	mms_clear_input(info);
@@ -1726,7 +1727,7 @@ extern inline int mms_lowpower_mode(struct mms_ts_info *info, u8 on)
 	else
 		info->ic_status = PWR_ON;
 
-	input_dbg(true, &info->client->dev, "%s: %s mode_flag:%x prox_power:%d ed:%d pocket:%d\n",
+	input_silence(true, &info->client->dev, "%s: %s mode_flag:%x prox_power:%d ed:%d pocket:%d\n",
 		__func__, on ? "LPM" : "normal", info->lowpower_flag, info->prox_power_off, info->ed_enable, info->pocket_enable);
 	return 0;
 }
@@ -1780,15 +1781,15 @@ static inline int mms_vbus_notification(struct notifier_block *nb,
 	struct mms_ts_info *info = container_of(nb, struct mms_ts_info, vbus_nb);
 	vbus_status_t vbus_type = *(vbus_status_t *)data;
 
-	input_dbg(true, &info->client->dev, "%s cmd=%lu, vbus_type=%d\n", __func__, cmd, vbus_type);
+	input_silence(true, &info->client->dev, "%s cmd=%lu, vbus_type=%d\n", __func__, cmd, vbus_type);
 
 	switch (vbus_type) {
 	case STATUS_VBUS_HIGH:
-		input_dbg(true, &info->client->dev, "%s : attach\n", __func__);
+		input_silence(true, &info->client->dev, "%s : attach\n", __func__);
 		info->ta_stsatus = true;
 		break;
 	case STATUS_VBUS_LOW:
-		input_dbg(true, &info->client->dev, "%s : detach\n", __func__);
+		input_silence(true, &info->client->dev, "%s : detach\n", __func__);
 		info->ta_stsatus = false;
 		break;
 	default:
@@ -1796,7 +1797,7 @@ static inline int mms_vbus_notification(struct notifier_block *nb,
 	}
 
 	if (!info->enabled) {
-		input_err(true, &info->client->dev, "%s tsp disabled", __func__);
+		input_silence(true, &info->client->dev, "%s tsp disabled", __func__);
 		return 0;
 	}
 

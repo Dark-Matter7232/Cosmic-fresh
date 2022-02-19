@@ -61,16 +61,6 @@ static inline bool ext4_bio_encrypted(struct bio *bio)
 #endif
 }
 
-static void
-ext4_trace_read_completion(struct bio *bio)
-{
-	struct page *first_page = bio->bi_io_vec[0].bv_page;
-
-	if (first_page != NULL)
-		trace_android_fs_dataread_end(first_page->mapping->host,
-					      page_offset(first_page),
-					      bio->bi_iter.bi_size);
-}
 
 /*
  * I/O completion handler for multipage BIOs.

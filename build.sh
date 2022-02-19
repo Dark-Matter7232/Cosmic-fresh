@@ -12,6 +12,7 @@ ORIGIN_DIR=$(pwd)
 BUILD_PREF_COMPILER='clang'
 BUILD_PREF_COMPILER_VERSION='proton'
 TOOLCHAIN=$(pwd)/build-shit/toolchain
+IMAGE=$(pwd)/out/arch/arm64/boot/Image
 # export environment variables
 export_env_vars() {
     export KBUILD_BUILD_USER=Const
@@ -83,7 +84,7 @@ build_kernel_image() {
     SUCCESS=$?
     echo -e "${RST}"
 
-    if [ $SUCCESS -eq 0 ]
+    if [ $SUCCESS -eq 0 ] && [ -f "$IMAGE" ]
     then
         echo -e "${GRN}"
         script_echo "------------------------------------------------------------"

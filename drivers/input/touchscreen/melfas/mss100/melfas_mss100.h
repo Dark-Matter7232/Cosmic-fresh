@@ -89,7 +89,7 @@ static struct delayed_work *p_ghost_check;
 #else
 #define RESET_ON_EVENT_ERROR		1
 #endif
-#define ESD_COUNT_FOR_DISABLE		7
+#define ESD_COUNT_FOR_DISABLE		1
 #define MMS_USE_TOUCHKEY		0
 
 #define POWER_ON_DELAY        150 /* ms */

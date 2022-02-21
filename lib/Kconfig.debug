@@ -2072,6 +2072,11 @@ config DEBUG_SNAPSHOT_DM
 	depends on DEBUG_SNAPSHOT && EXYNOS_DVFS_MANAGER && !DEBUG_SNAPSHOT_MINIMIZED_MODE
 	default y
 
+config EXYNOS_SNAPSHOT_DM
+	bool "Enable debugging of dvfs manager event by kevent(EXPERIMENTAL)"
+	depends on DEBUG_SNAPSHOT && EXYNOS_DVFS_MANAGER && !DEBUG_SNAPSHOT_MINIMIZED_MODE
+	default y
+
 config DEBUG_SNAPSHOT_HRTIMER
 	bool "Enable debugging of hrtimer by kevent"
 	depends on DEBUG_SNAPSHOT && !DEBUG_SNAPSHOT_MINIMIZED_MODE

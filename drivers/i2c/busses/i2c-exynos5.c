@@ -317,49 +317,6 @@ static void recover_gpio_pins(struct exynos5_i2c *i2c)
 }
 #endif
 
-static inline void dump_i2c_register(struct exynos5_i2c *i2c)
-{
-	dev_err(i2c->dev, "Register dump(suspended : %d)\n"
-		"CTL          0x%08x   "
-		"FIFO_CTL     0x%08x   "
-		"INT_EN       0x%08x   "
-		"INT_STAT     0x%08x \n"
-		"FIFO_STAT    0x%08x   "
-		"CONF         0x%08x   "
-		"CONF2        0x%08x   "
-		"TRANS_STAT   0x%08x \n"
-		"TIMING_HS1   0x%08x   "
-		"TIMING_HS2   0x%08x   "
-		"TIMING_HS3   0x%08x   "
-		"TIMING_FS1   0x%08x \n"
-		"TIMING_FS2   0x%08x   "
-		"TIMING_FS3   0x%08x   "
-		"TRAILING_CTL 0x%08x   "
-		"ADDR         0x%08x \n"
-		, i2c->suspended
-		, readl(i2c->regs + HSI2C_CTL)
-		, readl(i2c->regs + HSI2C_FIFO_CTL)
-		, readl(i2c->regs + HSI2C_INT_ENABLE)
-		, readl(i2c->regs + HSI2C_INT_STATUS)
-		, readl(i2c->regs + HSI2C_FIFO_STATUS)
-		, readl(i2c->regs + HSI2C_CONF)
-		, readl(i2c->regs + HSI2C_AUTO_CONF)
-		, readl(i2c->regs + HSI2C_TRANS_STATUS)
-		, readl(i2c->regs + HSI2C_TIMING_HS1)
-		, readl(i2c->regs + HSI2C_TIMING_HS2)
-		, readl(i2c->regs + HSI2C_TIMING_HS3)
-		, readl(i2c->regs + HSI2C_TIMING_FS1)
-		, readl(i2c->regs + HSI2C_TIMING_FS2)
-		, readl(i2c->regs + HSI2C_TIMING_FS3)
-		, readl(i2c->regs + HSI2C_TRAILIG_CTL)
-		, readl(i2c->regs + HSI2C_ADDR)
-	);
-
-#ifdef CONFIG_GPIOLIB
-	recover_gpio_pins(i2c);
-#endif
-}
-
 static void exynos5_i2c_clr_pend_irq(struct exynos5_i2c *i2c)
 {
 	writel(readl(i2c->regs + HSI2C_INT_STATUS),
@@ -792,7 +749,6 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c,
 			}
 
 			if (ret == -EAGAIN) {
-				dump_i2c_register(i2c);
 				exynos5_i2c_reset(i2c);
 				dev_warn(i2c->dev, "rx timeout\n");
 				return ret;
@@ -827,7 +783,6 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c,
 			}
 
 			if (timeout == 0) {
-				dump_i2c_register(i2c);
 				exynos5_i2c_reset(i2c);
 				dev_warn(i2c->dev, "rx timeout\n");
 				ret = -EAGAIN;
@@ -859,7 +814,6 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c,
 				udelay(1);
 			}
 			if (ret == -EAGAIN) {
-				dump_i2c_register(i2c);
 				exynos5_i2c_reset(i2c);
 				dev_warn(i2c->dev, "tx timeout\n");
 				return ret;
@@ -870,7 +824,6 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c,
 			disable_irq(i2c->irq);
 
 			if (timeout == 0) {
-				dump_i2c_register(i2c);
 				exynos5_i2c_reset(i2c);
 				dev_warn(i2c->dev, "tx timeout\n");
 				return ret;

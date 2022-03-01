@@ -1667,7 +1667,7 @@ static struct input_handler zram_wb_input_handler = {
 	.name           = "zram_wb_input_handler",
 	.id_table       = zram_wb_input_ids,
 };
-
+#ifdef CONFIG_ZRAM_WRITEBACK
 static void zram_wb_fb_work(struct work_struct *work)
 {
 	struct blk_plug plug;
@@ -1706,7 +1706,8 @@ static void zram_wb_fb_work(struct work_struct *work)
 	__pm_relax(&zram_wb_wakelock);
 	mutex_unlock(&zram_wb_wakelock_mutex);
 }
-
+#endif
+#ifdef CONFIG_ZRAM_WRITEBACK
 static int msm_drm_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
@@ -1736,7 +1737,8 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 out:
 	return NOTIFY_OK;
 }
-
+#endif
+#ifdef CONFIG_ZRAM_WRITEBACK
 static struct notifier_block fb_notifier_block = {
 	.notifier_call = msm_drm_notifier_callback,
 };
@@ -1757,7 +1759,7 @@ static void __exit destroy_zram_wb(void)
 	fb_unregister_client(&fb_notifier_block);
 	wakeup_source_trash(&zram_wb_wakelock);
 }
-
+#endif
 static void __zram_make_request(struct zram *zram, struct bio *bio)
 {
 	int offset;
@@ -2339,9 +2341,9 @@ static int __init zram_init(void)
 			goto out_error;
 		num_devices--;
 	}
-
+#ifdef CONFIG_ZRAM_WRITEBACK
 	init_zram_wb();
-
+#endif
 	return 0;
 
 out_error:
@@ -2351,7 +2353,9 @@ out_error:
 
 static void __exit zram_exit(void)
 {
+#ifdef CONFIG_ZRAM_WRITEBACK
 	destroy_zram_wb();
+#endif
 	destroy_devices();
 }
 

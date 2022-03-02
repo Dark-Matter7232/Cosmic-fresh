@@ -33,7 +33,7 @@
 #include <linux/sysfs.h>
 #include <linux/debugfs.h>
 #include <linux/cpuhotplug.h>
-#include <linux/fb.h>
+#include <linux/msm_drm_notify.h>
 #include <linux/input.h>
 #include <linux/power_supply.h>
 
@@ -1710,22 +1710,26 @@ static void zram_wb_fb_work(struct work_struct *work)
 static int msm_drm_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
-	struct fb_event *evdata = data;
+	struct msm_drm_notifier *evdata = data;
 	int *blank;
 
-	if (event != FB_EVENT_BLANK)
+	if (event != MSM_DRM_EVENT_BLANK && event != MSM_DRM_EARLY_EVENT_BLANK)
+		goto out;
+
+	if (!evdata || !evdata->data || evdata->id != MSM_DRM_PRIMARY_DISPLAY)
 		goto out;
 
 	blank = evdata->data;
 	switch (*blank) {
-	case FB_BLANK_POWERDOWN:
-	case FB_BLANK_NORMAL:
+	case MSM_DRM_BLANK_POWERDOWN_CUST:
+	case MSM_DRM_BLANK_POWERDOWN:
+	case MSM_DRM_BLANK_NORMAL:
 		if (!screen_on)
 			goto out;
 		screen_on = false;
 		queue_work(system_power_efficient_wq, &zram_wb_fb_worker);
 		break;
-	case FB_BLANK_UNBLANK:
+	case MSM_DRM_BLANK_UNBLANK_CUST:
 		if (screen_on)
 			goto out;
 		screen_on = true;
@@ -1747,14 +1751,14 @@ static void __init init_zram_wb(void)
 
 	INIT_WORK(&zram_wb_fb_worker, zram_wb_fb_work);
 	wakeup_source_init(&zram_wb_wakelock, "zram_wb_wakelock");
-	fb_register_client(&fb_notifier_block);
+	msm_drm_register_client(&fb_notifier_block);
 	i = input_register_handler(&zram_wb_input_handler);
 }
 
 static void __exit destroy_zram_wb(void)
 {
 	input_unregister_handler(&zram_wb_input_handler);
-	fb_unregister_client(&fb_notifier_block);
+	msm_drm_unregister_client(&fb_notifier_block);
 	wakeup_source_trash(&zram_wb_wakelock);
 }
 

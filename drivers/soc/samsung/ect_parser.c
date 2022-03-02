@@ -10,6 +10,7 @@
 #include <linux/file.h>
 #include <linux/module.h>
 #include <linux/vmalloc.h>
+#include <linux/cpufreq.h>
 
 #define ALIGNMENT_SIZE	 4
 
@@ -74,6 +75,17 @@ static int ect_parse_dvfs_domain(int parser_version, void *address, struct ect_d
 
 	ect_parse_integer(&address, &domain->max_frequency);
 	ect_parse_integer(&address, &domain->min_frequency);
+
+		if (domain->max_frequency == 2184000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			domain->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (domain->max_frequency == 2080000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			domain->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (domain->max_frequency == 1976000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			domain->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (domain->max_frequency == 1898000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			domain->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (domain->max_frequency == 1534000) //Skip this freq and jump to the next efficient freq-for little cluster.
+			domain->max_frequency = CPUFREQ_ENTRY_INVALID;
 
 	if (parser_version >= 2) {
 		ect_parse_integer(&address, &domain->boot_level_idx);
@@ -266,6 +278,8 @@ err_pll_list_allocation:
 	return ret;
 }
 
+static int freq_jump_workaround = 1;
+
 static int ect_parse_voltage_table(int parser_version, void **address, struct ect_voltage_domain *domain, struct ect_voltage_table *table)
 {
 	int num_of_data = domain->num_of_group * domain->num_of_level;
@@ -278,6 +292,7 @@ static int ect_parse_voltage_table(int parser_version, void **address, struct ec
 
 		table->level_en = *address;
 		*address += sizeof(int32_t) * domain->num_of_level;
+		table->level_en = &freq_jump_workaround;
 	} else {
 		table->boot_level_idx = -1;
 		table->resume_level_idx = -1;
@@ -558,6 +573,19 @@ static int ect_parse_ap_thermal_function(int parser_version, void *address, stru
 		ect_parse_integer(&address, &range->lower_bound_temperature);
 		ect_parse_integer(&address, &range->upper_bound_temperature);
 		ect_parse_integer(&address, &range->max_frequency);
+
+
+		if (range->max_frequency == 2184000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			range->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (range->max_frequency == 2080000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			range->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (range->max_frequency == 1976000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			range->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (range->max_frequency == 1898000) //Skip this freq and jump to the next efficient freq-for big cluster.
+			range->max_frequency = CPUFREQ_ENTRY_INVALID;
+		else if (range->max_frequency == 1534000) //Skip this freq and jump to the next efficient freq-for little cluster.
+			range->max_frequency = CPUFREQ_ENTRY_INVALID;
+
 		ect_parse_integer(&address, &range->sw_trip);
 		ect_parse_integer(&address, &range->flag);
 	}

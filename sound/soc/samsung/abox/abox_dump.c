@@ -565,7 +565,7 @@ static void abox_dump_add_dai_link(struct device *dev)
 	if (abox_dump_card.num_links <= id)
 		abox_dump_card.num_links = id + 1;
 
-	schedule_delayed_work(&abox_dump_register_card_work, HZ);
+	queue_delayed_work(system_power_efficient_wq, &abox_dump_register_card_work, HZ);
 }
 
 static int abox_dump_platform_probe(struct snd_soc_platform *platform)

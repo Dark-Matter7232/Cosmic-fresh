@@ -1673,7 +1673,7 @@ static int abox_tickle_put(struct snd_kcontrol *kcontrol,
 
 	if (!!val) {
 		pm_request_resume(dev);
-		schedule_delayed_work(&data->tickle_work, 1 * HZ);
+		queue_delayed_work(system_power_efficient_wq, &data->tickle_work, 1 * HZ);
 	}
 
 	return 0;
@@ -5667,7 +5667,7 @@ static int abox_enable(struct device *dev)
 
 	abox_pad_retention(false);
 #ifdef MANUAL_SECURITY_CHANGE
-	schedule_delayed_work(&work_temp, msecs_to_jiffies(3000));
+	queue_delayed_work(system_power_efficient_wq, &work_temp, msecs_to_jiffies(3000));
 #endif
 
 	data->enabled = true;

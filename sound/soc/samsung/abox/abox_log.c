@@ -191,7 +191,7 @@ static DECLARE_DEFERRABLE_WORK(abox_log_flush_all_work,
 static void abox_log_flush_all_work_func(struct work_struct *work)
 {
 	abox_log_flush_all(NULL);
-	schedule_delayed_work(&abox_log_flush_all_work, msecs_to_jiffies(3000));
+	queue_delayed_work(system_power_efficient_wq, &abox_log_flush_all_work, msecs_to_jiffies(3000));
 	set_bit(0, &abox_log_flush_all_work_rearm_self);
 }
 
@@ -199,7 +199,7 @@ void abox_log_schedule_flush_all(struct device *dev)
 {
 	if (test_and_clear_bit(0, &abox_log_flush_all_work_rearm_self))
 		cancel_delayed_work(&abox_log_flush_all_work);
-	schedule_delayed_work(&abox_log_flush_all_work, msecs_to_jiffies(100));
+	queue_delayed_work(system_power_efficient_wq, &abox_log_flush_all_work, msecs_to_jiffies(100));
 }
 EXPORT_SYMBOL(abox_log_schedule_flush_all);
 
@@ -420,7 +420,7 @@ static void abox_log_test_work_func(struct work_struct *work)
 
 	abox_log_flush_all(NULL);
 
-	schedule_delayed_work(&abox_log_test_work, msecs_to_jiffies(1000));
+	queue_delayed_work(system_power_efficient_wq, &abox_log_test_work, msecs_to_jiffies(1000));
 }
 #endif
 
@@ -435,7 +435,7 @@ static int __init samsung_abox_log_late_initcall(void)
 	abox_log_test_buffer = vzalloc(SZ_128);
 	abox_log_test_buffer->size = SZ_64;
 	abox_log_register_buffer(NULL, 0, abox_log_test_buffer);
-	schedule_delayed_work(&abox_log_test_work, msecs_to_jiffies(1000));
+	queue_delayed_work(system_power_efficient_wq, &abox_log_test_work, msecs_to_jiffies(1000));
 #endif
 
 	return 0;

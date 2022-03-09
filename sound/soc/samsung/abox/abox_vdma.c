@@ -621,7 +621,7 @@ static int abox_vdma_add_dai_link(struct device *dev)
 	if (abox_vdma_card.num_links <= idx)
 		abox_vdma_card.num_links = idx + 1;
 
-	schedule_delayed_work(&abox_vdma_register_card_work, HZ);
+	queue_delayed_work(system_power_efficient_wq, &abox_vdma_register_card_work, HZ);
 
 	return 0;
 }
@@ -694,7 +694,7 @@ static void test_work_func(struct work_struct *work)
 	}
 	abox_vdma_period_elapsed(info, &info->rtd[0], i % ARRAY_SIZE(test_buf));
 	abox_vdma_period_elapsed(info, &info->rtd[1], i % ARRAY_SIZE(test_buf));
-	schedule_delayed_work(to_delayed_work(work), msecs_to_jiffies(1000));
+	queue_delayed_work(system_power_efficient_wq, to_delayed_work(work), msecs_to_jiffies(1000));
 }
 DECLARE_DELAYED_WORK(test_work, test_work_func);
 
@@ -735,7 +735,7 @@ static int __init samsung_abox_vdma_initcall(void)
 			virt_to_phys(test_buf), &test_hardware);
 	abox_vdma_register(dev_abox, 102, SNDRV_PCM_STREAM_CAPTURE, test_buf,
 			virt_to_phys(test_buf), &test_hardware);
-	schedule_delayed_work(&test_work, HZ * 5);
+	queue_delayed_work(system_power_efficient_wq, &test_work, HZ * 5);
 #endif
 	return 0;
 }

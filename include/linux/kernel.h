@@ -615,7 +615,7 @@ enum ftrace_dump_mode {
 	DUMP_ORIG,
 };
 
-#if 0
+#ifdef CONFIG_TRACING
 void tracing_on(void);
 void tracing_off(void);
 int tracing_is_on(void);

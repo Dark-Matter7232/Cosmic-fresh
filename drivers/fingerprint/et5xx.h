@@ -1255,7 +1255,7 @@ static inline irqreturn_t etspi_fingerprint_interrupt(int irq, void *dev_id)
 	etspi->finger_on = 1;
 	disable_irq_nosync(gpio_irq);
 	wake_up_interruptible(&interrupt_waitq);
-	wake_lock_timeout(&etspi->fp_signal_lock, msecs_to_jiffies(1000));
+	wake_lock_timeout(&etspi->fp_signal_lock, 1 * HZ);
 	pr_info("%s FPS triggered.int_count(%d) On(%d)\n", __func__,
 		etspi->int_count, etspi->finger_on);
 	etspi->interrupt_count++;

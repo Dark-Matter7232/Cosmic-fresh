@@ -619,12 +619,12 @@ static void s2mu106_set_wireless_input_current(
 {
 	union power_supply_propval value;
 
-	wake_lock(&charger->wc_current_wake_lock);
+	wake_lock_stock(&charger->wc_current_wake_lock);
 	if (is_wireless_type(charger->cable_type)) {
 		/* Wcurr-A) In cases of wireless input current change,
 		 * configure the Vrect adj room to 270mV for safe wireless charging.
 		 */
-		wake_lock(&charger->wc_current_wake_lock);
+		wake_lock_stock(&charger->wc_current_wake_lock);
 		value.intval = WIRELESS_VRECT_ADJ_ROOM_1;	/* 270mV */
 		psy_do_property(charger->pdata->wireless_charger_name, set,
 				POWER_SUPPLY_PROP_INPUT_VOLTAGE_REGULATION, value);
@@ -1341,7 +1341,7 @@ static int s2mu106_chg_set_property(struct power_supply *psy,
 
 			s2mu106_read_reg(charger->i2c, S2MU106_CHG_STATUS5, &ivr_state);
 			if (ivr_state & IVR_STATUS) {
-				wake_lock(&charger->ivr_wake_lock);
+				wake_lock_stock(&charger->ivr_wake_lock);
 				/* Mask IRQ */
 				s2mu106_update_reg(charger->i2c,
 					S2MU106_CHG_INT2M, 1 << IVR_M_SHIFT, IVR_M_MASK);
@@ -2120,7 +2120,7 @@ static irqreturn_t s2mu106_ivr_isr(int irq, void *data)
 	struct s2mu106_charger_data *charger = data;
 
 	pr_info("%s: irq(%d)\n", __func__, irq);
-	wake_lock(&charger->ivr_wake_lock);
+	wake_lock_stock(&charger->ivr_wake_lock);
 
 	/* Mask IRQ */
 	s2mu106_update_reg(charger->i2c,

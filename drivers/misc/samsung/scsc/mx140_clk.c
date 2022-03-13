@@ -632,7 +632,7 @@ static void mx140_clk20mhz_restart(void)
 
 	SCSC_TAG_INFO(CLK20, "\n");
 
-	wake_lock(&clk20mhz.clk_wake_lock);
+	__pm_wakeup_event(&clk20mhz.clk_wake_lock, 500);
 
 	mutex_lock(&clk_lock);
 

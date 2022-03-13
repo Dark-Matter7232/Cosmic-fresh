@@ -21,7 +21,7 @@ void slsi_wakelock(struct slsi_wake_lock *lock)
 	}
 	spin_lock_irqsave(&lock->wl_spinlock, flags);
 	if (!lock->counter)
-		wake_lock(&lock->wl);
+		__pm_wakeup_event(&lock->wl, 500);
 
 	lock->counter++;
 	spin_unlock_irqrestore(&lock->wl_spinlock, flags);
@@ -54,7 +54,7 @@ void slsi_wakelock_timeout(struct slsi_wake_lock *lock, int timeout)
 		return;
 	}
 	lock->counter = 1;
-	wake_lock_timeout(&lock->wl, msecs_to_jiffies(timeout));
+	wake_lock_timeout(&lock->wl, msecs_to_jiffies(500));
 }
 
 int slsi_is_wakelock_active(struct slsi_wake_lock *lock)

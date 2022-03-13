@@ -2044,7 +2044,7 @@ static void mxman_failure_work(struct work_struct *work)
 	int used = 0, r = 0;
 
 #ifdef CONFIG_ANDROID
-	wake_lock(&mxman->failure_recovery_wake_lock);
+	__pm_wakeup_event(&mxman->failure_recovery_wake_lock, 500);
 #endif
 	/* Take mutex shared with syserr recovery */
 	mutex_lock(&mxman->mxman_recovery_mutex);
@@ -2326,7 +2326,7 @@ static void mxman_syserr_recovery_work(struct work_struct *work)
 	struct srvman *srvman;
 
 #ifdef CONFIG_ANDROID
-	wake_lock(&mxman->syserr_recovery_wake_lock);
+	__pm_wakeup_event(&mxman->syserr_recovery_wake_lock, 500);
 #endif
 	if (!mutex_trylock(&mxman->mxman_recovery_mutex)) {
 		SCSC_TAG_WARNING(MXMAN, "Syserr during full reset - ignored\n");

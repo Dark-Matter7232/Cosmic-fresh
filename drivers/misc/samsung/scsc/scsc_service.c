@@ -276,7 +276,7 @@ int scsc_mx_service_start(struct scsc_service *service, scsc_mifram_ref ref)
 #endif
 	mutex_lock(&srvman->api_access_mutex);
 #ifdef CONFIG_ANDROID
-	wake_lock(&srvman->sm_wake_lock);
+	__pm_wakeup_event(&srvman->sm_wake_lock, 500);
 #endif
 	if (srvman->error) {
 		tval = ns_to_timeval(mxman->last_panic_time);
@@ -370,7 +370,7 @@ int scsc_mx_service_stop(struct scsc_service *service)
 #endif
 	mutex_lock(&srvman->api_access_mutex);
 #ifdef CONFIG_ANDROID
-	wake_lock(&srvman->sm_wake_lock);
+	__pm_wakeup_event(&srvman->sm_wake_lock, 500);
 #endif
 	if (srvman->error) {
 		tval = ns_to_timeval(mxman->last_panic_time);
@@ -654,7 +654,7 @@ int scsc_mx_service_close(struct scsc_service *service)
 
 	mutex_lock(&srvman->api_access_mutex);
 #ifdef CONFIG_ANDROID
-	wake_lock(&srvman->sm_wake_lock);
+	__pm_wakeup_event(&srvman->sm_wake_lock, 500);
 #endif
 
 	/* TODO - Race conditions here unless we protect better
@@ -740,7 +740,7 @@ struct scsc_service *scsc_mx_service_open(struct scsc_mx *mx, enum scsc_service_
 
 	mutex_lock(&srvman->api_access_mutex);
 #ifdef CONFIG_ANDROID
-	wake_lock(&srvman->sm_wake_lock);
+	__pm_wakeup_event(&srvman->sm_wake_lock, 500);
 #endif
 	/* TODO - need to close potential race conditions - see close */
 	if (srvman->error) {

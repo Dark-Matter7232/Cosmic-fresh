@@ -5679,7 +5679,7 @@ void usbpd_policy_work(struct work_struct *work)
 	policy_state next_state = policy->state;
 	policy_state saved_state;
 
-	wake_lock(&pd_data->policy_wake);
+	wake_lock_usb(&pd_data->policy_wake);
 	do {
 		if (!policy->plug_valid) {
 			pr_debug_once("%s : usbpd cable is empty\n", __func__);

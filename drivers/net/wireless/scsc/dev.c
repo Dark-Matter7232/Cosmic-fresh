@@ -321,11 +321,13 @@ struct slsi_dev *slsi_dev_attach(struct device *dev, struct scsc_mx *core, struc
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 	slsi_wake_lock_init(NULL, &sdev->wlan_wl.ws, "wlan");
 	slsi_wake_lock_init(NULL, &sdev->wlan_wl_mlme.ws, "wlan_mlme");
+	slsi_wake_lock_init(NULL, &sdev->wlan_wl_ma.ws, "wlan_ma");
 	slsi_wake_lock_init(NULL, &sdev->wlan_wl_roam.ws, "wlan_roam");
 	slsi_wake_lock_init(NULL, &sdev->wlan_wl_init.ws, "wlan_init");
 #else
 	slsi_wake_lock_init(&sdev->wlan_wl, WAKE_LOCK_SUSPEND, "wlan");
 	slsi_wake_lock_init(&sdev->wlan_wl_mlme, WAKE_LOCK_SUSPEND, "wlan_mlme");
+	slsi_wake_lock_init(&sdev->wlan_wl_ma, WAKE_LOCK_SUSPEND, "wlan_ma");
 	slsi_wake_lock_init(&sdev->wlan_wl_roam, WAKE_LOCK_SUSPEND, "wlan_roam");
 	slsi_wake_lock_init(&sdev->wlan_wl_init, WAKE_LOCK_SUSPEND, "wlan_init");
 #endif
@@ -507,6 +509,7 @@ err_ctrl_wq_init:
 err_if:
 	slsi_wake_lock_destroy(&sdev->wlan_wl);
 	slsi_wake_lock_destroy(&sdev->wlan_wl_mlme);
+	slsi_wake_lock_destroy(&sdev->wlan_wl_ma);
 	slsi_wake_lock_destroy(&sdev->wlan_wl_roam);
 	slsi_wake_lock_destroy(&sdev->wlan_wl_init);
 
@@ -575,6 +578,7 @@ void slsi_dev_detach(struct slsi_dev *sdev)
 	SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Clean up wakelocks\n");
 	slsi_wake_lock_destroy(&sdev->wlan_wl);
 	slsi_wake_lock_destroy(&sdev->wlan_wl_mlme);
+	slsi_wake_lock_destroy(&sdev->wlan_wl_ma);
 	slsi_wake_lock_destroy(&sdev->wlan_wl_roam);
 	slsi_wake_lock_destroy(&sdev->wlan_wl_init);
 

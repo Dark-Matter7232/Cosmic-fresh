@@ -250,7 +250,7 @@ void scsc_mx_request_firmware_mutex_lock(struct scsc_mx *mx)
 }
 void scsc_mx_request_firmware_wake_lock(struct scsc_mx *mx)
 {
-	wake_lock(&mx->scsc_mx_wl_request_firmware);
+	__pm_wakeup_event(&mx->scsc_mx_wl_request_firmware, 500);
 }
 void scsc_mx_request_firmware_mutex_unlock(struct scsc_mx *mx)
 {

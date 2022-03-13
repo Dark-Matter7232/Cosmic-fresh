@@ -384,7 +384,7 @@ int scsc_wlbtd_get_and_print_build_type(void)
 	int rc = 0;
 
 	SCSC_TAG_DEBUG(WLBTD, "start\n");
-	wake_lock(&wlbtd_wakelock);
+	__pm_wakeup_event(&wlbtd_wakelock, 500);
 
 	/* check if the value wasn't cached yet */
 	mutex_lock(&build_type_lock);
@@ -461,7 +461,7 @@ int wlbtd_write_file(const char *file_path, const char *file_content)
 	SCSC_TAG_DEBUG(WLBTD, "start\n");
 
 	mutex_lock(&write_file_lock);
-	wake_lock(&wlbtd_wakelock);
+	__pm_wakeup_event(&wlbtd_wakelock, 500);
 
 	skb = nlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
 	if (!skb) {
@@ -558,7 +558,7 @@ int call_wlbtd_sable(u8 trigger_code, u16 reason_code)
 	unsigned long max_timeout_jiffies = msecs_to_jiffies(MAX_TIMEOUT);
 
 	mutex_lock(&sable_lock);
-	wake_lock(&wlbtd_wakelock);
+	__pm_wakeup_event(&wlbtd_wakelock, 500);
 
 	SCSC_TAG_INFO(WLBTD, "start:trigger - %s\n",
 		scsc_get_trigger_str((int)trigger_code));
@@ -683,7 +683,7 @@ int call_wlbtd(const char *script_path)
 
 	SCSC_TAG_DEBUG(WLBTD, "start\n");
 
-	wake_lock(&wlbtd_wakelock);
+	__pm_wakeup_event(&wlbtd_wakelock, 500);
 
 	skb = nlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
 	if (!skb) {

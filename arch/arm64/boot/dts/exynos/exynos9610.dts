@@ -3380,7 +3380,7 @@
 			boost_table = < 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 60 910000 80 >;
+			upscale_ratio_table = < 60 1534000 80 >;
 		};
 
 		domain@1 {

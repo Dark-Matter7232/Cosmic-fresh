@@ -76,14 +76,6 @@ needed).
    crypto/index
    filesystems/index
 
-Architecture-agnostic documentation
------------------------------------
-
-.. toctree::
-   :maxdepth: 2
-
-   asm-annotations
-
 Architecture-specific documentation
 -----------------------------------
 

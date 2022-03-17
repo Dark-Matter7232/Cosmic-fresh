@@ -108,7 +108,7 @@ extern int exynos_cpufreq_domain_count(void);
  * the time it takes on this CPU to switch between
  * two frequencies in nanoseconds
  */
-#define TRANSITION_LATENCY	4500000
+#define TRANSITION_LATENCY	3000000
 
 /*
  * Exynos CPUFreq API

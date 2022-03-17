@@ -934,8 +934,7 @@ struct devkmsg_user {
 
 static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 {
-	char *line;
-	char buf[LOG_LINE_MAX + PREFIX_MAX];
+	char *buf, *line;
 	int level = default_message_loglevel;
 	int facility = 1;	/* LOG_USER */
 	struct file *file = iocb->ki_filp;
@@ -959,10 +958,13 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 			return ret;
 	}
 
-	memset(&buf, 0, LOG_LINE_MAX + PREFIX_MAX);
+	buf = kmalloc(len+1, GFP_KERNEL);
+	if (buf == NULL)
+		return -ENOMEM;
 
 	buf[len] = '\0';
 	if (!copy_from_iter_full(buf, len, from)) {
+		kfree(buf);
 		return -EFAULT;
 	}
 
@@ -988,17 +990,11 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 			endp++;
 			len -= endp - line;
 			line = endp;
-			if (unlikely(strncmp("healthd", line, 7) == 0 ||
-				strncmp("SSP", line, 3) == 0 ||
-				strncmp("VIB", line, 3) == 0 ||
-				strncmp("LNK-RX", line, 6) == 0 ||
-				strncmp("dc_vib", line, 6) == 0 ||
-				strncmp("sec_input", line, 9) == 0))
-				return len;
 		}
 	}
 
 	printk_emit(facility, level, NULL, 0, "%s", line);
+	kfree(buf);
 	return ret;
 }
 
@@ -1479,11 +1475,13 @@ static size_t msg_print_text(const struct printk_log *msg, bool syslog, char *bu
 
 static int syslog_print(char __user *buf, int size)
 {
-	char text[LOG_LINE_MAX + PREFIX_MAX];
+	char *text;
 	struct printk_log *msg;
 	int len = 0;
 
-	memset(&text, 0, LOG_LINE_MAX + PREFIX_MAX);
+	text = kmalloc(LOG_LINE_MAX + PREFIX_MAX, GFP_KERNEL);
+	if (!text)
+		return -ENOMEM;
 
 	while (size > 0) {
 		size_t n;
@@ -1532,15 +1530,18 @@ static int syslog_print(char __user *buf, int size)
 		buf += n;
 	}
 
+	kfree(text);
 	return len;
 }
 
 static int syslog_print_all(char __user *buf, int size, bool clear, bool knox)
 {
-	char text[LOG_LINE_MAX + PREFIX_MAX];
+	char *text;
 	int len = 0;
 
-	memset(&text, 0, LOG_LINE_MAX + PREFIX_MAX);
+	text = kmalloc(LOG_LINE_MAX + PREFIX_MAX, GFP_KERNEL);
+	if (!text)
+		return -ENOMEM;
 
 	logbuf_lock_irq();
 	if (buf) {
@@ -1633,6 +1634,7 @@ static int syslog_print_all(char __user *buf, int size, bool clear, bool knox)
 
 	logbuf_unlock_irq();
 
+	kfree(text);
 	return len;
 }
 
@@ -2373,7 +2375,7 @@ static int __init console_suspend_disable(char *str)
 }
 __setup("no_console_suspend", console_suspend_disable);
 module_param_named(console_suspend, console_suspend_enabled,
-		bool, 0444);
+		bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(console_suspend, "suspend console during suspend"
 	" and hibernate operations");
 

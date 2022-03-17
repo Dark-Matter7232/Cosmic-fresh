@@ -988,17 +988,15 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 			endp++;
 			len -= endp - line;
 			line = endp;
-			if (unlikely(strncmp("healthd", line, 7) == 0 ||
-				strncmp("SSP", line, 3) == 0 ||
-				strncmp("VIB", line, 3) == 0 ||
-				strncmp("LNK-RX", line, 6) == 0 ||
-				strncmp("dc_vib", line, 6) == 0 ||
-				strncmp("sec_input", line, 9) == 0))
-				return len;
+			if (strstr(line, "healthd") ||
+				strstr(line, "cacert") ||
+				strncmp(line, "logd: Skipping", sizeof("logd: Skipping")))
+				goto free;
 		}
 	}
 
 	printk_emit(facility, level, NULL, 0, "%s", line);
+free:
 	return ret;
 }
 

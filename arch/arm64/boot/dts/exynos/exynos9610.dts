@@ -3411,7 +3411,7 @@
 			device_type = "cpufreq-userctrl";
 			shared-cpus = "4-7";
 
-			user-default-qos = <936000>;
+			user-default-qos = <1040000>;
 			user-boost = <1>;
 
 			min-limit {
@@ -3478,7 +3478,7 @@
 
 			user-boost = <0>;
 
-			user-default-qos = <702000>;	/* 715000 for Lhotse */
+			user-default-qos = <1222000>;	/* 715000 for Lhotse */
 
 			#cooling-cells = <2>; /* min followed by max */
 

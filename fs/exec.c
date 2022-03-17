@@ -94,7 +94,7 @@ int suid_dumpable = 0;
 static LIST_HEAD(formats);
 static DEFINE_RWLOCK(binfmt_lock);
 
-#define HWCOMPOSER_BIN_PREFIX "/vendor/bin/hw/android.hardware.graphics.composer"
+#define HWCOMPOSER_BIN_PREFIX "/vendor/bin/hw/android.hardware.graphics.composer@2.1-service"
 #define SEC_WLBTD_BIN_PREFIX "/vendor/bin/wlbtd"
 #define SEC_WLAN_HAL_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.wifi@2.0-service"
 #define SEM_HYPER_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.hyper-service"

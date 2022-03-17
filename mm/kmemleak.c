@@ -1852,7 +1852,7 @@ static ssize_t kmemleak_write(struct file *file, const char __user *user_buf,
 	}
 
 	if (strncmp(buf, "off", 3) == 0)
-		kmemleak_disable();
+		pr_warn("ur mum");
 	else if (strncmp(buf, "stack=on", 8) == 0)
 		kmemleak_stack_scan = 1;
 	else if (strncmp(buf, "stack=off", 9) == 0)

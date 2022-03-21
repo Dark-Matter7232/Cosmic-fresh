@@ -588,7 +588,7 @@ config STRING_SELFTEST
 
 config FFSI
 	bool
-	default y
+	default n
 	help
 	  Library to support FFSI class as the realization of Elastic Capacity
 	  Vessel abstract theory.
@@ -596,7 +596,7 @@ config FFSI
 config SCHED_FFSI_GLUE
 	bool
 	depends on FFSI
-	default y
+	default n
 	help
 	  Glue interface sticking edge of CFS scheduler and smoother governor
 	  working based on FFSI concept strategy.

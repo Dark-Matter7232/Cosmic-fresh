@@ -3293,7 +3293,7 @@
 		g3d_genpd_name = "pd-g3d"; /*KC, RM: pd-g3d, LT,MK: pd-embedded_g3d*/
         #cooling-cells = <2>; /* min followed by max */
 		governor = "interactive";
-		interactive_info = <764000 75 0>;
+		interactive_info = <764000 65 0>;
 		gpu_dvfs_table_size = <11 7>; /*<row col>*/
 		/*  8 columns      freq  down   up  stay  mif    little  middle   big  */
 		gpu_dvfs_table = <  1053000    95  100   1  2093000 1638000       0

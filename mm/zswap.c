@@ -1079,10 +1079,10 @@ static int zswap_size_notifier(struct notifier_block *nb,
 	s = (struct seq_file *)data;
 	if (s)
 		seq_printf(s, "ZSwapDevice:    %8lu kB\n",
-			(unsigned long)zswap_pool_total_size >> 10);
+			(unsigned long)zswap_pool_total_size_kb >> 10);
 	else
 		pr_cont("ZSwapDevice:%lukB ",
-			(unsigned long)zswap_pool_total_size >> 10);
+			(unsigned long)zswap_pool_total_size_kb >> 10);
 	return 0;
 }
 

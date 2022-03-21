@@ -562,8 +562,6 @@ static unsigned long swapin_nr_pages(unsigned long offset)
 struct page *swapin_readahead(swp_entry_t entry, gfp_t gfp_mask,
 			struct vm_area_struct *vma, unsigned long addr)
 {
-	struct vm_area_struct *vma = vmf->vma;
-	unsigned long addr = vmf->address;
 	bool do_poll = true;
 #ifdef CONFIG_SWAP_ENABLE_READAHEAD
 	struct page *page;

@@ -109,6 +109,7 @@ domainfilter_mt(const struct sk_buff *skb, struct xt_action_param *par)
         return false;
     }
 
+#ifdef CONFIG_KNOX_NCM
     // check domain name match
     if (sk->domain_name[0] != '\0') {
         return matchHost(info->domain_name, sk->domain_name);
@@ -116,6 +117,7 @@ domainfilter_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
     // didn't match
     return false;
+#endif
 }
 
 static struct xt_match domainfilter_mt_reg __read_mostly = {

@@ -902,7 +902,7 @@ int mms_charger_attached(struct mms_ts_info *info, bool status)
 static irqreturn_t mms_interrupt(int irq, void *dev_id)
 {
 	struct mms_ts_info *info = dev_id;
-	struct i2c_client *client = info->client;
+	struct i2c_client *client __maybe_unused = info->client;
 	unsigned int packet_size = info->event_size * MAX_FINGER_NUM + 1;
 	u8 wbuf[8];
 	u8 rbuf[packet_size];
@@ -1097,7 +1097,7 @@ int mms_fw_update_from_storage(struct mms_ts_info *info, bool force, bool signin
 	size_t fw_size, nread;
 	int ret = 0;
 	size_t spu_fw_size;
-	size_t spu_ret = 0;
+	size_t spu_ret __maybe_unused = 0;
 
 	input_silence(true, &info->client->dev, "%s [START]\n", __func__);
 

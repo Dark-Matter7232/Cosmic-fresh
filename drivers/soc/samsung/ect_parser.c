@@ -23,7 +23,7 @@ static struct ect_info ect_list[];
 
 static char ect_signature[] = "PARA";
 
-static struct class *ect_class;
+static struct class *ect_class __maybe_unused;
 
 static phys_addr_t ect_address;
 static phys_addr_t ect_size;

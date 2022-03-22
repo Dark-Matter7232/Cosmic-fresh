@@ -78,7 +78,7 @@ static void scsc_bt_shm_irq_handler(int irqbit, void *data)
 	    bt_service.bsmhcp_protocol->header.panic_deathbed_confession) {
 		bt_service.interrupt_read_count++;
 
-		__pm_wakeup_event(&bt_service.read_wake_lock, HZ);
+		wake_lock_timeout(&bt_service.read_wake_lock, HZ);
 		wake_up(&bt_service.read_wait);
 	}
 

@@ -613,7 +613,7 @@ static inline bool ta_connected;
 static inline int mms_power_control(struct mms_ts_info *info, int enable)
 {
 	int ret = 0;
-	struct i2c_client *client = info->client;
+	struct i2c_client *client __maybe_unused = info->client;
 	struct regulator *regulator_dvdd = NULL;
 	struct regulator *regulator_avdd = NULL;
 	struct pinctrl_state *pinctrl_state;
@@ -758,7 +758,7 @@ static const char finger_mode[10] = { 'N', 'P' };
  */
 static inline void mms_input_event_handler(struct mms_ts_info *info, u8 sz, u8 *buf)
 {
-	struct i2c_client *client = info->client;
+	struct i2c_client *client __maybe_unused = info->client;
 	int i;
 	int id;
 	int hover = 0;

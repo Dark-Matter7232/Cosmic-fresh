@@ -342,7 +342,7 @@ EXIT:
 static void cmd_get_chip_vendor(void *device_data)
 {
 	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
+	struct mms_ts_info *info __maybe_unused = container_of(sec, struct mms_ts_info, sec);
 
 	char buf[64] = { 0 };
 
@@ -397,7 +397,7 @@ EXIT:
 static void cmd_get_chip_name(void *device_data)
 {
 	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
+	struct mms_ts_info *info __maybe_unused = container_of(sec, struct mms_ts_info, sec);
 	char buf[64] = { 0 };
 	//u8 rbuf[64];
 
@@ -713,300 +713,56 @@ static void cmd_module_on_master(void *device_data)
 /**
  * Command : Run cm delta test
  */
-static void cmd_run_test_cm(void *device_data)
+static inline void cmd_run_test_cm(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-
-	sec_cmd_set_default_result(sec);
-
-	snprintf(buf, sizeof(buf), "%d,%d", info->test_min, info->test_max);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-EXIT:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING)
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CM");
 }
 
-static void cmd_run_test_cm_all(void *device_data)
+static inline void cmd_run_test_cm_all(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-
-	sec_cmd_set_default_result(sec);
-
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-out:
-	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
-static void cmd_run_test_cm_h_gap(void *device_data)
+static inline void cmd_run_test_cm_h_gap(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-
-	sec_cmd_set_default_result(sec);
-
-	snprintf(buf, sizeof(buf), "%d,%d", info->test_min, info->test_max);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-EXIT:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING)
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CM_H_GAP");
 }
 
-static void cmd_run_test_cm_h_gap_all(void *device_data)
+static inline void cmd_run_test_cm_h_gap_all(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	int ret;
-
-	sec_cmd_set_default_result(sec);
-
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-out:
-	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
-static void cmd_run_test_cm_v_gap(void *device_data)
+static inline void cmd_run_test_cm_v_gap(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-
-	sec_cmd_set_default_result(sec);
-
-	snprintf(buf, sizeof(buf), "%d,%d", info->test_min, info->test_max);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-EXIT:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING)
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CM_V_GAP");
 }
-static void cmd_run_test_cm_v_gap_all(void *device_data)
+static inline void cmd_run_test_cm_v_gap_all(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	int ret;
-
-	sec_cmd_set_default_result(sec);
-
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-out:
-	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
-static void cmd_run_test_cm_jitter(void *device_data)
+static inline void cmd_run_test_cm_jitter(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-
-	sec_cmd_set_default_result(sec);
-
-	snprintf(buf, sizeof(buf), "%d,%d", info->test_min, info->test_max);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-EXIT:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING)
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CM_JITTER");
 }
-static void cmd_run_test_cm_jitter_all(void *device_data)
+static inline void cmd_run_test_cm_jitter_all(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	int ret;
-
-	sec_cmd_set_default_result(sec);
-
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-out:
-	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
-static void cmd_run_test_cp(void *device_data)
+static inline void cmd_run_test_cp(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-	int i;
-	int tx_min, rx_min;
-	int tx_max, rx_max;
-
-	for (i = 0; i < info->node_y; i++) {
-		if (i == 0)
-			rx_min = rx_max = info->image_buf[i];
-
-		rx_min = min(rx_min, info->image_buf[i]);
-		rx_max = max(rx_max, info->image_buf[i]);
-	}
-
-	for (i = info->node_y; i < (info->node_x + info->node_y); i++) {
-		if (i == info->node_y)
-			tx_min = tx_max = info->image_buf[i];
-
-		tx_min = min(tx_min, info->image_buf[i]);
-		tx_max = max(tx_max, info->image_buf[i]);
-	}
-
-	snprintf(buf, sizeof(buf), "%d,%d", info->test_min, info->test_max);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING) {
-		snprintf(buf, sizeof(buf), "%d,%d", tx_min, tx_max);
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_TX");
-		snprintf(buf, sizeof(buf), "%d,%d", rx_min, rx_max);
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_RX");
-	}
-
-	return;
-
-ERROR:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING) {
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_TX");
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_RX");
-	}
 }
-static void cmd_run_test_cp_all(void *device_data)
+static inline void cmd_run_test_cp_all(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	int ret;
-
-	sec_cmd_set_default_result(sec);
-
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-out:
-	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
-static void cmd_run_test_cp_short(void *device_data)
+static inline void cmd_run_test_cp_short(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-	int i;
-	int tx_min, rx_min;
-	int tx_max, rx_max;
-
-	sec_cmd_set_default_result(sec);
-
-	for (i = 0; i < info->node_y; i++) {
-		if (i == 0)
-			rx_min = rx_max = info->image_buf[i];
-
-		rx_min = min(rx_min, info->image_buf[i]);
-		rx_max = max(rx_max, info->image_buf[i]);
-	}
-
-	for (i = info->node_y; i < (info->node_x + info->node_y); i++) {
-		if (i == info->node_y)
-			tx_min = tx_max = info->image_buf[i];
-
-		tx_min = min(tx_min, info->image_buf[i]);
-		tx_max = max(tx_max, info->image_buf[i]);
-	}
-
-	snprintf(buf, sizeof(buf), "%d,%d", info->test_min, info->test_max);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING) {
-		snprintf(buf, sizeof(buf), "%d,%d", tx_min, tx_max);
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_SHORT_TX");
-		snprintf(buf, sizeof(buf), "%d,%d", rx_min, rx_max);
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_SHORT_RX");
-	}
-
-	return;
-
-ERROR:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING) {
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_SHORT_TX");
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_SHORT_RX");
-	}
 }
-static void cmd_run_test_cp_short_all(void *device_data)
+static inline void cmd_run_test_cp_short_all(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	int ret;
-
-	sec_cmd_set_default_result(sec);
-
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-out:
-	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
-static void cmd_run_test_cp_lpm(void *device_data)
+static inline void cmd_run_test_cp_lpm(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-	int i;
-	int tx_min, rx_min;
-	int tx_max, rx_max;
-
-	sec_cmd_set_default_result(sec);
-
-	for (i = 0; i < info->node_y; i++) {
-		if (i == 0)
-			rx_min = rx_max = info->image_buf[i];
-
-		rx_min = min(rx_min, info->image_buf[i]);
-		rx_max = max(rx_max, info->image_buf[i]);
-	}
-
-	for (i = info->node_y; i < (info->node_x + info->node_y); i++) {
-		if (i == info->node_y)
-			tx_min = tx_max = info->image_buf[i];
-
-		tx_min = min(tx_min, info->image_buf[i]);
-		tx_max = max(tx_max, info->image_buf[i]);
-	}
-
-	snprintf(buf, sizeof(buf), "%d,%d", info->test_min, info->test_max);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING) {
-		snprintf(buf, sizeof(buf), "%d,%d", tx_min, tx_max);
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_LPM_TX");
-		snprintf(buf, sizeof(buf), "%d,%d", rx_min, rx_max);
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_LPM_RX");
-	}
-
-	return;
-
-ERROR:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING) {
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_LPM_TX");
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "CP_LPM_RX");
-	}
 }
 
-static void cmd_run_test_cp_lpm_all(void *device_data)
+static inline void cmd_run_test_cp_lpm_all(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	int ret;
-
-	sec_cmd_set_default_result(sec);
-
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-out:
-	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
 static void cmd_run_prox_intensity_read_all(void *device_data)
@@ -1058,32 +814,8 @@ out:
 	sec_cmd_set_cmd_result(sec, info->print_buf, strlen(info->print_buf));
 }
 
-static void cmd_check_gpio(void *device_data)
+static inline void cmd_check_gpio(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-	int value_low;
-	int value_high;
-
-	sec_cmd_set_default_result(sec);
-
-	value_low = info->image_buf[0];
-
-	value_high = info->image_buf[0];
-
-	if ((value_high == 1) && (value_low == 0)) {
-		snprintf(buf, sizeof(buf), "%d", value_low);
-		sec->cmd_state = SEC_CMD_STATUS_OK;
-	} else {
-		snprintf(buf, sizeof(buf), "%s", "NG");
-		sec->cmd_state = SEC_CMD_STATUS_FAIL;
-	}
-
-error:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING)
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "GPIO_CHECK");
 }
 
 static void cmd_check_wet_mode(void *device_data)
@@ -1140,21 +872,8 @@ exit:
 		__func__, buf, sec->cmd_state);
 }
 
-static void cmd_run_test_vsync(void *device_data)
+static inline void cmd_run_test_vsync(void *device_data)
 {
-	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
-	char buf[64] = { 0 };
-
-	sec_cmd_set_default_result(sec);
-
-	snprintf(buf, sizeof(buf), "%d", info->image_buf[0]);
-	sec->cmd_state = SEC_CMD_STATUS_OK;
-
-EXIT:
-	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
-	if (sec->cmd_all_factory_state == SEC_CMD_STATUS_RUNNING)
-		sec_cmd_set_cmd_result_all(sec, buf, strnlen(buf, sizeof(buf)), "VSYNC");
 }
 
 static void mms_gap_data(void *device_data)
@@ -2297,7 +2016,7 @@ out:
 static void cmd_unknown_cmd(void *device_data)
 {
 	struct sec_cmd_data *sec = (struct sec_cmd_data *)device_data;
-	struct mms_ts_info *info = container_of(sec, struct mms_ts_info, sec);
+	struct mms_ts_info *info __maybe_unused = container_of(sec, struct mms_ts_info, sec);
 	char buff[16] = { 0 };
 
 	sec_cmd_set_default_result(sec);

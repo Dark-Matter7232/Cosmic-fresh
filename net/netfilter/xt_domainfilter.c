@@ -102,7 +102,7 @@ static int domainfilter_check(const struct xt_mtchk_param *par)
 static bool
 domainfilter_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
-    const struct xt_domainfilter_match_info *info = par->matchinfo;
+    const struct xt_domainfilter_match_info *info __maybe_unused = par->matchinfo;
     struct sock *sk = skb_to_full_sk(skb);
 
     if (sk == NULL) {

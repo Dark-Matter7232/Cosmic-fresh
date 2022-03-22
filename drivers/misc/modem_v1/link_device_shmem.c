@@ -2618,7 +2618,7 @@ static char *shmem_get_srinfo_address(struct link_device *ld)
 	return base;
 }
 
-static void shmem_clr_sbdcplog(unsigned long arg)
+static void __maybe_unused shmem_clr_sbdcplog(unsigned long arg)
 {
 #ifdef CONFIG_SBD_BOOTLOG
 	struct mem_link_device *mld = ld_to_mem_link_device((struct link_device *)arg);

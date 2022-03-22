@@ -2156,7 +2156,7 @@ long _do_fork(unsigned long clone_flags,
 	if (task_is_zygote(current)) {
                 kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
                 kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
-                devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 70);
+                devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
 }
 	/*
 	 * Determine whether and which event to report to ptracer.  When

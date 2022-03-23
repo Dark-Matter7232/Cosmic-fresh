@@ -2364,10 +2364,6 @@ static struct page *__rmqueue(struct zone *zone, unsigned int order,
 {
 	struct page *page = NULL;
 
-#ifdef CONFIG_KANOND
-	wakeup_kanond();
-#endif
-
 #ifdef CONFIG_CMA
 	if (migratetype == MIGRATE_CMA) {
 #else

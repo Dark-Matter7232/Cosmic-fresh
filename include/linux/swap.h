@@ -361,12 +361,6 @@ struct shrink_result {
 };
 extern unsigned long shrink_anon_memory(unsigned long nr_to_reclaim,
 					struct shrink_result *sr);
-#ifdef CONFIG_KANOND
-extern void wakeup_kanond(void);
-extern const char *get_kanond_balanced_reason(void);
-extern unsigned long get_kanond_wmark_high(void);
-extern int set_kanond_wmark_high(unsigned long wmark);
-#endif
 extern int vm_swappiness;
 extern int remove_mapping(struct address_space *mapping, struct page *page);
 extern unsigned long vm_total_pages;

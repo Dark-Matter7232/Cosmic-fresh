@@ -44,10 +44,6 @@ obj-y			:= filemap.o mempool.o oom_kill.o \
 
 obj-y += init-mm.o
 
-ifdef CONFIG_KANOND
-obj-y += kanond.o
-endif
-
 ifdef CONFIG_NO_BOOTMEM
 	obj-y		+= nobootmem.o
 else

@@ -114,10 +114,6 @@ struct scan_control {
 	/* One of the zones is ready for compaction */
 	unsigned int compaction_ready:1;
 
-#ifdef CONFIG_KANOND
-	unsigned int anon_only_mode:1;
-#endif
-
 	/* Incremented by the number of inactive pages that were scanned */
 	unsigned long nr_scanned;
 
@@ -131,19 +127,6 @@ struct scan_control {
 	 */
 	struct vm_area_struct *target_vma;
 };
-
-#ifdef CONFIG_KANOND
-static inline bool is_kanond(struct scan_control *sc)
-{
-	return sc->anon_only_mode;
-}
-#else
-static inline bool is_kanond(struct scan_control *sc)
-{
-	return false;
-}
-#endif
-
 
 #ifdef ARCH_HAS_PREFETCH
 #define prefetch_prev_lru_page(_page, _base, _field)			\
@@ -1903,13 +1886,6 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 			__count_vm_events(PGSCAN_KSWAPD, nr_scanned);
 		count_memcg_events(lruvec_memcg(lruvec), PGSCAN_KSWAPD,
 				   nr_scanned);
-#ifdef CONFIG_KANOND
-	} else if (is_kanond(sc)) {
-		if (global_reclaim(sc))
-			__count_vm_events(PGSCAN_KANOND, nr_scanned);
-		count_memcg_events(lruvec_memcg(lruvec), PGSCAN_KANOND,
-				   nr_scanned);
-#endif
 	} else {
 		if (global_reclaim(sc))
 			__count_vm_events(PGSCAN_DIRECT, nr_scanned);
@@ -1931,13 +1907,6 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 			__count_vm_events(PGSTEAL_KSWAPD, nr_reclaimed);
 		count_memcg_events(lruvec_memcg(lruvec), PGSTEAL_KSWAPD,
 				   nr_reclaimed);
-#ifdef CONFIG_KANOND
-	} else if (is_kanond(sc)) {
-		if (global_reclaim(sc))
-			__count_vm_events(PGSTEAL_KANOND, nr_reclaimed);
-		count_memcg_events(lruvec_memcg(lruvec), PGSTEAL_KANOND,
-				   nr_reclaimed);
-#endif
 	} else {
 		if (global_reclaim(sc))
 			__count_vm_events(PGSTEAL_DIRECT, nr_reclaimed);
@@ -2481,11 +2450,6 @@ static void get_scan_count(struct lruvec *lruvec, struct mem_cgroup *memcg,
 	unsigned long ap, fp;
 	enum lru_list lru;
 
-	if (is_kanond(sc)) {
-		scan_balance = SCAN_ANON;
-		goto out;
-	}
-
 	/* If we have no swap space, do not bother scanning anon pages. */
 	if (!sc->may_swap || mem_cgroup_get_nr_swap_pages(memcg) <= 0) {
 		scan_balance = SCAN_FILE;
@@ -2920,11 +2884,11 @@ static bool shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 			shrink_node_memcg(pgdat, memcg, sc, &lru_pages);
 			node_lru_pages += lru_pages;
 
-			if (!is_kanond(sc) && memcg)
+			if (memcg)
 				shrink_slab(sc->gfp_mask, pgdat->node_id,
 					    memcg, sc->nr_scanned - scanned,
 					    lru_pages);
-			if (!is_kanond(sc))
+
 				/* Record the group's reclaim efficiency */
 				vmpressure(sc->gfp_mask, memcg, false,
 					   sc->nr_scanned - scanned,
@@ -2951,7 +2915,7 @@ static bool shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 		 * Shrink the slab caches in the same proportion that
 		 * the eligible LRU pages were scanned.
 		 */
-		if (!is_kanond(sc) && global_reclaim(sc))
+		if (global_reclaim(sc))
 			shrink_slab(sc->gfp_mask, pgdat->node_id, NULL,
 				    sc->nr_scanned - nr_scanned,
 				    node_lru_pages);
@@ -2961,7 +2925,6 @@ static bool shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 			reclaim_state->reclaimed_slab = 0;
 		}
 
-		if (!is_kanond(sc))
 			/* Record the subtree's reclaim efficiency */
 			vmpressure(sc->gfp_mask, sc->target_mem_cgroup, true,
 				   sc->nr_scanned - nr_scanned,
@@ -3151,13 +3114,12 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 retry:
 	delayacct_freepages_start();
 
-	if (!is_kanond(sc) && global_reclaim(sc))
+	if (global_reclaim(sc))
 		__count_zid_vm_events(ALLOCSTALL, sc->reclaim_idx, 1);
 
 	do {
-		if (!is_kanond(sc))
-			vmpressure_prio(sc->gfp_mask, sc->target_mem_cgroup,
-					sc->priority);
+		vmpressure_prio(sc->gfp_mask, sc->target_mem_cgroup,
+				sc->priority);
 		sc->nr_scanned = 0;
 		shrink_zones(zonelist, sc);
 
@@ -3986,7 +3948,7 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 	wake_up_interruptible(&pgdat->kswapd_wait);
 }
 
-#if defined(CONFIG_HIBERNATION) || defined(CONFIG_KANOND)
+#ifdef CONFIG_HIBERNATION
 /*
  * Try to free `nr_to_reclaim' of memory, system-wide, and return the number of
  * freed pages.
@@ -3995,8 +3957,7 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
  * LRU order by reclaiming preferentially
  * inactive > active > active referenced > active mapped
  */
-unsigned long __shrink_all_memory(unsigned long nr_to_reclaim,
-				  struct shrink_result *sr)
+unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
 {
 	struct reclaim_state reclaim_state;
 	struct scan_control sc = {
@@ -4009,9 +3970,6 @@ unsigned long __shrink_all_memory(unsigned long nr_to_reclaim,
 		.may_swap = 1,
 		.swappiness = vm_swappiness,
 		.hibernation_mode = 1,
-#ifdef CONFIG_KANOND
-		.anon_only_mode = sr ? 1 : 0,
-#endif
 	};
 	struct zonelist *zonelist = node_zonelist(numa_node_id(), sc.gfp_mask);
 	struct task_struct *p = current;
@@ -4028,25 +3986,8 @@ unsigned long __shrink_all_memory(unsigned long nr_to_reclaim,
 	p->reclaim_state = NULL;
 	fs_reclaim_release(sc.gfp_mask);
 	memalloc_noreclaim_restore(noreclaim_flag);
-#ifdef CONFIG_KANOND
-	if (sr) {
-		sr->priority = sc.priority;
-		sr->nr_scanned = sc.nr_scanned;
-		sr->nr_reclaimed = sc.nr_reclaimed;
-	}
-#endif
+
 	return nr_reclaimed;
-}
-
-unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
-{
-	return __shrink_all_memory(nr_to_reclaim, NULL);
-}
-
-unsigned long shrink_anon_memory(unsigned long nr_to_reclaim,
-				 struct shrink_result *sr)
-{
-	return __shrink_all_memory(nr_to_reclaim, sr);
 }
 #endif /* CONFIG_HIBERNATION */
 

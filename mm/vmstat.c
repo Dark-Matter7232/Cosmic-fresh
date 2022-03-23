@@ -1132,12 +1132,6 @@ const char * const vmstat_text[] = {
 	"kswapd_inodesteal",
 	"kswapd_low_wmark_hit_quickly",
 	"kswapd_high_wmark_hit_quickly",
-#ifdef CONFIG_KANOND
-	"pgsteal_kanond",
-	"pgscan_kanond",
-	"kanond_low_wmark_hit_quickly",
-	"kanond_high_wmark_hit_quickly",
-#endif
 	"pageoutrun",
 
 	"pgrotated",

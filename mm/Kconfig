@@ -859,20 +859,6 @@ config MMAP_READAROUND_LIMIT
 	  during the sluggish situation. Add the hard upper-limit for
 	  mmap readaround.
 
-
-config KANOND
-	bool "Support kanond"
-	default n
-	help
-	  Support kanond kernel thread which does anonymous swapping.
-
-config KANOND_FORCE_SIZE
-	int "Set kanond required size by force"
-	depends on KANOND
-	default 0
-	help
-	  Instead of default size, for to use this size"
-
 config BOOT_MEMORY_PARAM
 	bool "keep more free memory at boot-time"
         default n

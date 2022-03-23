@@ -1316,9 +1316,6 @@ static int __init pm_qos_power_init(void)
 
 	BUILD_BUG_ON(ARRAY_SIZE(pm_qos_array) != PM_QOS_NUM_CLASSES);
 
-	/* Don't let userspace impose restrictions on CPU idle levels */
-	return 0;
-
 	d = debugfs_create_dir("pm_qos", NULL);
 
 	for (i = PM_QOS_CPU_DMA_LATENCY; i < PM_QOS_NUM_CLASSES; i++) {

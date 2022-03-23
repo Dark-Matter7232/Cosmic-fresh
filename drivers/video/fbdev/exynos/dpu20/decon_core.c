@@ -76,7 +76,7 @@ void decon_wait_for_vstatus(struct decon_device *decon, u32 timeout);
 struct decon_device *decon_drvdata[MAX_DECON_CNT];
 EXPORT_SYMBOL(decon_drvdata);
 
-static char *decon_state_names[] = {
+static char *decon_state_names[] __maybe_unused = {
 	"INIT",
 	"ON",
 	"DOZE",
@@ -632,7 +632,7 @@ err:
 static int decon_enable(struct decon_device *decon)
 {
 	int ret = 0;
-	enum decon_state prev_state = decon->state;
+	enum decon_state prev_state __maybe_unused = decon->state;
 	enum decon_state next_state = DECON_STATE_ON;
 
 	mutex_lock(&decon->lock);
@@ -664,7 +664,7 @@ out:
 static int decon_doze(struct decon_device *decon)
 {
 	int ret = 0;
-	enum decon_state prev_state = decon->state;
+	enum decon_state prev_state __maybe_unused = decon->state;
 	enum decon_state next_state = DECON_STATE_DOZE;
 
 	mutex_lock(&decon->lock);
@@ -842,7 +842,7 @@ err:
 static int decon_disable(struct decon_device *decon)
 {
 	int ret = 0;
-	enum decon_state prev_state = decon->state;
+	enum decon_state prev_state __maybe_unused = decon->state;
 	enum decon_state next_state = DECON_STATE_OFF;
 
 	mutex_lock(&decon->lock);
@@ -872,7 +872,7 @@ out:
 static int decon_doze_suspend(struct decon_device *decon)
 {
 	int ret = 0;
-	enum decon_state prev_state = decon->state;
+	enum decon_state prev_state __maybe_unused = decon->state;
 	enum decon_state next_state = DECON_STATE_DOZE_SUSPEND;
 
 	mutex_lock(&decon->lock);

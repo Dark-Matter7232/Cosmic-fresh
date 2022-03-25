@@ -3982,7 +3982,7 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
  * LRU order by reclaiming preferentially
  * inactive > active > active referenced > active mapped
  */
-unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
+unsigned long __shrink_all_memory(unsigned long nr_to_reclaim)
 {
 	struct reclaim_state reclaim_state;
 	struct scan_control sc = {
@@ -4013,6 +4013,17 @@ unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
 	memalloc_noreclaim_restore(noreclaim_flag);
 
 	return nr_reclaimed;
+}
+
+unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
+{
+	return __shrink_all_memory(nr_to_reclaim, NULL);
+}
+
+unsigned long shrink_anon_memory(unsigned long nr_to_reclaim,
+				 struct shrink_result *sr)
+{
+	return __shrink_all_memory(nr_to_reclaim, sr);
 }
 #endif /* CONFIG_HIBERNATION */
 

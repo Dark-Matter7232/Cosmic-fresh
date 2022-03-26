@@ -459,6 +459,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Xassembler -march=armv8-a+lse \
 		   -std=gnu89
 
+KBUILD_CFLAGS    += -Werror=vla
+
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -1088,6 +1090,15 @@ KBUILD_CFLAGS	+= $(call cc-option,-fgcse-sm)
 # incompatible with -mindirect-branch=thunk-extern
 ifdef CONFIG_RETPOLINE
 KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
+endif
+
+# Variable Length Arrays (VLAs) Detection
+# Variable Length Arrays (VLAs) should not be used anywhere in the kernel
+ifdef CONFIG_VLA_WARN_ON_DETECT
+KBUILD_CFLAGS += $(call cc-option,-Wvla)
+endif
+ifdef CONFIG_VLA_ERROR_ON_DETECT
+KBUILD_CFLAGS    += -Werror=vla
 endif
 
 # use the deterministic mode of AR if available

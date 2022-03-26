@@ -13,7 +13,6 @@
 #include <uapi/linux/sched/types.h>
 #include <linux/sched.h>
 #include <linux/moduleparam.h>
-#include <linux/ems_service.h>
 
 static unsigned long devfreq_boost_freq =
 	CONFIG_DEVFREQ_EXYNOS_MIF_BOOST_FREQ;
@@ -22,9 +21,6 @@ static unsigned short devfreq_boost_dur =
 
 module_param(devfreq_boost_freq, long, 0644);
 module_param(devfreq_boost_dur, short, 0644);
-
-static struct kpp kpp_ta;
-static struct kpp kpp_fg;
 
 static int boost_slot;
 
@@ -115,9 +111,6 @@ static void __devfreq_boost_kick_max(struct boost_dev *b,
 	} while (atomic_long_cmpxchg(&b->max_boost_expires, curr_expires,
 				     new_expires) != curr_expires);
 
-	kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
-	kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
-
 	set_bit(MAX_BOOST, &b->state);
 	if (!mod_delayed_work(system_unbound_wq, &b->max_unboost,
 			      boost_jiffies)) {
@@ -160,9 +153,6 @@ static void devfreq_max_unboost(struct work_struct *work)
 {
 	struct boost_dev *b = container_of(to_delayed_work(work), typeof(*b),
 					   max_unboost);
-
-	kpp_request(STUNE_TOPAPP, &kpp_ta, 0);
-	kpp_request(STUNE_FOREGROUND, &kpp_fg, 0);
 
 	clear_bit(MAX_BOOST, &b->state);
 	wake_up(&b->boost_waitq);

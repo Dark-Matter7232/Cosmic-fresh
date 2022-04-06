@@ -2,7 +2,6 @@
 
 # Initialize variables
 
-BOLD='\033[1m'
 GRN='\033[01;32m'
 CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
@@ -10,9 +9,11 @@ RED='\033[01;31m'
 RST='\033[0m'
 ORIGIN_DIR=$(pwd)
 BUILD_PREF_COMPILER='clang'
-BUILD_PREF_COMPILER_VERSION='proton'
-TOOLCHAIN=$(pwd)/build-shit/toolchain
-IMAGE=$(pwd)/out/arch/arm64/boot/Image
+TOOLCHAIN=$ORIGIN_DIR/build-shit/toolchain
+IMAGE=$ORIGIN_DIR/out/arch/arm64/boot/Image
+DEVICE=M21
+CONFIG="${DEVICE}_defconfig"
+
 # export environment variables
 export_env_vars() {
     export KBUILD_BUILD_USER=Const
@@ -22,7 +23,6 @@ export_env_vars() {
     export SUBARCH=arm64
     export ANDROID_MAJOR_VERSION=r
     export PLATFORM_VERSION=11.0.0
-    export $ARCH
 
     # CCACHE
     export USE_CCACHE=1
@@ -42,16 +42,16 @@ exit_script() {
 }
 add_deps() {
     echo -e "${CYAN}"
-    if [ ! -d $(pwd)/build-shit ]
+    if [ ! -d "$ORIGIN_DIR/build-shit" ]
     then
         script_echo "Create build-shit folder"
-        mkdir $(pwd)/build-shit
+        mkdir "$ORIGIN_DIR/build-shit"
     fi
 
-    if [ ! -d $(pwd)/build-shit/toolchain ]
+    if [ ! -d "$ORIGIN_DIR/build-shit/toolchain" ]
     then
         script_echo "Downloading proton-clang...."
-        cd build-shit
+        cd "$ORIGIN_DIR/build-shit" || exit
         script_echo $(wget -q https://github.com/kdrag0n/proton-clang/archive/refs/tags/20201212.tar.gz -O clang.tar.gz);
         bsdtar xf clang.tar.gz
         rm -rf clang.tar.gz
@@ -78,9 +78,9 @@ build_kernel_image() {
     echo -e "${GRN}"
     read -p "Write the Kernel version: " KV
     echo -e "${YELLOW}"
-    script_echo 'Building CosmicFresh Kernel For M21'
-    make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) LOCALVERSION="—CosmicFresh-R$KV" M21_defconfig 2>&1 | sed 's/^/     /'
-    make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) LOCALVERSION="—CosmicFresh-R$KV" 2>&1 | sed 's/^/     /'
+    script_echo "Building CosmicFresh Kernel For $DEVICE"
+    make -C "$ORIGIN_DIR" CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$(($(nproc)+1)) LOCALVERSION="—CosmicFresh-R$KV" $CONFIG 2>&1 | sed 's/^/     /'
+    make -C "$ORIGIN_DIR" CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$(($(nproc)+1)) LOCALVERSION="—CosmicFresh-R$KV" 2>&1 | sed 's/^/     /'
     SUCCESS=$?
     echo -e "${RST}"
 
@@ -113,20 +113,18 @@ build_flashable_zip() {
     script_echo " "
     script_echo "I: Building kernel image..."
     echo -e "${GRN}"
-    cp $(pwd)/out/arch/arm64/boot/{Image,dtb_exynos.img,dtbo_exynos.img} CosmicFresh/
-    mv CosmicFresh/dtb_exynos.img CosmicFresh/dtb
-    mv CosmicFresh/dtbo_exynos.img CosmicFresh/dtbo.img
-    cd $(pwd)/CosmicFresh/
+    cp "$ORIGIN_DIR"/out/arch/arm64/boot/{Image,dtb_exynos.img,dtbo_exynos.img} CosmicFresh/
+    cd "$ORIGIN_DIR"/CosmicFresh/ || exit
+    mv dtb_exynos.img dtb
+    mv dtbo_exynos.img dtbo.img
     zip -r9 "CosmicFresh-R$KV.zip" anykernel.sh META-INF tools version Image dtb dtbo.img
     rm -rf {Image,dtb,dtbo.img}
     cd ../
 }
 
 cleanup() {
-    cd $(pwd)/CosmicFresh/
-    rm -rf {Image,*.zip,dtb,dtbo.img}
-    cd ../
-    rm -rf $(pwd)/out/arch/arm64/boot/*
+    rm -rf "$ORIGIN_DIR"/out/arch/arm64/boot/{Image,dt*}
+    rm -rf "$ORIGIN_DIR"/CosmicFresh/{Image,*.zip,dtb,dtbo.img}
 }
 add_deps
 export_env_vars

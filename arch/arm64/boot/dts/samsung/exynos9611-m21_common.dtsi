@@ -1183,7 +1183,7 @@
 };
 
 &chosen {
-	bootargs_ext = "quiet root=/dev/ram0 androidboot.boot_devices=13520000.ufs mitigations=off nosoftlockup mce=ignore_ce noirqdebug kpti=off";
+	bootargs_ext = "quiet root=/dev/ram0 androidboot.boot_devices=13520000.ufs mitigations=off rcu_nocbs=0-7 nosoftlockup mce=ignore_ce noirqdebug kpti=off";
 };
 
 &i2c_3 {

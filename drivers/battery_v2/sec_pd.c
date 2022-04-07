@@ -18,6 +18,9 @@
 #include <linux/battery/battery_notifier.h>
 #endif
 
+#undef pr_info
+#undef pr_debug
+
 struct pdic_notifier_struct pd_noti;
 
 void (*fp_select_pdo)(int num);

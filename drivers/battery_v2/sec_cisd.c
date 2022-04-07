@@ -16,6 +16,9 @@
 #include <linux/sti/abc_common.h>
 #endif
 
+#undef pr_info
+#undef pr_debug
+
 const char *cisd_data_str[] = {
 	"RESET_ALG", "ALG_INDEX", "FULL_CNT", "CAP_MAX", "CAP_MIN", "RECHARGING_CNT", "VALERT_CNT",
 	"BATT_CYCLE", "WIRE_CNT", "WIRELESS_CNT", "HIGH_SWELLING_CNT", "LOW_SWELLING_CNT",
@@ -295,7 +298,7 @@ static void add_pad_data(struct cisd* cisd, unsigned int pad_id, unsigned int pa
 	if (pad_data == NULL)
 		return;
 
-	pr_info("%s: id(0x%x), count(%d)\n", __func__, pad_id, pad_count);
+	pr_debug_once("%s: id(0x%x), count(%d)\n", __func__, pad_id, pad_count);
 	while (temp_data) {
 		if (temp_data->id > pad_id) {
 			temp_data->prev->next = pad_data;
@@ -308,7 +311,7 @@ static void add_pad_data(struct cisd* cisd, unsigned int pad_id, unsigned int pa
 		temp_data = temp_data->next;
 	}
 
-	pr_info("%s: failed to add pad_data(%d, %d)\n",
+	pr_debug_once("%s: failed to add pad_data(%d, %d)\n",
 		__func__, pad_id, pad_count);
 	kfree(pad_data);
 }
@@ -348,7 +351,7 @@ void count_cisd_pad_data(struct cisd* cisd, unsigned int pad_id)
 	struct pad_data* pad_data;
 
 	if (cisd->pad_array == NULL) {
-		pr_info("%s: can't update the connected count of pad_id(0x%x) because of null\n",
+		pr_debug_once("%s: can't update the connected count of pad_id(0x%x) because of null\n",
 			__func__, pad_id);
 		return;
 	}
@@ -396,19 +399,19 @@ void set_cisd_pad_data(struct sec_battery_info *battery, const char* buf)
 	struct pad_data* pad_data;
 	int i, x;
 
-	pr_info("%s: %s\n", __func__, buf);
+	pr_debug_once("%s: %s\n", __func__, buf);
 	if (sscanf(buf, "%10d %n", &pad_index, &x) <= 0) {
-		pr_info("%s: failed to read pad index\n", __func__);
+		pr_debug_once("%s: failed to read pad index\n", __func__);
 		return;
 	}
 	buf += (size_t)x;
-	pr_info("%s: stored pad_index(%d)\n", __func__, pad_index);
+	pr_debug_once("%s: stored pad_index(%d)\n", __func__, pad_index);
 
 	if (pcisd->pad_count > 0)
 		init_cisd_pad_data(pcisd);
 
 	if (pcisd->pad_array == NULL) {
-		pr_info("%s: can't set the pad data because of null\n", __func__);
+		pr_debug_once("%s: can't set the pad data because of null\n", __func__);
 		return;
 	}
 
@@ -435,10 +438,10 @@ void set_cisd_pad_data(struct sec_battery_info *battery, const char* buf)
 			return;
 		buf += (size_t)x;
 
-		pr_info("%s: add pad data(count: %d)\n", __func__, pad_total_count);
+		pr_debug_once("%s: add pad data(count: %d)\n", __func__, pad_total_count);
 		for (i = 0; i < pad_total_count; i++) {
 			if (sscanf(buf, "0x%02x:%10d %n", &pad_id, &pad_count, &x) != 2) {
-				pr_info("%s: failed to read pad data(0x%x, %d, %d)!!!re-init pad data\n",
+				pr_debug_once("%s: failed to read pad data(0x%x, %d, %d)!!!re-init pad data\n",
 					__func__, pad_id, pad_count, x);
 				init_cisd_pad_data(pcisd);
 				break;

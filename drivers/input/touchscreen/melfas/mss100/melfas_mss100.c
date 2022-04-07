@@ -23,6 +23,9 @@ struct mms_ts_info *tui_tsp_info;
 struct mms_ts_info *tsp_info;
 #endif
 
+#undef pr_info
+#undef pr_debug
+
 /**
  * Reboot chip
  *

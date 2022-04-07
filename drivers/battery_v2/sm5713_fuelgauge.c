@@ -22,6 +22,8 @@
 #include <linux/debugfs.h>
 #include <linux/seq_file.h>
 
+#undef pr_info
+#undef pr_debug
 
 static enum power_supply_property sm5713_fuelgauge_props[] = {
 };
@@ -82,7 +84,7 @@ static void sm5713_fg_periodic_read(struct sm5713_fuelgauge_data *fuelgauge)
 
 	c_ts = ktime_to_timespec(ktime_get_boottime());
 	if ((unsigned long)(c_ts.tv_sec - old_ts.tv_sec) <= 180 && old_ts.tv_sec != 0) { /*3 min*/
-		pr_debug("%s: skip old(%ld) current(%ld)\n", __func__, old_ts.tv_sec, c_ts.tv_sec);
+		pr_debug_once("%s: skip old(%ld) current(%ld)\n", __func__, old_ts.tv_sec, c_ts.tv_sec);
 		return;
 	}
 	old_ts = c_ts;
@@ -118,8 +120,8 @@ static void sm5713_fg_periodic_read(struct sm5713_fuelgauge_data *fuelgauge)
 		}
 	}
 
-	pr_debug("[FG_ALL] %s", str);
-	pr_debug("\n");
+	pr_debug_once("[FG_ALL] %s", str);
+	pr_debug_once("\n");
 
 	kfree(str);
 }
@@ -132,10 +134,10 @@ static bool sm5713_fg_check_reg_init_need(struct sm5713_fuelgauge_data *fuelgaug
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_OP_STATUS);
 
 	if ((ret & INIT_CHECK_MASK) == DISABLE_RE_INIT) {
-		pr_debug("%s: SM5713_REG_FG_OP_STATUS : 0x%x , return FALSE NO init need\n", __func__, ret);
+		pr_debug_once("%s: SM5713_REG_FG_OP_STATUS : 0x%x , return FALSE NO init need\n", __func__, ret);
 		return 0;
 	} else {
-		pr_debug("%s: SM5713_REG_FG_OP_STATUS : 0x%x , return TRUE init need!!!!\n", __func__, ret);
+		pr_debug_once("%s: SM5713_REG_FG_OP_STATUS : 0x%x , return TRUE init need!!!!\n", __func__, ret);
 		return 1;
 	}
 }
@@ -162,7 +164,7 @@ void sm5713_cal_avg_vbat(struct sm5713_fuelgauge_data *fuelgauge)
 				 (fuelgauge->info.p_batt_voltage+fuelgauge->info.batt_voltage))/4;
 
 #ifdef SM5713_FG_FULL_DEBUG
-	pr_debug("%s: batt_avgvoltage = %d\n", __func__, fuelgauge->info.batt_avgvoltage);
+	pr_debug_once("%s: batt_avgvoltage = %d\n", __func__, fuelgauge->info.batt_avgvoltage);
 #endif
 
 	return;
@@ -205,7 +207,7 @@ void sm5713_voffset_cancel(struct sm5713_fuelgauge_data *fuelgauge)
 			}
 		}
 		sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_VOLT_CAL, ((mohm_volt_cal & 0x00FF) | (volt_slope & 0xFF00)));
-		pr_debug("%s: <%d %d %d %d> volt_cal = 0x%x, volt_slope = 0x%x, mohm_volt_cal = 0x%x\n",
+		pr_debug_once("%s: <%d %d %d %d> volt_cal = 0x%x, volt_slope = 0x%x, mohm_volt_cal = 0x%x\n",
 			__func__, fuelgauge->info.enable_v_offset_cancel_p, fuelgauge->info.enable_v_offset_cancel_n
 			, fuelgauge->info.v_offset_cancel_level, fuelgauge->info.v_offset_cancel_mohm
 			, fuelgauge->info.volt_cal[0], volt_slope, mohm_volt_cal);
@@ -243,11 +245,11 @@ static unsigned int sm5713_get_vbat(struct sm5713_fuelgauge_data *fuelgauge)
 	if ((sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_AUX_STAT) & 0x0002) ||
 		factory_mode) {
 		if (fuelgauge->isjigmoderealvbat)
-			pr_debug("%s : nENQ4 high JIG_ON, BUT need real VBAT \n", __func__, ret);
+			pr_debug_once("%s : nENQ4 high JIG_ON, BUT need real VBAT \n", __func__, ret);
 		else {
 			sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_BAT_PTT1, 0x0109);
 			ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_VOLTAGE_VSYS);
-			pr_debug("%s : nENQ4 high JIG_ON, vsys register read result 0x%x\n", __func__, ret);
+			pr_debug_once("%s : nENQ4 high JIG_ON, vsys register read result 0x%x\n", __func__, ret);
 		}
 	}
 	else {
@@ -257,7 +259,7 @@ static unsigned int sm5713_get_vbat(struct sm5713_fuelgauge_data *fuelgauge)
 	}
 
 	if (ret < 0) {
-		pr_err("%s: read vbat reg fail", __func__);
+		pr_err_once("%s: read vbat reg fail", __func__);
 		vbat = 4000;
 	} else {
 		vbat = ((ret&0x3fff)*1000)>>11;
@@ -272,7 +274,7 @@ static unsigned int sm5713_get_vbat(struct sm5713_fuelgauge_data *fuelgauge)
 
 		sm5713_fg_fuelalert_init(fuelgauge,
 			fuelgauge->pdata->fuel_alert_soc);
-		pr_debug("%s : Recoverd from SW V EMPTY Activation\n", __func__);
+		pr_debug_once("%s : Recoverd from SW V EMPTY Activation\n", __func__);
 
 	}
 
@@ -286,7 +288,7 @@ static unsigned int sm5713_get_ocv(struct sm5713_fuelgauge_data *fuelgauge)
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_OCV);
 	if (ret < 0) {
-		pr_err("%s: read ocv reg fail\n", __func__);
+		pr_err_once("%s: read ocv reg fail\n", __func__);
 		ocv = 4000;
 	} else {
 		ocv = ((ret&0x7fff)*1000)>>11;
@@ -332,7 +334,7 @@ static int sm5713_get_curr(struct sm5713_fuelgauge_data *fuelgauge)
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_CURRENT);
 	if (ret < 0) {
-		pr_err("%s: read curr reg fail", __func__);
+		pr_err_once("%s: read curr reg fail", __func__);
 		curr = 0;
 	} else {
 		curr = ((ret&0x3fff)*1000)>>11;
@@ -355,7 +357,7 @@ static int sm5713_get_temperature(struct sm5713_fuelgauge_data *fuelgauge)
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_TEMPERATURE);
 	if (ret < 0) {
-		pr_err("%s: read temp reg fail", __func__);
+		pr_err_once("%s: read temp reg fail", __func__);
 		temp = 0;
 	} else {
 		temp = ((ret&0x7FF0)*10)>>8;
@@ -375,7 +377,7 @@ static int sm5713_get_cycle(struct sm5713_fuelgauge_data *fuelgauge)
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_SOC_CYCLE);
 	if (ret < 0) {
-		pr_err("%s: read cycle reg fail", __func__);
+		pr_err_once("%s: read cycle reg fail", __func__);
 		cycle = 0;
 	} else {
 		cycle = ret&0x03FF;
@@ -396,7 +398,7 @@ static int sm5713_get_asoc(struct sm5713_fuelgauge_data *fuelgauge)
 
 	h_flag = (pre_soh & 0x80)>>7;
 	pre_soh = pre_soh & 0x7F;
-	pr_debug("%s : asoc = %d, ctrl = 0x%x, info = 0x%x, pre = 0x%x, t = %d \n", __func__, fuelgauge->info.soh, ctrl, info, pre_soh, fuelgauge->info.temperature);
+	pr_debug_once("%s : asoc = %d, ctrl = 0x%x, info = 0x%x, pre = 0x%x, t = %d \n", __func__, fuelgauge->info.soh, ctrl, info, pre_soh, fuelgauge->info.temperature);
 	ctrl = ctrl & 0x0200;
 	if (ctrl != 0x0200) {
 		soh = pre_soh;
@@ -419,7 +421,7 @@ static int sm5713_get_asoc(struct sm5713_fuelgauge_data *fuelgauge)
 				pre_soh = pre_soh-1;
 				temp = (c_flag<<7) | pre_soh;
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_USER_RESERV_2, temp);
-				pr_debug("%s : pre_soh update to %d, write 0x%x\n", __func__, pre_soh, temp);
+				pr_debug_once("%s : pre_soh update to %d, write 0x%x\n", __func__, pre_soh, temp);
 			}
 		}
 	}
@@ -440,7 +442,7 @@ static void sm5713_vbatocv_check(struct sm5713_fuelgauge_data *fuelgauge)
 			fuelgauge->info.iocv_error_count++;
 		}
 
-		pr_debug("%s: sm5713 FG iocv_error_count (%d)\n", __func__, fuelgauge->info.iocv_error_count);
+		pr_debug_once("%s: sm5713 FG iocv_error_count (%d)\n", __func__, fuelgauge->info.iocv_error_count);
 
 		if (fuelgauge->info.iocv_error_count > 5) /* prevent to overflow */
 			fuelgauge->info.iocv_error_count = 6;
@@ -449,12 +451,12 @@ static void sm5713_vbatocv_check(struct sm5713_fuelgauge_data *fuelgauge)
 	}
 
 	if (fuelgauge->info.iocv_error_count > 5) {
-		pr_debug("%s: p_v - v = (%d)\n", __func__, fuelgauge->info.p_batt_voltage - fuelgauge->info.batt_voltage);
+		pr_debug_once("%s: p_v - v = (%d)\n", __func__, fuelgauge->info.p_batt_voltage - fuelgauge->info.batt_voltage);
 		if (abs(fuelgauge->info.p_batt_voltage - fuelgauge->info.batt_voltage) > 15) { /* 15mV over */
 			fuelgauge->info.iocv_error_count = 0;
 		} else {
 			/* mode change to mix RS manual mode */
-			pr_debug("%s: mode change to mix RS manual mode\n", __func__);
+			pr_debug_once("%s: mode change to mix RS manual mode\n", __func__);
 			/* RS manual value write */
 			sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MAX, fuelgauge->info.rs_value[0]+5);
 			sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MIN, fuelgauge->info.rs_value[0]-5);
@@ -464,7 +466,7 @@ static void sm5713_vbatocv_check(struct sm5713_fuelgauge_data *fuelgauge)
 		if (fuelgauge->vempty_mode != VEMPTY_MODE_HW) {
 			if ((fuelgauge->info.p_batt_voltage < fuelgauge->info.n_tem_poff) &&
 				(fuelgauge->info.batt_voltage < fuelgauge->info.n_tem_poff) && (!fuelgauge->is_charging)) {
-				pr_debug("%s: mode change to normal tem mix RS manual mode\n", __func__);
+				pr_debug_once("%s: mode change to normal tem mix RS manual mode\n", __func__);
 				/* mode change to mix RS manual mode */
 				/* RS manual value write */
 				if ((fuelgauge->info.p_batt_voltage <
@@ -478,14 +480,14 @@ static void sm5713_vbatocv_check(struct sm5713_fuelgauge_data *fuelgauge)
 					sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MIN, fuelgauge->info.rs_value[0]-5);
 				}
 			} else {
-				pr_debug("%s: mode change to mix RS auto mode\n", __func__);
+				pr_debug_once("%s: mode change to mix RS auto mode\n", __func__);
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MAX, fuelgauge->info.rs_value[3]);
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MIN, fuelgauge->info.rs_value[4]);
 			}
 		} else { /* voltage mode with 3.25V, VEMPTY_MODE_HW mode */
 			if ((fuelgauge->info.p_batt_voltage < fuelgauge->info.l_tem_poff) &&
 				(fuelgauge->info.batt_voltage < fuelgauge->info.l_tem_poff) && (!fuelgauge->is_charging)) {
-				pr_debug("%s: mode change to normal tem mix RS manual mode\n", __func__);
+				pr_debug_once("%s: mode change to normal tem mix RS manual mode\n", __func__);
 				/* mode change to mix RS manual mode */
 				/* RS manual value write */
 				if ((fuelgauge->info.p_batt_voltage <
@@ -499,7 +501,7 @@ static void sm5713_vbatocv_check(struct sm5713_fuelgauge_data *fuelgauge)
 					sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MIN, fuelgauge->info.rs_value[0]-5);
 				}
 			} else {
-				pr_debug("%s: mode change to mix RS auto mode\n", __func__);
+				pr_debug_once("%s: mode change to mix RS auto mode\n", __func__);
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MAX, fuelgauge->info.rs_value[3]);
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MIN, fuelgauge->info.rs_value[4]);
 			}
@@ -521,7 +523,7 @@ void sm5713_adabt_full_offset(struct sm5713_fuelgauge_data *fuelgauge)
 
 	curr_off = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_DP_CSP_I_OFF);
 	aux_stat = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_AUX_STAT);
-	pr_debug("%s: curr_off=%x, aux_stat=%x, flag_charge_health=%d, flag_chg_status=%d, flag_full_charge=%d\n", __func__,
+	pr_debug_once("%s: curr_off=%x, aux_stat=%x, flag_charge_health=%d, flag_chg_status=%d, flag_full_charge=%d\n", __func__,
 		curr_off, aux_stat, fuelgauge->info.flag_charge_health, fuelgauge->info.flag_chg_status, fuelgauge->info.flag_full_charge);
 
 	if (fuelgauge->info.full_offset_enable > 0) {
@@ -553,7 +555,7 @@ void sm5713_adabt_full_offset(struct sm5713_fuelgauge_data *fuelgauge)
 					sign_offset = 0;
 				}
 
-				pr_debug("%s: curr=%x, curr_off=%x, i_offset=%x, sign_offset=%d, full_offset_margin=%x, full_extra_offset=%x\n",
+				pr_debug_once("%s: curr=%x, curr_off=%x, i_offset=%x, sign_offset=%d, full_offset_margin=%x, full_extra_offset=%x\n",
 					__func__, curr, curr_off, i_offset, sign_offset, fuelgauge->info.full_offset_margin, fuelgauge->info.full_extra_offset);
 
 				if (sign_offset == 1) {
@@ -563,7 +565,7 @@ void sm5713_adabt_full_offset(struct sm5713_fuelgauge_data *fuelgauge)
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_DP_EV_I_OFF, full_offset);
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_DP_CSP_I_OFF, full_offset);
 				sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_DP_CSN_I_OFF, full_offset);
-				pr_debug("%s: LAST i_offset=%x, sign_offset=%x, full_offset=%x\n", __func__, i_offset, sign_offset, full_offset);        
+				pr_debug_once("%s: LAST i_offset=%x, sign_offset=%x, full_offset=%x\n", __func__, i_offset, sign_offset, full_offset);        
 			}
 		} else {
 			sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_DP_EV_I_OFF, fuelgauge->info.dp_ecv_i_off);
@@ -585,7 +587,7 @@ static int sm5713_get_full_chg_mq (struct sm5713_fuelgauge_data *fuelgauge)
 
 	mq = ((mq_raw&0x7FFF) * 1000) >> 11;
 
-	pr_debug("%s: raw = 0x%x, mq = %d\n", __func__, mq_raw, mq);
+	pr_debug_once("%s: raw = 0x%x, mq = %d\n", __func__, mq_raw, mq);
 
 	return mq;
 }
@@ -598,7 +600,7 @@ static void sm5713_set_full_chg_mq (struct sm5713_fuelgauge_data *fuelgauge, int
 	mq_abs = (mq_abs << 11)/1000;
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_USER_RESERV_1, mq_abs);
 
-	pr_debug("%s: mq = %d, abs = 0x%x\n", __func__, mq, mq_abs);
+	pr_debug_once("%s: mq = %d, abs = 0x%x\n", __func__, mq, mq_abs);
 }
 
 static void sm5713_meas_mq_suspend (struct sm5713_fuelgauge_data *fuelgauge)
@@ -611,11 +613,11 @@ static void sm5713_meas_mq_suspend (struct sm5713_fuelgauge_data *fuelgauge)
 		suspend_mq = sm5713_meas_mq_dump(fuelgauge);
 
 		sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_START_MQ, ((suspend_mq<<11)/1000));
-		pr_debug("%s: suspend mode mq is <0x%x>, AUX_2 : <0x%x> \n", __func__, suspend_mq, ret);
+		pr_debug_once("%s: suspend mode mq is <0x%x>, AUX_2 : <0x%x> \n", __func__, suspend_mq, ret);
 
 		sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2, 0);
 	} else {
-		pr_debug("%s: AUX_2 : <0x%x> \n", __func__, ret);
+		pr_debug_once("%s: AUX_2 : <0x%x> \n", __func__, ret);
 	}
 }
 
@@ -623,7 +625,7 @@ static void sm5713_meas_mq_resume (struct sm5713_fuelgauge_data *fuelgauge)
 {
 	int ret;
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2);
-	pr_debug("%s: SM5713_FG_REG_AUX_2 : <0x%x> \n", __func__, ret);
+	pr_debug_once("%s: SM5713_FG_REG_AUX_2 : <0x%x> \n", __func__, ret);
 
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2, START_MQ);
 }
@@ -632,14 +634,14 @@ static void sm5713_meas_mq_start (struct sm5713_fuelgauge_data *fuelgauge)
 {
 	int ret, mq;
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2);
-	pr_debug("%s: SM5713_FG_REG_AUX_2 : <0x%x> \n", __func__, ret);
+	pr_debug_once("%s: SM5713_FG_REG_AUX_2 : <0x%x> \n", __func__, ret);
 
 	if ((ret & START_MQ) != START_MQ) {
 		ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_Q_MEAS_INIT);
 		if (ret == 0) {
 			mq = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_Q_EST);
 			sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_Q_MEAS_INIT, mq);
-			pr_debug("%s: starting mq is <0x%x> \n", __func__, mq);
+			pr_debug_once("%s: starting mq is <0x%x> \n", __func__, mq);
 
 			msleep(50);
 			sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2, START_MQ);
@@ -647,11 +649,11 @@ static void sm5713_meas_mq_start (struct sm5713_fuelgauge_data *fuelgauge)
 			/* full mq set */
 			sm5713_set_full_chg_mq(fuelgauge, ((fuelgauge->info.cap * 1000) >> 11));
 		} else {
-			pr_debug("%s: read start mq is <0x%x> and resumed \n", __func__, ret);
+			pr_debug_once("%s: read start mq is <0x%x> and resumed \n", __func__, ret);
 			sm5713_meas_mq_resume(fuelgauge);
 		}
 	} else {
-		pr_debug("%s: sm5713_meas_mq_start already started : mq is <%d> \n", __func__, sm5713_meas_mq_dump(fuelgauge));
+		pr_debug_once("%s: sm5713_meas_mq_start already started : mq is <%d> \n", __func__, sm5713_meas_mq_dump(fuelgauge));
 	}
 }
 
@@ -659,7 +661,7 @@ static int sm5713_meas_eq_dump (struct sm5713_fuelgauge_data *fuelgauge)
 {
 	int ret, eq;
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_Q_EST);
-	pr_debug("%s: SM5713_FG_REG_Q_EST : <0x%x> \n", __func__, ret);
+	pr_debug_once("%s: SM5713_FG_REG_Q_EST : <0x%x> \n", __func__, ret);
 
 	eq = ((ret&0x7FFF) * 1000) >> 11;
 	if (ret&0x8000) {
@@ -668,7 +670,7 @@ static int sm5713_meas_eq_dump (struct sm5713_fuelgauge_data *fuelgauge)
 
 	if (eq == 0) {
 		eq = (fuelgauge->info.cap * 1000) >> 11;
-		pr_debug("%s: eq is 0, It's abnormal, return cap : %d\n", __func__, eq);
+		pr_debug_once("%s: eq is 0, It's abnormal, return cap : %d\n", __func__, eq);
 	}
 
 	return eq;
@@ -681,7 +683,7 @@ static int sm5713_meas_mq_dump (struct sm5713_fuelgauge_data *fuelgauge)
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2);
 
 	if ((ret & START_MQ) == START_MQ) {
-		pr_debug("%s: AUX_2 : <0x%x> \n", __func__, ret);
+		pr_debug_once("%s: AUX_2 : <0x%x> \n", __func__, ret);
 
 		ret = START_MQ | DUMP_MQ;
 		sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2, ret);
@@ -692,17 +694,17 @@ static int sm5713_meas_mq_dump (struct sm5713_fuelgauge_data *fuelgauge)
 		for (count = 0; count < 5; count++) {
 			ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_Q_DUMP);
 			if (ret == 0) {
-				pr_debug("%s: SM5713_FG_REG_MQ : <0x%x> retry %d\n", __func__, ret, count);
+				pr_debug_once("%s: SM5713_FG_REG_MQ : <0x%x> retry %d\n", __func__, ret, count);
 				msleep(50);
 			} else {
-				pr_debug("%s: SM5713_FG_REG_MQ : <0x%x> OK count = %d\n", __func__, ret, count);
+				pr_debug_once("%s: SM5713_FG_REG_MQ : <0x%x> OK count = %d\n", __func__, ret, count);
 				break;
 			}
 		}
 
 		if (ret < 0) {
 			mq = ((fuelgauge->info.cap * 1000) >> 11);
-			pr_err("%s: sm5713_meas_mq_dump read fail!!!! return battery default value : %d\n", __func__, mq);
+			pr_err_once("%s: sm5713_meas_mq_dump read fail!!!! return battery default value : %d\n", __func__, mq);
 		} else {
 			mq = ((ret&0x07FF) * 1000) >> 7;
 			if (ret&0x8000) {
@@ -712,11 +714,11 @@ static int sm5713_meas_mq_dump (struct sm5713_fuelgauge_data *fuelgauge)
 
 		if (mq == 0) {
 			mq = sm5713_meas_eq_dump(fuelgauge);
-			pr_debug("%s: mq is 0, It's abnormal, return eq : %d\n", __func__, mq);
+			pr_debug_once("%s: mq is 0, It's abnormal, return eq : %d\n", __func__, mq);
 		}
 	} else {
 		mq = ((fuelgauge->info.cap * 1000) >> 11);
-		pr_debug("%s: sm5713_meas_mq not started : return battery default value : %d, AUX_2 : <0x%x>\n", __func__, mq, ret);
+		pr_debug_once("%s: sm5713_meas_mq not started : return battery default value : %d, AUX_2 : <0x%x>\n", __func__, mq, ret);
 	}
 
 	return mq;
@@ -730,7 +732,7 @@ static void sm5713_meas_mq_off (struct sm5713_fuelgauge_data *fuelgauge)
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_Q_MEAS_INIT, 0);
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AUX_2, 0);
 
-	pr_debug("%s: mq off completed, last_mq : %d\n", __func__, last_mq);
+	pr_debug_once("%s: mq off completed, last_mq : %d\n", __func__, last_mq);
 }
 
 #endif
@@ -745,7 +747,7 @@ static void sm5713_dp_setup (struct sm5713_fuelgauge_data *fuelgauge)
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_DP_CSP_I_SLO, fuelgauge->info.dp_csp_i_slo);
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_DP_CSN_I_SLO, fuelgauge->info.dp_csn_i_slo);
 
-	pr_debug("%s: dp_off : <0x%x 0x%x 0x%x> dp_slo : <0x%x 0x%x 0x%x>\n",
+	pr_debug_once("%s: dp_off : <0x%x 0x%x 0x%x> dp_slo : <0x%x 0x%x 0x%x>\n",
 		__func__,
 	fuelgauge->info.dp_ecv_i_off, fuelgauge->info.dp_csp_i_off, fuelgauge->info.dp_csn_i_off,
 	fuelgauge->info.dp_ecv_i_slo, fuelgauge->info.dp_csp_i_slo, fuelgauge->info.dp_csn_i_slo);
@@ -761,7 +763,7 @@ static void sm5713_alg_setup (struct sm5713_fuelgauge_data *fuelgauge)
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_CSP_I_SLO, fuelgauge->info.csp_i_slo);
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_CSN_I_SLO, fuelgauge->info.csn_i_slo);
 
-	pr_debug("%s: alg_off : <0x%x 0x%x 0x%x> alg_slo : <0x%x 0x%x 0x%x>\n",
+	pr_debug_once("%s: alg_off : <0x%x 0x%x 0x%x> alg_slo : <0x%x 0x%x 0x%x>\n",
 		__func__,
 	fuelgauge->info.ecv_i_off, fuelgauge->info.csp_i_off, fuelgauge->info.csn_i_off,
 	fuelgauge->info.ecv_i_slo, fuelgauge->info.csp_i_slo, fuelgauge->info.csn_i_slo);
@@ -828,7 +830,7 @@ static void sm5713_cal_carc (struct sm5713_fuelgauge_data *fuelgauge)
 	p_curr_cal = p_curr_cal + (p_fg_delta_cal);
 	n_curr_cal = n_curr_cal + (n_fg_delta_cal);
 
-	pr_debug("%s: <%d %d %d %d %d %d %d %d %d %d>, temp_fg = %d ,p_curr_cal = 0x%x, n_curr_cal = 0x%x, "
+	pr_debug_once("%s: <%d %d %d %d %d %d %d %d %d %d>, temp_fg = %d ,p_curr_cal = 0x%x, n_curr_cal = 0x%x, "
 		"batt_temp = %d\n",
 		__func__,
 		fuelgauge->info.en_high_fg_temp_cal,
@@ -857,7 +859,7 @@ static void sm5713_cal_carc (struct sm5713_fuelgauge_data *fuelgauge)
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_CSP_I_SLO, curr_cal);
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_CSN_I_SLO, curr_cal);
 
-	pr_debug("%s: <%d %d %d %d %d %d %d %d %d %d>, "
+	pr_debug_once("%s: <%d %d %d %d %d %d %d %d %d %d>, "
 		"p_curr_cal = 0x%x, n_curr_cal = 0x%x, mix_factor=0x%x ,curr_cal = 0x%x\n",
 		__func__,
 		fuelgauge->info.en_high_temp_cal,
@@ -879,16 +881,16 @@ static int sm5713_fg_verified_write_word(struct i2c_client *client,
 	ret = sm5713_write_word(client, reg_addr, data);
 	if (ret < 0) {
 		msleep(50);
-		pr_debug("1st fail i2c write %s: ret = %d, addr = 0x%x, data = 0x%x\n",
+		pr_debug_once("1st fail i2c write %s: ret = %d, addr = 0x%x, data = 0x%x\n",
 				__func__, ret, reg_addr, data);
 		ret = sm5713_write_word(client, reg_addr, data);
 		if (ret < 0) {
 			msleep(50);
-			pr_debug("2nd fail i2c write %s: ret = %d, addr = 0x%x, data = 0x%x\n",
+			pr_debug_once("2nd fail i2c write %s: ret = %d, addr = 0x%x, data = 0x%x\n",
 					__func__, ret, reg_addr, data);
 			ret = sm5713_write_word(client, reg_addr, data);
 			if (ret < 0) {
-				pr_debug("3rd fail i2c write %s: ret = %d, addr = 0x%x, data = 0x%x\n",
+				pr_debug_once("3rd fail i2c write %s: ret = %d, addr = 0x%x, data = 0x%x\n",
 						__func__, ret, reg_addr, data);
 			}
 		}
@@ -905,7 +907,7 @@ static int sm5713_fg_fs_read_word_table(struct i2c_client *client,
 	for (i = 0; i < count; i++) {
 		ret = sm5713_read_word(client, reg_addr);
 		if (ret < 0) {
-			pr_err("%s: 1st fail i2c write ret = %d, addr = 0x%x\n, count = %d",
+			pr_err_once("%s: 1st fail i2c write ret = %d, addr = 0x%x\n, count = %d",
 				__func__, ret, reg_addr, count);
 		} else {
 			if (ret == 0xffff)
@@ -933,7 +935,7 @@ int sm5713_fg_calculate_iocv(struct sm5713_fuelgauge_data *fuelgauge, bool is_vs
 	int v_ret = 0, i_ret = 0, ret = 0;
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_END_V_IDX);
-	pr_debug("%s: iocv_status_read = addr : 0x%x , data : 0x%x\n", __func__, SM5713_FG_REG_END_V_IDX, ret);
+	pr_debug_once("%s: iocv_status_read = addr : 0x%x , data : 0x%x\n", __func__, SM5713_FG_REG_END_V_IDX, ret);
 
 	/* init start */
 	if ((ret & 0x0010) == 0x0000) {
@@ -1082,9 +1084,9 @@ int sm5713_fg_calculate_iocv(struct sm5713_fuelgauge_data *fuelgauge, bool is_vs
 	sm5713_write_word(client, SM5713_FG_REG_DP_ECV_I_OFF, i_offset);
 	lb offset make end
 */
-	pr_debug("%s: iocv_l_max=0x%x, iocv_l_min=0x%x, iocv_l_avg=0x%x, lb_v_set=0x%x, roop_max=%d \n",
+	pr_debug_once("%s: iocv_l_max=0x%x, iocv_l_min=0x%x, iocv_l_avg=0x%x, lb_v_set=0x%x, roop_max=%d \n",
 			__func__, v_max, v_min, lb_v_avg, lb_v_set, roop_max);
-	pr_debug("%s: ioci_l_max=0x%x, ioci_l_min=0x%x, ioci_l_avg=0x%x, lb_i_set=0x%x, i_offset=0x%x, sign_i_offset=%d\n",
+	pr_debug_once("%s: ioci_l_max=0x%x, ioci_l_min=0x%x, ioci_l_avg=0x%x, lb_i_set=0x%x, i_offset=0x%x, sign_i_offset=%d\n",
 			__func__, i_max, i_min, lb_i_avg, lb_i_set, i_offset, sign_i_offset);
 
 	if (!only_lb) {
@@ -1229,9 +1231,9 @@ int sm5713_fg_calculate_iocv(struct sm5713_fuelgauge_data *fuelgauge, bool is_vs
 		}
 		/* cb offset make end */
 
-		pr_debug("%s: iocv_c_max=0x%x, iocv_c_min=0x%x, iocv_c_avg=0x%x, cb_v_set=0x%x, cb_last_index=%d, is_vsys=%d \n",
+		pr_debug_once("%s: iocv_c_max=0x%x, iocv_c_min=0x%x, iocv_c_avg=0x%x, cb_v_set=0x%x, cb_last_index=%d, is_vsys=%d \n",
 				__func__, v_max, v_min, cb_v_avg, cb_v_set, cb_last_index, is_vsys);
-		pr_debug("%s: ioci_c_max=0x%x, ioci_c_min=0x%x, ioci_c_avg=0x%x, cb_i_set=0x%x, i_offset=0x%x, sign_i_offset=%d\n",
+		pr_debug_once("%s: ioci_c_max=0x%x, ioci_c_min=0x%x, ioci_c_avg=0x%x, cb_i_set=0x%x, i_offset=0x%x, sign_i_offset=%d\n",
 				__func__, i_max, i_min, cb_i_avg, cb_i_set, i_offset, sign_i_offset);
 
 	}
@@ -1244,10 +1246,10 @@ int sm5713_fg_calculate_iocv(struct sm5713_fuelgauge_data *fuelgauge, bool is_vs
 	}
 
 	if (ret > fuelgauge->info.battery_table[DISCHARGE_TABLE][FG_TABLE_LEN-1]) {
-		pr_debug("%s: iocv ret change 0x%x -> 0x%x \n", __func__, ret, fuelgauge->info.battery_table[DISCHARGE_TABLE][FG_TABLE_LEN-1]);
+		pr_debug_once("%s: iocv ret change 0x%x -> 0x%x \n", __func__, ret, fuelgauge->info.battery_table[DISCHARGE_TABLE][FG_TABLE_LEN-1]);
 		ret = fuelgauge->info.battery_table[DISCHARGE_TABLE][FG_TABLE_LEN-1];
 	} else if (ret < fuelgauge->info.battery_table[DISCHARGE_TABLE][0]) {
-		pr_debug("%s: iocv ret change 0x%x -> 0x%x \n", __func__, ret, (fuelgauge->info.battery_table[DISCHARGE_TABLE][0] + 0x10));
+		pr_debug_once("%s: iocv ret change 0x%x -> 0x%x \n", __func__, ret, (fuelgauge->info.battery_table[DISCHARGE_TABLE][0] + 0x10));
 		ret = fuelgauge->info.battery_table[DISCHARGE_TABLE][0] + 0x10;
 	}
 
@@ -1262,7 +1264,7 @@ void sm5713_set_cycle_cfg(struct sm5713_fuelgauge_data *fuelgauge)
 
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_SOC_CYCLE_CFG, value);
 
-	pr_debug("%s: cycle cfg value = 0x%x\n", __func__, value);
+	pr_debug_once("%s: cycle cfg value = 0x%x\n", __func__, value);
 
 }
 
@@ -1274,7 +1276,7 @@ void sm5713_set_arsm_cfg(struct sm5713_fuelgauge_data *fuelgauge)
 
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AUTO_RS_MAN, value);
 
-	pr_debug("%s: arsm cfg value = 0x%x\n", __func__, value);
+	pr_debug_once("%s: arsm cfg value = 0x%x\n", __func__, value);
 }
 
 #ifdef ENABLE_BATT_LONG_LIFE
@@ -1289,7 +1291,7 @@ int get_v_max_index_by_cycle(struct sm5713_fuelgauge_data *fuelgauge)
 			break;
 		}
 	}
-	pr_debug("%s: chg_full_soc = %d, index = %d \n", __func__, fuelgauge->chg_full_soc, cycle_index);
+	pr_debug_once("%s: chg_full_soc = %d, index = %d \n", __func__, fuelgauge->chg_full_soc, cycle_index);
 
 	return cycle_index;
 }
@@ -1303,7 +1305,7 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 	int write_table[TABLE_MAX][FG_TABLE_LEN+1];
 	int error_remain = 0, error_check = 0;
 
-	pr_debug("%s: sm5713_fg_reg_init START!!\n", __func__);
+	pr_debug_once("%s: sm5713_fg_reg_init START!!\n", __func__);
 
 	/* init mark */
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RESET, FG_INIT_MARK);
@@ -1314,23 +1316,23 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 	/* RCE write */
 	for (i = 0; i < 3; i++)	{
 		sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RCE0+i, fuelgauge->info.rce_value[i]);
-		pr_debug("%s: RCE write RCE%d = 0x%x : 0x%x\n",
+		pr_debug_once("%s: RCE write RCE%d = 0x%x : 0x%x\n",
 				__func__,  i, SM5713_FG_REG_RCE0+i, fuelgauge->info.rce_value[i]);
 	}
 
 	/* DTCD write */
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_DTCD, fuelgauge->info.dtcd_value);
-	pr_debug("%s: DTCD write DTCD = 0x%x : 0x%x\n",
+	pr_debug_once("%s: DTCD write DTCD = 0x%x : 0x%x\n",
 			__func__, SM5713_FG_REG_DTCD, fuelgauge->info.dtcd_value);
 
 	/* RS write */
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_RS_MAN, fuelgauge->info.rs_value[0]);
-	pr_debug("%s: RS write RS = 0x%x : 0x%x\n",
+	pr_debug_once("%s: RS write RS = 0x%x : 0x%x\n",
 			__func__, SM5713_FG_REG_AUTO_RS_MAN, fuelgauge->info.rs_value[0]);
 
 	/* VIT_PERIOD write */
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_VIT_PERIOD, fuelgauge->info.vit_period);
-	pr_debug("%s: VIT_PERIOD write VIT_PERIOD = 0x%x : 0x%x\n",
+	pr_debug_once("%s: VIT_PERIOD write VIT_PERIOD = 0x%x : 0x%x\n",
 			__func__, SM5713_FG_REG_VIT_PERIOD, fuelgauge->info.vit_period);
 
 	/* TABLE_LEN write & pram unlock */
@@ -1339,15 +1341,15 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 	/* CAP write */
 #ifdef ENABLE_BATT_LONG_LIFE
 	i = get_v_max_index_by_cycle(fuelgauge);
-	pr_debug("%s: v_max_now is change %x -> %x \n", __func__, fuelgauge->info.v_max_now, fuelgauge->info.v_max_table[i]);
-	pr_debug("%s: q_max_now is change %x -> %x \n", __func__, fuelgauge->info.q_max_now, fuelgauge->info.q_max_table[i]);
+	pr_debug_once("%s: v_max_now is change %x -> %x \n", __func__, fuelgauge->info.v_max_now, fuelgauge->info.v_max_table[i]);
+	pr_debug_once("%s: q_max_now is change %x -> %x \n", __func__, fuelgauge->info.q_max_now, fuelgauge->info.q_max_table[i]);
 	fuelgauge->info.v_max_now = fuelgauge->info.v_max_table[i];
 	fuelgauge->info.q_max_now = fuelgauge->info.q_max_table[i];
 	fuelgauge->info.cap = fuelgauge->info.q_max_now;
 #endif
 
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_BAT_CAP, fuelgauge->info.cap);
-	pr_debug("%s: SM5713_REG_CAP 0x%x, 0x%x\n",
+	pr_debug_once("%s: SM5713_REG_CAP 0x%x, 0x%x\n",
 		__func__, fuelgauge->info.min_cap, fuelgauge->info.cap);
 
 	for (i = 0; i < TABLE_MAX; i++) {
@@ -1383,20 +1385,20 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 			value = sm5713_fg_fs_read_word_table(fuelgauge->i2c,
 				(table_reg + j), TABLE_READ_COUNT);
 			if (write_table[i][j] == value) {
-				pr_debug("%s: TABLE write and verify OK [%d][%d] = 0x%x : 0x%x\n",
+				pr_debug_once("%s: TABLE write and verify OK [%d][%d] = 0x%x : 0x%x\n",
 					__func__, i, j, (table_reg + j), write_table[i][j]);
 			} else {
 				error_check = 1;
 
 				for (k = 1; k <= I2C_ERROR_COUNT_MAX; k++) {
-					pr_debug("%s: TABLE write data ERROR!!!! rewrite [%d][%d] = 0x%x : 0x%x, count=%d\n",
+					pr_debug_once("%s: TABLE write data ERROR!!!! rewrite [%d][%d] = 0x%x : 0x%x, count=%d\n",
 						__func__, i, j, (table_reg + j), write_table[i][j], k);
 					sm5713_write_word(fuelgauge->i2c, (table_reg + j), write_table[i][j]);
 					msleep(30);
 					value = sm5713_fg_fs_read_word_table(fuelgauge->i2c,
 						(table_reg + j), TABLE_READ_COUNT);
 					if (write_table[i][j] == value) {
-						pr_debug("%s: TABLE rewrite OK [%d][%d] = 0x%x : 0x%x, count=%d\n",
+						pr_debug_once("%s: TABLE rewrite OK [%d][%d] = 0x%x : 0x%x, count=%d\n",
 						__func__, i, j, (table_reg + j), write_table[i][j], k);
 						break;
 					}
@@ -1411,7 +1413,7 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 	table_reg = SM5713_FG_REG_TABLE_2_START;
 	for (j = 0; j <= FG_ADD_TABLE_LEN; j++) {
 		sm5713_write_word(fuelgauge->i2c, (table_reg + j), fuelgauge->info.battery_table[i][j]);
-		pr_debug("%s: TABLE write OK [%d][%d] = 0x%x : 0x%x\n",
+		pr_debug_once("%s: TABLE write OK [%d][%d] = 0x%x : 0x%x\n",
 				__func__, i, j, (table_reg + j), fuelgauge->info.battery_table[i][j]);
 	}
 
@@ -1422,7 +1424,7 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_MIX_RATE, fuelgauge->info.mix_value[0]);
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_MIX_INIT_BLANK, fuelgauge->info.mix_value[1]);
 
-	pr_debug("%s: RS_MIX_FACTOR = 0x%x, RS_MAX = 0x%x, RS_MIN = 0x%x, MIX_RATE = 0x%x, MIX_INIT_BLANK = 0x%x\n",
+	pr_debug_once("%s: RS_MIX_FACTOR = 0x%x, RS_MAX = 0x%x, RS_MIN = 0x%x, MIX_RATE = 0x%x, MIX_INIT_BLANK = 0x%x\n",
 		__func__,
 		fuelgauge->info.rs_value[2], fuelgauge->info.rs_value[3], fuelgauge->info.rs_value[4],
 		fuelgauge->info.mix_value[0], fuelgauge->info.mix_value[1]);
@@ -1433,12 +1435,12 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 
 	/* MISC write */
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_MISC, fuelgauge->info.misc);
-	pr_debug("%s: SM5713_REG_MISC 0x%x : 0x%x\n",
+	pr_debug_once("%s: SM5713_REG_MISC 0x%x : 0x%x\n",
 		__func__, SM5713_FG_REG_MISC, fuelgauge->info.misc);
 
 	/* TOPOFF SOC */
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_TOPOFF_SOC, fuelgauge->info.topoff_soc);
-	pr_debug("%s: SM5713_REG_TOPOFF_SOC 0x%x : 0x%x\n", __func__,
+	pr_debug_once("%s: SM5713_REG_TOPOFF_SOC 0x%x : 0x%x\n", __func__,
 		SM5713_FG_REG_TOPOFF_SOC, fuelgauge->info.topoff_soc);
 
 	/* INIT_last -  control register set */
@@ -1447,18 +1449,18 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 		value = fuelgauge->info.cntl_value;
 	}
 	value = ENABLE_MIX_MODE | ENABLE_TEMP_MEASURE | ENABLE_MANUAL_OCV | (fuelgauge->info.enable_topoff_soc << 13);
-	pr_debug("%s: SM5713_REG_CNTL reg : 0x%x\n", __func__, value);
+	pr_debug_once("%s: SM5713_REG_CNTL reg : 0x%x\n", __func__, value);
 
 	ret = sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_CNTL, value);
 	if (ret < 0)
-		pr_debug("%s: fail control register set(%d)\n", __func__, ret);
+		pr_debug_once("%s: fail control register set(%d)\n", __func__, ret);
 
-	pr_debug("%s: LAST SM5713_REG_CNTL = 0x%x : 0x%x\n", __func__, SM5713_FG_REG_CNTL, value);
+	pr_debug_once("%s: LAST SM5713_REG_CNTL = 0x%x : 0x%x\n", __func__, SM5713_FG_REG_CNTL, value);
 
 	/* LOCK */
 	value = FG_PARAM_LOCK_CODE | FG_TABLE_LEN;
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_PARAM_CTRL, value);
-	pr_debug("%s: LAST PARAM CTRL VALUE = 0x%x : 0x%x\n", __func__, SM5713_FG_REG_PARAM_CTRL, value);
+	pr_debug_once("%s: LAST PARAM CTRL VALUE = 0x%x : 0x%x\n", __func__, SM5713_FG_REG_PARAM_CTRL, value);
 
 	/* surge reset defence */
 	if (is_surge) {
@@ -1483,7 +1485,7 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 
 	msleep(10);
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_IOCV_MAN, value);
-	pr_debug("%s: IOCV_MAN_WRITE = %d : 0x%x\n", __func__, SM5713_FG_REG_IOCV_MAN, value);
+	pr_debug_once("%s: IOCV_MAN_WRITE = %d : 0x%x\n", __func__, SM5713_FG_REG_IOCV_MAN, value);
 
 	/* init delay */
 	msleep(20);
@@ -1502,7 +1504,7 @@ static bool sm5713_fg_reg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_
 	if (error_check)
 		value |= I2C_ERROR_CHECK;
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_USER_RESERV_1, value);
-	pr_debug("%s: RESERVED = %d : 0x%x\n", __func__, SM5713_FG_REG_USER_RESERV_1, value);
+	pr_debug_once("%s: RESERVED = %d : 0x%x\n", __func__, SM5713_FG_REG_USER_RESERV_1, value);
 
 	return 1;
 }
@@ -1517,16 +1519,16 @@ static int sm5713_abnormal_reset_check(struct sm5713_fuelgauge_data *fuelgauge)
 	/* abnormal case process */
 	if (sm5713_fg_check_reg_init_need(fuelgauge) || (reset_read == 0) || (table_len_read != FG_TABLE_LEN)) {
 		cntl_read = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_CNTL);
-		pr_debug("%s: SM5713 FG abnormal case!!!! SM5713_REG_CNTL : 0x%x, is_FG_initialised : %d, reset_read : 0x%x, table_len_read : 0x%x\n",
+		pr_debug_once("%s: SM5713 FG abnormal case!!!! SM5713_REG_CNTL : 0x%x, is_FG_initialised : %d, reset_read : 0x%x, table_len_read : 0x%x\n",
 				__func__, cntl_read, fuelgauge->info.is_FG_initialised, reset_read, table_len_read);
 
 		if (fuelgauge->info.is_FG_initialised == 1) {
 			/* SW reset code */
 			fuelgauge->info.is_FG_initialised = 0;
 			if (sm5713_fg_verified_write_word(fuelgauge->i2c, SM5713_FG_REG_RESET, SW_RESET_OTP_CODE) < 0) {
-				pr_debug("%s: Warning!!!! SM5713 FG abnormal case.... SW reset FAIL \n", __func__);
+				pr_debug_once("%s: Warning!!!! SM5713 FG abnormal case.... SW reset FAIL \n", __func__);
 			} else {
-				pr_debug("%s: SM5713 FG abnormal case.... SW reset OK\n", __func__);
+				pr_debug_once("%s: SM5713 FG abnormal case.... SW reset OK\n", __func__);
 			}
 			/* delay 100ms */
 			msleep(100);
@@ -1546,14 +1548,14 @@ static unsigned int sm5713_get_device_id(struct sm5713_fuelgauge_data *fuelgauge
 	int ret;
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_DEVICE_ID);
 	sm5713_device_id = ret;
-	pr_debug("%s: SM5713 device_id = 0x%x\n", __func__, ret);
+	pr_debug_once("%s: SM5713 device_id = 0x%x\n", __func__, ret);
 
 	return ret;
 }
 
 int sm5713_call_fg_device_id(void)
 {
-	pr_debug("%s: extern call SM5713 fg_device_id = 0x%x\n", __func__, sm5713_device_id);
+	pr_debug_once("%s: extern call SM5713 fg_device_id = 0x%x\n", __func__, sm5713_device_id);
 
 	return sm5713_device_id;
 }
@@ -1565,11 +1567,11 @@ unsigned int sm5713_get_soc(struct sm5713_fuelgauge_data *fuelgauge)
 
 
 
-	pr_debug("%s: \n", __func__);
+	pr_debug_once("%s: \n", __func__);
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_SOC);
 	if (ret < 0) {
-		pr_err("%s: Warning!!!! read soc reg fail\n", __func__);
+		pr_err_once("%s: Warning!!!! read soc reg fail\n", __func__);
 		soc = 500;
 	} else {
 		soc = ((ret&0x7f00)>>8) * 10; /* integer bit; */
@@ -1582,7 +1584,7 @@ unsigned int sm5713_get_soc(struct sm5713_fuelgauge_data *fuelgauge)
 /*	soc = 500; */
 
 	if (sm5713_abnormal_reset_check(fuelgauge) < 0)	{
-		pr_debug("%s: FG init ERROR!! pre_SOC returned!!, read_SOC = %d, pre_SOC = %d\n", __func__, soc, fuelgauge->info.batt_soc);
+		pr_debug_once("%s: FG init ERROR!! pre_SOC returned!!, read_SOC = %d, pre_SOC = %d\n", __func__, soc, fuelgauge->info.batt_soc);
 		return fuelgauge->info.batt_soc;
 	}
 
@@ -1590,17 +1592,17 @@ unsigned int sm5713_get_soc(struct sm5713_fuelgauge_data *fuelgauge)
 	sm5713_get_ocv(fuelgauge);
 
 #ifdef SM5713_FG_FULL_DEBUG
-	pr_debug("%s: read = 0x%x, soc = %d\n", __func__, ret, soc);
+	pr_debug_once("%s: read = 0x%x, soc = %d\n", __func__, ret, soc);
 #endif
 
 	/* for low temp power off test */
 	if (fuelgauge->info.volt_alert_flag && (fuelgauge->info.temperature < -100)) {
-		pr_debug("%s: volt_alert_flag is TRUE!!!! SOC make force ZERO!!!!\n", __func__);
+		pr_debug_once("%s: volt_alert_flag is TRUE!!!! SOC make force ZERO!!!!\n", __func__);
 		fuelgauge->info.batt_soc = 0;
 		return 0;
 	} else {
 		fuelgauge->info.batt_soc = soc;
-		pr_debug("%s: batt_soc = %d, soc = %d\n", __func__, fuelgauge->info.batt_soc, soc);
+		pr_debug_once("%s: batt_soc = %d, soc = %d\n", __func__, fuelgauge->info.batt_soc, soc);
 	}
 
 	return soc;
@@ -1620,7 +1622,7 @@ static void sm5713_fg_test_read(struct sm5713_fuelgauge_data *fuelgauge)
 	ret5 = sm5713_read_word(fuelgauge->i2c, 0x28);
 	ret6 = sm5713_read_word(fuelgauge->i2c, 0x2F);
 	ret7 = sm5713_read_word(fuelgauge->i2c, 0x01);
-	pr_debug("%s: 0xA0=0x%04x, 0xAC=0x%04x, 0xAD=0x%04x, 0xAE=0x%04x, 0xAF=0x%04x, 0x28=0x%04x, 0x2F=0x%04x, 0x01=0x%04x, SM5713_ID=0x%04x\n",
+	pr_debug_once("%s: 0xA0=0x%04x, 0xAC=0x%04x, 0xAD=0x%04x, 0xAE=0x%04x, 0xAF=0x%04x, 0x28=0x%04x, 0x2F=0x%04x, 0x01=0x%04x, SM5713_ID=0x%04x\n",
 		__func__, ret0, ret1, ret2, ret3, ret4, ret5, ret6, ret7, sm5713_device_id);
 
 	ret0 = sm5713_read_word(fuelgauge->i2c, t_addr);
@@ -1633,7 +1635,7 @@ static void sm5713_fg_test_read(struct sm5713_fuelgauge_data *fuelgauge)
 	ret7 = sm5713_read_word(fuelgauge->i2c, 0x87);
 	ret8 = sm5713_read_word(fuelgauge->i2c, 0x1F);
 	ret9 = sm5713_read_word(fuelgauge->i2c, 0x94);
-	pr_debug("%s: 0xB0=0x%04x, 0xBC=0x%04x, 0xBD=0x%04x, 0xBE=0x%04x, 0xBF=0x%04x, 0x85=0x%04x, 0x86=0x%04x, 0x87=0x%04x, 0x1F=0x%04x, 0x94=0x%04x\n",
+	pr_debug_once("%s: 0xB0=0x%04x, 0xBC=0x%04x, 0xBD=0x%04x, 0xBE=0x%04x, 0xBF=0x%04x, 0x85=0x%04x, 0x86=0x%04x, 0x87=0x%04x, 0x1F=0x%04x, 0x94=0x%04x\n",
 		__func__, ret0, ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, ret9);
 
 	return;
@@ -1678,7 +1680,7 @@ static void sm5713_update_all_value(struct sm5713_fuelgauge_data *fuelgauge)
 
 	sm5713_fg_test_read(fuelgauge);
 
-	pr_debug("%s: chg_h=%d, chg_f=%d, chg_s=%d, is_chg=%d, ta_exist=%d, "
+	pr_debug_once("%s: chg_h=%d, chg_f=%d, chg_s=%d, is_chg=%d, ta_exist=%d, "
 		"v=%d, v_avg=%d, i=%d, i_avg=%d, ocv=%d, fg_t=%d, b_t=%d, cycle=%d, soc=%d, state=0x%x\n",
 		__func__, fuelgauge->info.flag_charge_health, fuelgauge->info.flag_full_charge,
 		fuelgauge->info.flag_chg_status, fuelgauge->is_charging, fuelgauge->ta_exist,
@@ -1706,7 +1708,7 @@ static void sm5713_update_all_value(struct sm5713_fuelgauge_data *fuelgauge)
 			temp = temp | 0x0040;
 			sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_MISC, temp);
 		}
-		pr_debug("%s : temp = 0x%x, t = %d \n", __func__, temp, fuelgauge->info.temperature);
+		pr_debug_once("%s : temp = 0x%x, t = %d \n", __func__, temp, fuelgauge->info.temperature);
 	}
 	// for abnormal case asoc update stop, MUST USE AFTER PASSS_5
 }
@@ -1718,7 +1720,7 @@ static int sm5713_fg_set_jig_mode_real_vbat(struct sm5713_fuelgauge_data *fuelga
 	fuelgauge->isjigmoderealvbat = false;
 
 	if (sm5713_fg_check_reg_init_need(fuelgauge)) {
-		pr_debug("%s: FG init fail!! \n", __func__);
+		pr_debug_once("%s: FG init fail!! \n", __func__);
 		return -1;
 	}
 
@@ -1727,11 +1729,11 @@ static int sm5713_fg_set_jig_mode_real_vbat(struct sm5713_fuelgauge_data *fuelga
 		stat = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_AUX_STAT);
 		if (stat & 0x0002) {
 			fuelgauge->isjigmoderealvbat = true;
-			pr_debug("%s: FG check jig_ON!! and after read real VBAT!! \n", __func__);
+			pr_debug_once("%s: FG check jig_ON!! and after read real VBAT!! \n", __func__);
 		} else
-			pr_debug("%s: isjigmoderealvbat = 1 but FG check nENQ4 LOW!! check jig!! \n", __func__);
+			pr_debug_once("%s: isjigmoderealvbat = 1 but FG check nENQ4 LOW!! check jig!! \n", __func__);
 	} else
-		pr_debug("%s: meas_mode = 1, isjigmoderealvbat = false!! \n", __func__);
+		pr_debug_once("%s: meas_mode = 1, isjigmoderealvbat = false!! \n", __func__);
 
 	return 0;
 }
@@ -1739,7 +1741,7 @@ static int sm5713_fg_set_jig_mode_real_vbat(struct sm5713_fuelgauge_data *fuelga
 static int sm5713_fg_check_battery_present(struct sm5713_fuelgauge_data *fuelgauge)
 {
 	/* SM5713 is not suport batt present */
-	pr_debug("%s: sm5713_fg_get_batt_present\n", __func__);
+	pr_debug_once("%s: sm5713_fg_get_batt_present\n", __func__);
 
 	return true;
 }
@@ -1754,7 +1756,7 @@ static bool sm5713_check_jig_status(struct sm5713_fuelgauge_data *fuelgauge)
 		else
 			ret = gpio_get_value(fuelgauge->pdata->jig_gpio);
 	}
-	pr_debug("%s: jig_gpio(%d), ret(%d)\n",
+	pr_debug_once("%s: jig_gpio(%d), ret(%d)\n",
 		__func__, fuelgauge->pdata->jig_gpio, ret);
 	return ret;
 }
@@ -1768,7 +1770,7 @@ void sm5713_fg_reset_capacity_by_jig_connection(struct sm5713_fuelgauge_data *fu
 	ret |= JIG_CONNECTED;
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_USER_RESERV_1, ret);
 
-	pr_debug("%s: set JIG_CONNECTED(0x%04x) (Jig Connection or bypass)\n", __func__, ret);
+	pr_debug_once("%s: set JIG_CONNECTED(0x%04x) (Jig Connection or bypass)\n", __func__, ret);
 }
 
 int sm5713_fg_alert_init(struct sm5713_fuelgauge_data *fuelgauge, int soc)
@@ -1784,7 +1786,7 @@ int sm5713_fg_alert_init(struct sm5713_fuelgauge_data *fuelgauge, int soc)
 	/* check status */
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_STATUS);
 	if (ret < 0) {
-		pr_err("%s: Failed to read SM5713_FG_REG_STATUS\n", __func__);
+		pr_err_once("%s: Failed to read SM5713_FG_REG_STATUS\n", __func__);
 		return -1;
 	}
 
@@ -1799,24 +1801,24 @@ int sm5713_fg_alert_init(struct sm5713_fuelgauge_data *fuelgauge, int soc)
 */
 	value_soc_alarm = (soc<<8); /* 0x0100 = 1.00% */
 	if (sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_SOC_ALARM, value_soc_alarm) < 0) {
-		pr_err("%s: Failed to write SM5713_FG_REG_SOC_ALARM\n", __func__);
+		pr_err_once("%s: Failed to write SM5713_FG_REG_SOC_ALARM\n", __func__);
 		return -1;
 	}
 
 	/* enabel volt alert control, other alert disable */
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_CNTL);
 	if (ret < 0) {
-		pr_err("%s: Failed to read SM5713_FG_REG_CNTL\n", __func__);
+		pr_err_once("%s: Failed to read SM5713_FG_REG_CNTL\n", __func__);
 		return -1;
 	}
 	ret = ret | ENABLE_V_ALARM;
 	ret = ret & (~ENABLE_SOC_ALARM & ~ENABLE_T_H_ALARM & ~ENABLE_T_L_ALARM);
 	if (sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_CNTL, ret) < 0) {
-		pr_err("%s: Failed to write SM5713_REG_CNTL\n", __func__);
+		pr_err_once("%s: Failed to write SM5713_REG_CNTL\n", __func__);
 		return -1;
 	}
 
-	pr_debug("%s: fg_irq= 0x%x, REG_CNTL=0x%x, SOC_ALARM=0x%x \n",
+	pr_debug_once("%s: fg_irq= 0x%x, REG_CNTL=0x%x, SOC_ALARM=0x%x \n",
 		__func__, fuelgauge->fg_irq, ret, value_soc_alarm);
 
 	return 1;
@@ -1831,7 +1833,7 @@ static int sm5713_set_tcal_ioff(struct sm5713_fuelgauge_data *fuelgauge)
 
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_VOLT_TEMP_CAL, tcal);
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AUX_3, ioff);
-	pr_debug("%s : set tcal & ioff!! tcal = 0x%x, ioff = 0x%x\n", __func__, tcal, ioff);
+	pr_debug_once("%s : set tcal & ioff!! tcal = 0x%x, ioff = 0x%x\n", __func__, tcal, ioff);
 
 	return 0;
 }
@@ -1841,10 +1843,10 @@ static int sm5713_asoc_init(struct sm5713_fuelgauge_data *fuelgauge)
 	int ret, temp;
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_AGING_CTRL);
-	pr_debug("%s 0x%x : 0x%x\n", __func__, SM5713_FG_REG_AGING_CTRL, ret);
+	pr_debug_once("%s 0x%x : 0x%x\n", __func__, SM5713_FG_REG_AGING_CTRL, ret);
 	if(ret != fuelgauge->info.age_cntl){
 		if (sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_AGING_CTRL, fuelgauge->info.age_cntl) < 0) {
-			pr_err("%s: Failed to write SM5713_FG_REG_AGING_CTRL\n", __func__);
+			pr_err_once("%s: Failed to write SM5713_FG_REG_AGING_CTRL\n", __func__);
 		}
 	}
 
@@ -1856,10 +1858,10 @@ static int sm5713_asoc_init(struct sm5713_fuelgauge_data *fuelgauge)
 		temp = temp & 0x80;
 		temp = temp | fuelgauge->info.soh;
 		sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_USER_RESERV_2, temp);
-		pr_debug("%s : soh reset %d, write 0x%x\n", __func__, fuelgauge->info.soh, temp);
+		pr_debug_once("%s : soh reset %d, write 0x%x\n", __func__, fuelgauge->info.soh, temp);
 	} else {
 		fuelgauge->info.soh = ret;
-		pr_debug("%s asoc restore : %d\n", __func__, fuelgauge->info.soh);
+		pr_debug_once("%s asoc restore : %d\n", __func__, fuelgauge->info.soh);
 	}
 
 	return 0;
@@ -1872,7 +1874,7 @@ static irqreturn_t sm5713_jig_irq_thread(int irq, void *irq_data)
 	if (sm5713_check_jig_status(fuelgauge))
 		sm5713_fg_reset_capacity_by_jig_connection(fuelgauge);
 	else
-		pr_debug("%s: jig removed\n", __func__);
+		pr_debug_once("%s: jig removed\n", __func__);
 	return IRQ_HANDLED;
 }
 
@@ -1886,7 +1888,7 @@ static void sm5713_fg_buffer_read(struct sm5713_fuelgauge_data *fuelgauge)
 	ret3 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_LB_V+3);
 	ret4 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_LB_V+4);
 	ret5 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_LB_V+5);
-	pr_debug("%s: sm5713 FG buffer 0x30_0x35 lb_V = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
+	pr_debug_once("%s: sm5713 FG buffer 0x30_0x35 lb_V = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
 		__func__, ret0, ret1, ret2, ret3, ret4, ret5);
 
 	ret0 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_CB_V);
@@ -1895,7 +1897,7 @@ static void sm5713_fg_buffer_read(struct sm5713_fuelgauge_data *fuelgauge)
 	ret3 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_CB_V+3);
 	ret4 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_CB_V+4);
 	ret5 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_CB_V+5);
-	pr_debug("%s: sm5713 FG buffer 0x36_0x3B cb_V = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
+	pr_debug_once("%s: sm5713 FG buffer 0x36_0x3B cb_V = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
 		__func__, ret0, ret1, ret2, ret3, ret4, ret5);
 
 
@@ -1905,7 +1907,7 @@ static void sm5713_fg_buffer_read(struct sm5713_fuelgauge_data *fuelgauge)
 	ret3 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_LB_I+3);
 	ret4 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_LB_I+4);
 	ret5 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_LB_I+5);
-	pr_debug("%s: sm5713 FG buffer 0x40_0x45 lb_I = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
+	pr_debug_once("%s: sm5713 FG buffer 0x40_0x45 lb_I = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
 		__func__, ret0, ret1, ret2, ret3, ret4, ret5);
 
 
@@ -1915,7 +1917,7 @@ static void sm5713_fg_buffer_read(struct sm5713_fuelgauge_data *fuelgauge)
 	ret3 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_CB_I+3);
 	ret4 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_CB_I+4);
 	ret5 = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_START_CB_I+5);
-	pr_debug("%s: sm5713 FG buffer 0x46_0x4B cb_I = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
+	pr_debug_once("%s: sm5713 FG buffer 0x46_0x4B cb_I = 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x \n",
 		__func__, ret0, ret1, ret2, ret3, ret4, ret5);
 
 	return;
@@ -1947,10 +1949,10 @@ static bool sm5713_fg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_surg
 				"jig-irq", fuelgauge);
 		}
 		if (ret) {
-			pr_debug("%s: Failed to Request IRQ\n",
+			pr_debug_once("%s: Failed to Request IRQ\n",
 				__func__);
 		}
-		pr_debug("%s: jig_result : %d\n", __func__, sm5713_check_jig_status(fuelgauge));
+		pr_debug_once("%s: jig_result : %d\n", __func__, sm5713_check_jig_status(fuelgauge));
 
 		/* initial check for the JIG */
 		if (sm5713_check_jig_status(fuelgauge))
@@ -1959,18 +1961,18 @@ static bool sm5713_fg_init(struct sm5713_fuelgauge_data *fuelgauge, bool is_surg
 
 #ifdef ENABLE_BATT_LONG_LIFE
 	fuelgauge->info.q_max_now = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_BAT_CAP);
-	pr_debug("%s: q_max_now = 0x%x\n", __func__, fuelgauge->info.q_max_now);
+	pr_debug_once("%s: q_max_now = 0x%x\n", __func__, fuelgauge->info.q_max_now);
 #endif
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_USER_RESERV_1);
 	error_remain = (ret & I2C_ERROR_REMAIN) ? 1 : 0;
-	pr_debug("%s: reserv_1 = 0x%x\n", __func__, ret);
+	pr_debug_once("%s: reserv_1 = 0x%x\n", __func__, ret);
 
 	if (sm5713_fg_check_reg_init_need(fuelgauge) || error_remain) {
 		if (sm5713_fg_reg_init(fuelgauge, is_surge))
-			pr_debug("%s: boot time kernel init DONE!\n", __func__);
+			pr_debug_once("%s: boot time kernel init DONE!\n", __func__);
 		else
-			pr_debug("%s: ERROR!! boot time kernel init ERROR!!\n", __func__);
+			pr_debug_once("%s: ERROR!! boot time kernel init ERROR!!\n", __func__);
 	} else {
 		sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_MIX_RATE, fuelgauge->info.mix_value[0]);
 	}
@@ -2015,7 +2017,7 @@ void sm5713_fg_fuelalert_set(struct sm5713_fuelgauge_data *fuelgauge,
 	u16 ret;
 
 	ret = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_STATUS);
-	pr_debug("%s: SM5713_FG_REG_STATUS(0x%x)\n",
+	pr_debug_once("%s: SM5713_FG_REG_STATUS(0x%x)\n",
 		__func__, ret);
 
 	/* not use SOC alarm
@@ -2026,7 +2028,7 @@ void sm5713_fg_fuelalert_set(struct sm5713_fuelgauge_data *fuelgauge,
 	*/
 
 	if (ret & ENABLE_V_ALARM && !lpcharge && !fuelgauge->is_charging) {
-		pr_debug("%s : Battery Voltage is Very Low!! SW V EMPTY ENABLE\n", __func__);
+		pr_debug_once("%s : Battery Voltage is Very Low!! SW V EMPTY ENABLE\n", __func__);
 
 		if (fuelgauge->vempty_mode == VEMPTY_MODE_SW ||
 					fuelgauge->vempty_mode == VEMPTY_MODE_SW_VALERT) {
@@ -2056,11 +2058,11 @@ bool sm5713_fg_fuelalert_process(void *irq_data)
 bool sm5713_fg_reset(struct sm5713_fuelgauge_data *fuelgauge, bool is_quickstart)
 {
 	if (fuelgauge->info.is_FG_initialised == 0) {
-		pr_debug("%s: Not work reset! prev init working! return! \n", __func__);
+		pr_debug_once("%s: Not work reset! prev init working! return! \n", __func__);
 		return true;
 	}
 
-	pr_debug("%s: Start fg reset\n", __func__);
+	pr_debug_once("%s: Start fg reset\n", __func__);
 	/* SW reset code */
 	fuelgauge->info.is_FG_initialised = 0;
 	sm5713_fg_verified_write_word(fuelgauge->i2c, SM5713_FG_REG_RESET, SW_RESET_CODE);
@@ -2072,27 +2074,27 @@ bool sm5713_fg_reset(struct sm5713_fuelgauge_data *fuelgauge, bool is_quickstart
 
 	if (is_quickstart) {
 		if (sm5713_fg_init(fuelgauge, false)) {
-			pr_debug("%s: Quick Start - mq STOP!!\n", __func__);
+			pr_debug_once("%s: Quick Start - mq STOP!!\n", __func__);
 #ifdef ENABLE_SM5713_MQ_FUNCTION
 			sm5713_meas_mq_off(fuelgauge);
 #endif
 		} else {
-			pr_debug("%s: sm5713_fg_init ERROR!!!!\n", __func__);
+			pr_debug_once("%s: sm5713_fg_init ERROR!!!!\n", __func__);
 			return false;
 		}
 	}
 #ifdef ENABLE_BATT_LONG_LIFE
 	else {
 		if (sm5713_fg_init(fuelgauge, true)) {
-			pr_debug("%s: BATT_LONG_LIFE reset - mq CONTINUE!!\n", __func__);
+			pr_debug_once("%s: BATT_LONG_LIFE reset - mq CONTINUE!!\n", __func__);
 		} else {
-			pr_debug("%s: sm5713_fg_init ERROR!!!!\n", __func__);
+			pr_debug_once("%s: sm5713_fg_init ERROR!!!!\n", __func__);
 			return false;
 		}
 	}
 #endif
 
-	pr_debug("%s: End fg reset\n", __func__);
+	pr_debug_once("%s: End fg reset\n", __func__);
 
 	return true;
 }
@@ -2118,7 +2120,7 @@ static void sm5713_fg_get_scaled_capacity(
 		0 : ((val->intval - fuelgauge->pdata->capacity_min) * 1000 /
 		(fuelgauge->capacity_max - fuelgauge->pdata->capacity_min));
 
-	pr_debug("%s: scaled capacity (%d.%d)\n",
+	pr_debug_once("%s: scaled capacity (%d.%d)\n",
 		__func__, val->intval/10, val->intval%10);
 }
 
@@ -2129,7 +2131,7 @@ static void sm5713_fg_get_atomic_capacity(
 	union power_supply_propval *val)
 {
 
-	pr_debug("%s : NOW(%d), OLD(%d)\n",
+	pr_debug_once("%s : NOW(%d), OLD(%d)\n",
 		__func__, val->intval, fuelgauge->capacity_old);
 
 	if (fuelgauge->pdata->capacity_calculation_type &
@@ -2145,7 +2147,7 @@ static void sm5713_fg_get_atomic_capacity(
 		SEC_FUELGAUGE_CAPACITY_TYPE_SKIP_ABNORMAL) {
 		if (!fuelgauge->is_charging &&
 			fuelgauge->capacity_old < val->intval) {
-			pr_err("%s: capacity (old %d : new %d)\n",
+			pr_err_once("%s: capacity (old %d : new %d)\n",
 			__func__, fuelgauge->capacity_old, val->intval);
 			val->intval = fuelgauge->capacity_old;
 		}
@@ -2164,7 +2166,7 @@ static int sm5713_fg_calculate_dynamic_scale(
 	if (raw_soc_val.intval <
 		fuelgauge->pdata->capacity_max -
 		fuelgauge->pdata->capacity_max_margin) {
-		pr_debug("%s: raw soc(%d) is very low, skip routine\n",
+		pr_debug_once("%s: raw soc(%d) is very low, skip routine\n",
 			__func__, raw_soc_val.intval);
 	} else {
 		fuelgauge->capacity_max =
@@ -2175,7 +2177,7 @@ static int sm5713_fg_calculate_dynamic_scale(
 			sm5713_fg_check_capacity_max(fuelgauge,
 			fuelgauge->capacity_max);
 
-		pr_debug("%s: %d is used for capacity_max, capacity(%d)\n",
+		pr_debug_once("%s: %d is used for capacity_max, capacity(%d)\n",
 			__func__, fuelgauge->capacity_max, capacity);
 	}
 
@@ -2186,7 +2188,7 @@ static int sm5713_fg_calculate_dynamic_scale(
 static void sm5713_set_full_value(struct sm5713_fuelgauge_data *fuelgauge,
 					int cable_type)
 {
-	pr_debug("%s : sm5713 todo\n",
+	pr_debug_once("%s : sm5713 todo\n",
 		__func__);
 }
 #endif
@@ -2202,7 +2204,7 @@ static int calc_ttf(struct sm5713_fuelgauge_data *fuelgauge, union power_supply_
 	int design_cap = fuelgauge->ttf_capacity;
 
 	if (!cv_data || (val->intval <= 0)) {
-		pr_debug("%s: no cv_data or val: %d\n", __func__, val->intval);
+		pr_debug_once("%s: no cv_data or val: %d\n", __func__, val->intval);
 		return -1;
 	}
 	for (i = 0; i < fuelgauge->cv_data_lenth; i++) {
@@ -2221,13 +2223,13 @@ static int calc_ttf(struct sm5713_fuelgauge_data *fuelgauge, union power_supply_
 		cv_time = cv_data[i].time;
 		cc_time = design_cap * (cv_data[i].soc - soc)\
 				/ val->intval * 3600 / 1000;
-		pr_debug("%s: cc_time: %d\n", __func__, cc_time);
+		pr_debug_once("%s: cc_time: %d\n", __func__, cc_time);
 		if (cc_time < 0) {
 			cc_time = 0;
 		}
 	}
 
-	pr_debug("%s: cap: %d, soc: %4d, T: %6d, avg: %4d, cv soc: %4d, i: %4d, val: %d\n",
+	pr_debug_once("%s: cap: %d, soc: %4d, T: %6d, avg: %4d, cv soc: %4d, i: %4d, val: %d\n",
 		__func__, design_cap, soc, cv_time + cc_time, fuelgauge->info.batt_avgcurrent, cv_data[i].soc, i, val->intval);
 
 	if (cv_time + cc_time >= 0)
@@ -2242,7 +2244,7 @@ static void sm5713_fg_set_vempty(struct sm5713_fuelgauge_data *fuelgauge, int ve
 	u32 value_v_alarm = 0;
 
 	if (!fuelgauge->using_temp_compensation) {
-		pr_debug("%s: does not use temp compensation, default hw vempty\n", __func__);
+		pr_debug_once("%s: does not use temp compensation, default hw vempty\n", __func__);
 		vempty_mode = VEMPTY_MODE_HW;
 	}
 
@@ -2256,11 +2258,11 @@ static void sm5713_fg_set_vempty(struct sm5713_fuelgauge_data *fuelgauge, int ve
 		value_v_alarm = (fuelgauge->battery_data->sw_v_empty_vol << 8)/1000;
 
 		if (sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_V_L_ALARM, value_v_alarm) < 0) {
-			pr_debug("%s: Failed to write VALRT_THRESHOLD_REG\n", __func__);
+			pr_debug_once("%s: Failed to write VALRT_THRESHOLD_REG\n", __func__);
 			return;
 		}
 		data = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_V_L_ALARM);
-		pr_debug("%s: HW V EMPTY Disable, SW V EMPTY Enable with %d mV (%d) \n",
+		pr_debug_once("%s: HW V EMPTY Disable, SW V EMPTY Enable with %d mV (%d) \n",
 			__func__, fuelgauge->battery_data->sw_v_empty_vol, data);
 		break;
 	default:
@@ -2268,11 +2270,11 @@ static void sm5713_fg_set_vempty(struct sm5713_fuelgauge_data *fuelgauge, int ve
 		value_v_alarm = (fuelgauge->battery_data->sw_v_empty_vol_cisd << 8)/1000;
 
 		if (sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_V_L_ALARM, value_v_alarm) < 0) {
-			pr_debug("%s: Failed to write VALRT_THRESHOLD_REG\n", __func__);
+			pr_debug_once("%s: Failed to write VALRT_THRESHOLD_REG\n", __func__);
 			return;
 		}
 		data = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_V_L_ALARM);
-		pr_debug("%s: HW V EMPTY Enable, SW V EMPTY Disable %d mV (%d) \n",
+		pr_debug_once("%s: HW V EMPTY Enable, SW V EMPTY Disable %d mV (%d) \n",
 			__func__, fuelgauge->battery_data->sw_v_empty_vol_cisd, data);
 		break;
 	}
@@ -2280,11 +2282,11 @@ static void sm5713_fg_set_vempty(struct sm5713_fuelgauge_data *fuelgauge, int ve
 	/* for v_alarm Hysteresis */
 	value_v_alarm = ((fuelgauge->info.value_v_alarm_hys << 4) / 1000)<<4;
 	if (sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_V_ALARM_HYS, value_v_alarm) < 0) {
-		pr_debug("%s: Failed to write VALRT_THRESHOLD_REG\n", __func__);
+		pr_debug_once("%s: Failed to write VALRT_THRESHOLD_REG\n", __func__);
 		return;
 	}
 	data = sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_V_ALARM_HYS);
-	pr_debug("%s: VALRT_THRESHOLD hysteresis set %d mV (0x%x) \n",
+	pr_debug_once("%s: VALRT_THRESHOLD hysteresis set %d mV (0x%x) \n",
 		__func__, fuelgauge->info.value_v_alarm_hys, data);
 }
 
@@ -2295,7 +2297,7 @@ static int sm5713_fg_get_property(struct power_supply *psy,
 	struct sm5713_fuelgauge_data *fuelgauge = power_supply_get_drvdata(psy);
 	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property) psp;
 
-	pr_debug("%s: psp = 0x%x\n", __func__, psp);
+	pr_debug_once("%s: psp = 0x%x\n", __func__, psp);
 	switch (psp) {
 	/* Cell voltage (VCELL, mV) */
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
@@ -2371,7 +2373,7 @@ static int sm5713_fg_get_property(struct power_supply *psy,
 			sm5713_fg_get_scaled_capacity(fuelgauge, val);
 
 			if (val->intval > 1010) {
-				pr_debug("%s : scaled capacity (%d)\n", __func__, val->intval);
+				pr_debug_once("%s : scaled capacity (%d)\n", __func__, val->intval);
 				sm5713_fg_calculate_dynamic_scale(fuelgauge, 100);
 			}
 		}
@@ -2406,7 +2408,7 @@ static int sm5713_fg_get_property(struct power_supply *psy,
 
 		if (!fuelgauge->is_charging &&
 		    fuelgauge->vempty_mode == VEMPTY_MODE_SW_VALERT && !lpcharge) {
-			pr_debug("%s : SW V EMPTY. Decrease SOC\n", __func__);
+			pr_debug_once("%s : SW V EMPTY. Decrease SOC\n", __func__);
 			val->intval = 0;
 		} else if ((fuelgauge->vempty_mode == VEMPTY_MODE_SW_RECOVERY) &&
 			   (val->intval == fuelgauge->capacity_old)) {
@@ -2481,7 +2483,7 @@ static int sm5713_fg_get_property(struct power_supply *psy,
 				val->intval = gpio_get_value(fuelgauge->pdata->jig_gpio);
 			else
 				val->intval = -1;
-			pr_debug("%s: jig gpio = %d \n", __func__, val->intval);
+			pr_debug_once("%s: jig gpio = %d \n", __func__, val->intval);
 			break;
 		case POWER_SUPPLY_EXT_PROP_MEASURE_SYS:
 			/* not supported */
@@ -2489,7 +2491,7 @@ static int sm5713_fg_get_property(struct power_supply *psy,
 			break;
 		case POWER_SUPPLY_EXT_PROP_VOLT_SLOPE:
 			val->intval = (sm5713_read_word(fuelgauge->i2c, SM5713_FG_REG_VOLT_CAL) & 0xFF00);
-			pr_debug("%s: VOLT SLOPE = 0x%x \n", __func__, val->intval);
+			pr_debug_once("%s: VOLT SLOPE = 0x%x \n", __func__, val->intval);
 			break;
 		case POWER_SUPPLY_EXT_PROP_MONITOR_WORK:
 #if !defined(CONFIG_SEC_FACTORY)
@@ -2521,7 +2523,7 @@ static int sm5713_fg_set_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_STATUS:
 #ifdef ENABLE_BATT_LONG_LIFE
 		if (val->intval == POWER_SUPPLY_STATUS_FULL) {			
-			pr_debug("%s: POWER_SUPPLY_STATUS_FULL : q_max_now = 0x%x \n", __func__, fuelgauge->info.q_max_now);
+			pr_debug_once("%s: POWER_SUPPLY_STATUS_FULL : q_max_now = 0x%x \n", __func__, fuelgauge->info.q_max_now);
 			if (fuelgauge->info.q_max_now !=
 				fuelgauge->info.q_max_table[get_v_max_index_by_cycle(fuelgauge)]) {
 				if (!sm5713_fg_reset(fuelgauge, false))
@@ -2575,7 +2577,7 @@ static int sm5713_fg_set_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_TEMP:
 		fuelgauge->info.temperature = val->intval;
 		if (val->intval < 0) {
-				pr_debug("%s: set the low temp reset! temp : %d\n",
+				pr_debug_once("%s: set the low temp reset! temp : %d\n",
 						__func__, val->intval);
 		}
 		break;
@@ -2584,13 +2586,13 @@ static int sm5713_fg_set_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_HEALTH:
 		fuelgauge->info.flag_charge_health =
 		(val->intval == POWER_SUPPLY_HEALTH_GOOD) ? 1 : 0;
-		pr_debug("%s: charge health from charger = 0x%x\n", __func__, val->intval);
+		pr_debug_once("%s: charge health from charger = 0x%x\n", __func__, val->intval);
 		break;
 	case POWER_SUPPLY_PROP_ENERGY_NOW:
 		sm5713_fg_reset_capacity_by_jig_connection(fuelgauge);
 		break;
 	case POWER_SUPPLY_PROP_ENERGY_FULL_DESIGN:
-		pr_debug("%s: capacity_max changed, %d -> %d\n",
+		pr_debug_once("%s: capacity_max changed, %d -> %d\n",
 			__func__, fuelgauge->capacity_max, val->intval);
 		fuelgauge->capacity_max = sm5713_fg_check_capacity_max(fuelgauge, val->intval);
 		fuelgauge->initial_update_of_soc = true;
@@ -2600,7 +2602,7 @@ static int sm5713_fg_set_property(struct power_supply *psy,
 		break;
 #if defined(CONFIG_BATTERY_AGE_FORECAST)
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
-		pr_debug("%s: full condition soc changed, %d -> %d\n",
+		pr_debug_once("%s: full condition soc changed, %d -> %d\n",
 			__func__, fuelgauge->chg_full_soc, val->intval);
 		fuelgauge->chg_full_soc = val->intval;
 		break;
@@ -2618,7 +2620,7 @@ static int sm5713_fg_set_property(struct power_supply *psy,
 			break;
 		case POWER_SUPPLY_EXT_PROP_FUELGAUGE_FACTORY:
 			if (val->intval) {
-				pr_debug("%s: bypass mode is enabled\n", __func__);
+				pr_debug_once("%s: bypass mode is enabled\n", __func__);
 				sm5713_fg_reset_capacity_by_jig_connection(fuelgauge);
 			}
 			break;
@@ -2647,7 +2649,7 @@ static irqreturn_t sm5713_fg_irq_thread(int irq, void *irq_data)
 {
 	struct sm5713_fuelgauge_data *fuelgauge = irq_data;
 
-	pr_debug("%s\n", __func__);
+	pr_debug_once("%s\n", __func__);
 
 	if (fuelgauge->is_fuel_alerted) {
 		return IRQ_HANDLED;
@@ -2700,7 +2702,7 @@ static const struct file_operations sm5713_fuelgauge_debugfs_fops = {
 #define PROPERTY_NAME_SIZE 128
 
 #define PINFO(format, args...) \
-	printk(KERN_INFO "%s() line-%d: " format, \
+	pr_debug_once("%s() line-%d: " format, \
 		__func__, __LINE__, ## args)
 
 #if defined(ENABLE_BATT_LONG_LIFE)
@@ -2711,7 +2713,7 @@ static int temp_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 	const u32 *p;
 
 	if (np == NULL) {
-		pr_err("%s np NULL\n", __func__);
+		pr_err_once("%s np NULL\n", __func__);
 	} else {
 		p = of_get_property(np, "battery,age_data", &len);
 		if (p) {
@@ -2720,15 +2722,15 @@ static int temp_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			ret = of_property_read_u32_array(np, "battery,age_data",
 					 (u32 *)fuelgauge->pdata->age_data, len/sizeof(u32));
 			if (ret) {
-				pr_err("%s failed to read battery->pdata->age_data: %d\n",
+				pr_err_once("%s failed to read battery->pdata->age_data: %d\n",
 						__func__, ret);
 				kfree(fuelgauge->pdata->age_data);
 				fuelgauge->pdata->age_data = NULL;
 				fuelgauge->pdata->num_age_step = 0;
 			}
-			pr_debug("%s num_age_step : %d\n", __func__, fuelgauge->pdata->num_age_step);
+			pr_debug_once("%s num_age_step : %d\n", __func__, fuelgauge->pdata->num_age_step);
 			for (len = 0; len < fuelgauge->pdata->num_age_step; ++len) {
-				pr_debug("[%d/%d]cycle:%d, float:%d, full_v:%d, recharge_v:%d, soc:%d\n",
+				pr_debug_once("[%d/%d]cycle:%d, float:%d, full_v:%d, recharge_v:%d, soc:%d\n",
 					len, fuelgauge->pdata->num_age_step-1,
 					fuelgauge->pdata->age_data[len].cycle,
 					fuelgauge->pdata->age_data[len].float_voltage,
@@ -2738,7 +2740,7 @@ static int temp_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			}
 		} else {
 			fuelgauge->pdata->num_age_step = 0;
-			pr_err("%s there is not age_data\n", __func__);
+			pr_err_once("%s there is not age_data\n", __func__);
 		}
 	}
 	return 0;
@@ -2785,43 +2787,43 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 
 	/* reset, irq gpio info */
 	if (np == NULL) {
-		pr_err("%s np NULL\n", __func__);
+		pr_err_once("%s np NULL\n", __func__);
 	} else {
 		ret = of_property_read_u32(np, "fuelgauge,capacity_max",
 				&fuelgauge->pdata->capacity_max);
 		if (ret < 0)
-			pr_err("%s error reading capacity_max %d\n", __func__, ret);
+			pr_err_once("%s error reading capacity_max %d\n", __func__, ret);
 
 		ret = of_property_read_u32(np, "fuelgauge,capacity_max_margin",
 				&fuelgauge->pdata->capacity_max_margin);
 		if (ret < 0) {
-			pr_err("%s error reading capacity_max_margin %d\n", __func__, ret);
+			pr_err_once("%s error reading capacity_max_margin %d\n", __func__, ret);
 			fuelgauge->pdata->capacity_max_margin = 300;
 		}
 
 		ret = of_property_read_u32(np, "fuelgauge,capacity_min",
 				&fuelgauge->pdata->capacity_min);
 		if (ret < 0)
-			pr_err("%s error reading capacity_min %d\n", __func__, ret);
+			pr_err_once("%s error reading capacity_min %d\n", __func__, ret);
 
-		pr_debug("%s: capacity_max: %d, capacity_max_margin: %d, capacity_min: %d\n",
+		pr_debug_once("%s: capacity_max: %d, capacity_max_margin: %d, capacity_min: %d\n",
 			__func__, fuelgauge->pdata->capacity_max,
 			fuelgauge->pdata->capacity_max_margin, fuelgauge->pdata->capacity_min);
 
 		ret = of_property_read_u32(np, "fuelgauge,capacity_calculation_type",
 				&fuelgauge->pdata->capacity_calculation_type);
 		if (ret < 0)
-			pr_err("%s error reading capacity_calculation_type %d\n",
+			pr_err_once("%s error reading capacity_calculation_type %d\n",
 					__func__, ret);
 		ret = of_property_read_u32(np, "fuelgauge,fuel_alert_soc",
 				&fuelgauge->pdata->fuel_alert_soc);
 		if (ret < 0)
-			pr_err("%s error reading pdata->fuel_alert_soc %d\n",
+			pr_err_once("%s error reading pdata->fuel_alert_soc %d\n",
 					__func__, ret);
 		fuelgauge->pdata->repeated_fuelalert = of_property_read_bool(np,
 				"fuelgaguge,repeated_fuelalert");
 
-		pr_debug("%s: "
+		pr_debug_once("%s: "
 				"calculation_type: 0x%x, fuel_alert_soc: %d,\n"
 				"repeated_fuelalert: %d\n", __func__,
 				fuelgauge->pdata->capacity_calculation_type,
@@ -2834,9 +2836,9 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			ret = of_property_read_u32(np, "fuelgauge,low_temp_limit",
 						&fuelgauge->low_temp_limit);
 			if (ret < 0)
-				pr_err("%s error reading low temp limit %d\n", __func__, ret);
+				pr_err_once("%s error reading low temp limit %d\n", __func__, ret);
 
-			pr_debug("%s : LOW TEMP LIMIT(%d)\n",
+			pr_debug_once("%s : LOW TEMP LIMIT(%d)\n",
 				__func__, fuelgauge->low_temp_limit);
 		}
 
@@ -2846,19 +2848,19 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			ret = of_property_read_u32(np, "fuelgauge,v_empty",
 						&fuelgauge->battery_data->V_empty);
 			if (ret < 0)
-				pr_err("%s error reading v_empty %d\n",
+				pr_err_once("%s error reading v_empty %d\n",
 						__func__, ret);
 
 			ret = of_property_read_u32(np, "fuelgauge,v_empty_origin",
 						&fuelgauge->battery_data->V_empty_origin);
 			if (ret < 0)
-				pr_err("%s error reading v_empty_origin %d\n",
+				pr_err_once("%s error reading v_empty_origin %d\n",
 						__func__, ret);
 
 			ret = of_property_read_u32(np, "fuelgauge,sw_v_empty_voltage_cisd",
 					&fuelgauge->battery_data->sw_v_empty_vol_cisd);
 			if (ret < 0) {
-				pr_err("%s error reading sw_v_empty_default_vol_cise %d\n",
+				pr_err_once("%s error reading sw_v_empty_default_vol_cise %d\n",
 						__func__, ret);
 				fuelgauge->battery_data->sw_v_empty_vol_cisd = 3100;
 			}
@@ -2866,7 +2868,7 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			ret = of_property_read_u32(np, "fuelgauge,sw_v_empty_voltage",
 						   &fuelgauge->battery_data->sw_v_empty_vol);
 			if (ret < 0) {
-				pr_err("%s error reading sw_v_empty_default_vol %d\n",
+				pr_err_once("%s error reading sw_v_empty_default_vol %d\n",
 					   __func__, ret);
 				fuelgauge->battery_data->sw_v_empty_vol	= 3200;
 			}
@@ -2874,7 +2876,7 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			ret = of_property_read_u32(np, "fuelgauge,sw_v_empty_recover_voltage",
 						   &fuelgauge->battery_data->sw_v_empty_recover_vol);
 			if (ret < 0) {
-				pr_err("%s error reading sw_v_empty_recover_vol %d\n",
+				pr_err_once("%s error reading sw_v_empty_recover_vol %d\n",
 					   __func__, ret);
 				fuelgauge->battery_data->sw_v_empty_recover_vol = 3480;
 			}
@@ -2882,12 +2884,12 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			ret = of_property_read_u32(np, "fuelgauge,vbat_ovp",
 						   &fuelgauge->battery_data->vbat_ovp);
 			if (ret < 0) {
-				pr_err("%s error reading vbat_ovp %d\n",
+				pr_err_once("%s error reading vbat_ovp %d\n",
 					   __func__, ret);
 				fuelgauge->battery_data->vbat_ovp = 4400;
 			}
 
-			pr_debug("%s : SW V Empty (%d)mV,  SW V Empty recover (%d)mV, CISD V_Alarm (%d)mV, Vbat OVP (%d)mV \n",
+			pr_debug_once("%s : SW V Empty (%d)mV,  SW V Empty recover (%d)mV, CISD V_Alarm (%d)mV, Vbat OVP (%d)mV \n",
 				__func__,
 				fuelgauge->battery_data->sw_v_empty_vol,
 				fuelgauge->battery_data->sw_v_empty_recover_vol,
@@ -2897,7 +2899,7 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 
 		fuelgauge->pdata->jig_gpio = of_get_named_gpio(np, "fuelgauge,jig_gpio", 0);
 		if (fuelgauge->pdata->jig_gpio < 0) {
-			pr_err("%s error reading jig_gpio = %d\n",
+			pr_err_once("%s error reading jig_gpio = %d\n",
 					__func__, fuelgauge->pdata->jig_gpio);
 			fuelgauge->pdata->jig_gpio = 0;
 		} else {
@@ -2909,7 +2911,7 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 						&fuelgauge->pdata->jig_low_active);
 
 			if (ret < 0) {
-				pr_err("%s error reading jig_low_active %d\n", __func__, ret);
+				pr_err_once("%s error reading jig_low_active %d\n", __func__, ret);
 				fuelgauge->pdata->jig_low_active = 0;
 			}
 		}
@@ -2917,7 +2919,7 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 		ret = of_property_read_u32(np, "fuelgauge,fg_resistor",
 				&fuelgauge->fg_resistor);
 		if (ret < 0) {
-			pr_err("%s error reading fg_resistor %d\n",
+			pr_err_once("%s error reading fg_resistor %d\n",
 					__func__, ret);
 			fuelgauge->fg_resistor = 1;
 		}
@@ -2930,32 +2932,32 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 		ret = of_property_read_u32(np, "fuelgauge,capacity",
 						&fuelgauge->battery_data->Capacity);
 		if (ret < 0)
-			pr_err("%s error reading Capacity %d\n",
+			pr_err_once("%s error reading Capacity %d\n",
 					__func__, ret);
 
 		ret = of_property_read_u32(np, "fuelgauge,ttf_capacity",
 						&fuelgauge->ttf_capacity);
 		if (ret < 0)
-			pr_err("%s error reading ttf_capacity %d\n",
+			pr_err_once("%s error reading ttf_capacity %d\n",
 					__func__, ret);
 
 		p = of_get_property(np, "fuelgauge,cv_data", &len);
 		if (p) {
 			fuelgauge->cv_data = kzalloc(len, GFP_KERNEL);
 			fuelgauge->cv_data_lenth = len / sizeof(struct cv_slope);
-			pr_err("%s len: %ld, lenth: %d, %d\n",
+			pr_err_once("%s len: %ld, lenth: %d, %d\n",
 						__func__, sizeof(int) * len, len, fuelgauge->cv_data_lenth);
 			ret = of_property_read_u32_array(np, "fuelgauge,cv_data",
 						(u32 *)fuelgauge->cv_data, len/sizeof(u32));
 
 			if (ret) {
-				pr_err("%s failed to read fuelgauge->cv_data: %d\n",
+				pr_err_once("%s failed to read fuelgauge->cv_data: %d\n",
 						__func__, ret);
 				kfree(fuelgauge->cv_data);
 				fuelgauge->cv_data = NULL;
 			}
 		} else {
-			pr_err("%s there is not cv_data\n", __func__);
+			pr_err_once("%s there is not cv_data\n", __func__);
 		}
 
 
@@ -2964,7 +2966,7 @@ static int sm5713_fuelgauge_parse_dt(struct sm5713_fuelgauge_data *fuelgauge)
 			&fuelgauge->pdata->full_condition_soc);
 		if (ret) {
 			fuelgauge->pdata->full_condition_soc = 93;
-			pr_debug("%s : Full condition soc is Empty\n", __func__);
+			pr_debug_once("%s : Full condition soc is Empty\n", __func__);
 		}
 #endif
 	}
@@ -3505,7 +3507,7 @@ static int sm5713_fuelgauge_probe(struct platform_device *pdev)
 	int ret = 0;
 	union power_supply_propval raw_soc_val;
 
-	pr_debug("%s: SM5713 Fuelgauge Driver Loading\n", __func__);
+	pr_debug_once("%s: SM5713 Fuelgauge Driver Loading\n", __func__);
 
 	fuelgauge = kzalloc(sizeof(*fuelgauge), GFP_KERNEL);
 	if (!fuelgauge)
@@ -3536,13 +3538,13 @@ static int sm5713_fuelgauge_probe(struct platform_device *pdev)
 	fuelgauge->battery_data = kzalloc(sizeof(struct battery_data_t),
 					GFP_KERNEL);
 	if (!fuelgauge->battery_data) {
-		pr_err("Failed to allocate memory\n");
+		pr_err_once("Failed to allocate memory\n");
 		ret = -ENOMEM;
 		goto err_pdata_free;
 	}
 	ret = sm5713_fuelgauge_parse_dt(fuelgauge);
 	if (ret < 0) {
-		pr_err("%s not found charger dt! ret[%d]\n",
+		pr_err_once("%s not found charger dt! ret[%d]\n",
 				__func__, ret);
 	}
 #endif
@@ -3556,7 +3558,7 @@ static int sm5713_fuelgauge_probe(struct platform_device *pdev)
 		S_IRUGO, NULL, (void *)fuelgauge, &sm5713_fuelgauge_debugfs_fops);
 
 	if (!sm5713_fg_init(fuelgauge, false)) {
-		pr_err("%s: Failed to Initialize Fuelgauge\n", __func__);
+		pr_err_once("%s: Failed to Initialize Fuelgauge\n", __func__);
 		goto err_data_free;
 	}
 
@@ -3568,7 +3570,7 @@ static int sm5713_fuelgauge_probe(struct platform_device *pdev)
 
 	/* SW/HW init code. SW/HW V Empty mode must be opposite ! */
 	fuelgauge->info.temperature = 300; /* default value */
-	pr_debug("%s: SW/HW V empty init \n", __func__);
+	pr_debug_once("%s: SW/HW V empty init \n", __func__);
 	sm5713_fg_set_vempty(fuelgauge, VEMPTY_MODE_HW);
 
 	psy_fg.drv_data = fuelgauge;
@@ -3591,12 +3593,12 @@ static int sm5713_fuelgauge_probe(struct platform_device *pdev)
 	ret = power_supply_register(&pdev->dev, &fuelgauge->psy_fg);
 
 	if (ret) {
-		pr_err("%s: Failed to Register psy_fg\n", __func__);
+		pr_err_once("%s: Failed to Register psy_fg\n", __func__);
 		goto err_data_free;
 	}
 */
 	fuelgauge->fg_irq = pdata->irq_base + SM5713_FG_IRQ_INT_LOW_VOLTAGE;
-	pr_debug("[%s]IRQ_BASE(%d) FG_IRQ(%d)\n",
+	pr_debug_once("[%s]IRQ_BASE(%d) FG_IRQ(%d)\n",
 		__func__, pdata->irq_base, fuelgauge->fg_irq);
 
 	fuelgauge->is_fuel_alerted = false;
@@ -3613,12 +3615,12 @@ static int sm5713_fuelgauge_probe(struct platform_device *pdev)
 						0,
 						"fuelgauge-irq", fuelgauge);
 				if (ret) {
-					pr_err("%s: Failed to Request IRQ\n", __func__);
+					pr_err_once("%s: Failed to Request IRQ\n", __func__);
 					goto err_supply_unreg;
 				}
 			}
 		} else {
-			pr_err("%s: Failed to Initialize Fuel-alert\n",
+			pr_err_once("%s: Failed to Initialize Fuel-alert\n",
 					__func__);
 			goto err_supply_unreg;
 		}
@@ -3631,7 +3633,7 @@ static int sm5713_fuelgauge_probe(struct platform_device *pdev)
 			"%s : Failed to create_attrs\n", __func__);
 	}
 
-	pr_debug("%s: SM5713 Fuelgauge Driver Loaded\n", __func__);
+	pr_debug_once("%s: SM5713 Fuelgauge Driver Loaded\n", __func__);
 	return 0;
 
 err_supply_unreg:
@@ -3678,7 +3680,7 @@ static void sm5713_fuelgauge_shutdown(struct platform_device *pdev)
 {
 	struct sm5713_fuelgauge_data *fuelgauge = platform_get_drvdata(pdev);
 
-	pr_debug("%s: ++\n", __func__);
+	pr_debug_once("%s: ++\n", __func__);
 
 	if (fuelgauge->using_hw_vempty)
 		sm5713_fg_set_vempty(fuelgauge, false);
@@ -3687,7 +3689,7 @@ static void sm5713_fuelgauge_shutdown(struct platform_device *pdev)
 #endif
 	sm5713_write_word(fuelgauge->i2c, SM5713_FG_REG_MIX_RATE, 0x0F03);
 
-	pr_debug("%s: --\n", __func__);
+	pr_debug_once("%s: --\n", __func__);
 }
 
 static SIMPLE_DEV_PM_OPS(sm5713_fuelgauge_pm_ops, sm5713_fuelgauge_suspend,
@@ -3708,7 +3710,7 @@ static struct platform_driver sm5713_fuelgauge_driver = {
 
 static int __init sm5713_fuelgauge_init(void)
 {
-	pr_debug("%s: \n", __func__);
+	pr_debug_once("%s: \n", __func__);
 	return platform_driver_register(&sm5713_fuelgauge_driver);
 }
 

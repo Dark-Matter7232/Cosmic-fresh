@@ -13,6 +13,9 @@
 #include <linux/t-base-tui.h>
 #endif
 
+#undef pr_info
+#undef pr_debug
+
 #if MMS_USE_CMD_MODE
 
 static ssize_t scrub_position_show(struct device *dev,

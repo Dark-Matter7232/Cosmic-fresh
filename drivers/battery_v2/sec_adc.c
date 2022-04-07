@@ -12,6 +12,9 @@
 
 #include "include/sec_adc.h"
 
+#undef pr_info
+#undef pr_debug
+
 struct adc_list {
 	const char*	name;
 	struct iio_channel *channel;
@@ -62,7 +65,7 @@ static int sec_bat_adc_ap_read(int channel)
 	}
 
 	if (retry_cnt <= 0) {
-		pr_err("%s: Error in ADC\n", __func__);
+		pr_err_once("%s: Error in ADC\n", __func__);
 		data = batt_adc_list[channel].prev_value;
 	} else
 		batt_adc_list[channel].prev_value = data;

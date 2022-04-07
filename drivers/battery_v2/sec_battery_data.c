@@ -16,6 +16,9 @@
 #include <linux/of.h>
 #include <linux/power_supply.h>
 
+#undef pr_info
+#undef pr_debug
+
 enum battery_data_type {
 	BATTERY_DATA_TYPE_NONE = 0,
 	BATTERY_DATA_TYPE_INFO,
@@ -33,7 +36,7 @@ enum battery_data_flag {
 #define CHECK_ERROR_DATA(logical_test, return_value, error_value, action) { \
 	if (logical_test) { \
 		return_value = error_value; \
-		pr_err("%s: error!!! (ret = %d)\n", __func__, error_value); \
+		pr_err_once("%s: error!!! (ret = %d)\n", __func__, error_value); \
 		action; \
 	} else { \
 		return_value = 0; \
@@ -84,7 +87,7 @@ static struct battery_node *get_battery_node(
 	struct battery_node *temp_node = NULL;
 
 	if (name == NULL) {
-		pr_err("%s: name is invalid!!\n", __func__);
+		pr_err_once("%s: name is invalid!!\n", __func__);
 		return NULL;
 	}
 
@@ -100,12 +103,12 @@ static struct battery_node *get_battery_node(
 
 	batt_node = kzalloc(sizeof(struct battery_node), GFP_KERNEL);
 	if (!batt_node) {
-		pr_err("%s: nomem!!\n", __func__);
+		pr_err_once("%s: nomem!!\n", __func__);
 		return NULL;
 	}
 	batt_node->np = of_find_node_by_name(NULL, name);
 	if (IS_ERR_OR_NULL(batt_node->np)) {
-		pr_err("%s: failed to find node(name=%s)\n", __func__, name);
+		pr_err_once("%s: failed to find node(name=%s)\n", __func__, name);
 		kfree(batt_node);
 		return NULL;
 	}
@@ -114,7 +117,7 @@ static struct battery_node *get_battery_node(
 		temp_node->next = batt_node;
 	batt_node->start_prop = NULL;
 	if (*start_node == NULL) *start_node = batt_node;
-	pr_info("%s: add battery_node(name = %s)\n", __func__, name);
+	pr_debug_once("%s: add battery_node(name = %s)\n", __func__, name);
 	return batt_node;
 }
 
@@ -152,7 +155,7 @@ static void change_battery_pdata(
 	struct battery_node *temp_node = NULL;
 
 	temp_node = start_node;
-	pr_info("%s: start update(%d)\n", __func__, is_valid);
+	pr_debug_once("%s: start update(%d)\n", __func__, is_valid);
 	while (is_valid && temp_node) {
 		struct battery_property *batt_prop = NULL;
 		struct power_supply *psy = NULL;
@@ -177,7 +180,7 @@ static void change_battery_pdata(
 		temp_node = temp_node->next;
 	}
 
-	pr_info("%s: release battery pdata\n", __func__);
+	pr_debug_once("%s: release battery pdata\n", __func__);
 	while (start_node) {
 		struct battery_property *temp_batt_prop = NULL;
 		struct battery_property *batt_prop = NULL;
@@ -186,12 +189,12 @@ static void change_battery_pdata(
 		while (batt_prop) {
 			switch (batt_prop->flag) {
 			case BATTERY_DATA_FLAG_REMOVE:
-				pr_debug("%s: re-set property(ret=%d, flag=%d, name=%s)\n",
+				pr_debug_once("%s: re-set property(ret=%d, flag=%d, name=%s)\n",
 					__func__, of_add_property(start_node->np, batt_prop->property),
 					batt_prop->flag, batt_prop->property->name);
 				break;
 			case BATTERY_DATA_FLAG_EDIT:
-				pr_debug("%s: re-set property(type=%d, flag=%d, name=%s)\n",
+				pr_debug_once("%s: re-set property(type=%d, flag=%d, name=%s)\n",
 					__func__, batt_prop->type,
 					batt_prop->flag, batt_prop->property->name);
 				if (!is_valid) {
@@ -206,7 +209,7 @@ static void change_battery_pdata(
 				}
 				break;
 			case BATTERY_DATA_FLAG_ADD:
-				pr_debug("%s: re-set property(ret=%d, flag=%d, name=%s)\n",
+				pr_debug_once("%s: re-set property(ret=%d, flag=%d, name=%s)\n",
 					__func__, of_remove_property(start_node->np, batt_prop->property),
 					batt_prop->flag, batt_prop->property->name);
 				if (batt_prop->new_value &&	(!is_valid || batt_prop->type != BATTERY_DATA_TYPE_STRING)) {
@@ -250,26 +253,26 @@ static int sec_battery_check_info(struct file *fp,
 	np = of_find_node_by_name(NULL, batt_data.node_name);
 	ret = of_property_read_u32(np, "battery,batt_data_version", &dt_version);
 	if (ret) {
-		pr_info("%s : batt_data_version is Empty\n", __func__);
+		pr_debug_once("%s : batt_data_version is Empty\n", __func__);
 		dt_version = 0;
 	}
 
 	np = of_find_all_nodes(NULL);
 	ret = of_property_read_u32(np, "model_info-hw_rev", &hw_rev);
 	if (ret) {
-		pr_info("%s: model_info-hw_rev is Empty\n", __func__);
+		pr_debug_once("%s: model_info-hw_rev is Empty\n", __func__);
 		hw_rev = 0;
 	}
 	ret = of_property_read_u32(np, "model_info-hw_rev_end", &hw_rev_end);
 	if (ret) {
-		pr_info("%s: model_info-hw_rev_end is Empty\n", __func__);
+		pr_debug_once("%s: model_info-hw_rev_end is Empty\n", __func__);
 		hw_rev_end = 99;
 	}
 
 	ret = (batt_info->version < dt_version) ? -1 :
 		((batt_info->hw_rev > hw_rev_end || batt_info->hw_rev < hw_rev) ? -2 : 0);
 
-	pr_info("%s: check info(ret=%d), version(%d <-> %d), hw_rev(%d ~ %d <-> %d), prop_count(%d), value_length(%d)\n",
+	pr_debug_once("%s: check info(ret=%d), version(%d <-> %d), hw_rev(%d ~ %d <-> %d), prop_count(%d), value_length(%d)\n",
 		__func__, ret,
 		dt_version, batt_info->version,
 		hw_rev, hw_rev_end, batt_info->hw_rev,
@@ -288,7 +291,7 @@ static int sec_battery_check_none(struct file *fp)
 	CHECK_ERROR_DATA((read_size <= 0), ret, (-ENODATA), goto finish_check_none);
 
 	if (batt_data.type != BATTERY_DATA_TYPE_NONE) {
-		pr_info("%s: invalid type(%d)\n", __func__, batt_data.type);
+		pr_debug_once("%s: invalid type(%d)\n", __func__, batt_data.type);
 		ret = -EINVAL;
 	}
 
@@ -303,10 +306,10 @@ static char *sec_battery_check_value(struct file *fp,
 	int read_size;
 
 	if (batt_data->length < 0 || batt_data->length > batt_info->value_length) {
-		pr_info("%s: length(%d) of data is invalid\n", __func__, batt_data->length);
+		pr_debug_once("%s: length(%d) of data is invalid\n", __func__, batt_data->length);
 		return NULL;
 	} else if (batt_data->length == 0) {
-		pr_info("%s: skip alloc buffer(length=%d)\n", __func__, batt_data->length);
+		pr_debug_once("%s: skip alloc buffer(length=%d)\n", __func__, batt_data->length);
 		return NULL;
 	}
 
@@ -314,7 +317,7 @@ static char *sec_battery_check_value(struct file *fp,
 	if (temp_buf) {
 		read_size = fp->f_op->read(fp, temp_buf, batt_data->length, &fp->f_pos);
 		if (read_size <= 0) {
-			pr_info("%s: failed to read value\n", __func__);
+			pr_debug_once("%s: failed to read value\n", __func__);
 			kfree(temp_buf);
 			temp_buf = NULL;
 		}
@@ -345,7 +348,7 @@ int sec_battery_update_data(const char* file_path)
 	while (batt_info.prop_count-- > 0) {
 		read_size = fp->f_op->read(fp, (char*)&batt_data, sizeof(struct battery_data), &fp->f_pos);
 		CHECK_ERROR_DATA((read_size <= 0), ret, (-ENODATA), goto finish_update_data);
-		pr_debug("%s: read batt_data(type=%d, flag=%d, node_name=%s, property=%s, length=%d)\n",
+		pr_debug_once("%s: read batt_data(type=%d, flag=%d, node_name=%s, property=%s, length=%d)\n",
 			__func__, batt_data.type, batt_data.flag, batt_data.node_name, batt_data.property, batt_data.length);
 
 		temp_node = get_battery_node(&batt_node, batt_data.node_name);
@@ -375,7 +378,7 @@ int sec_battery_update_data(const char* file_path)
 				CHECK_ERROR_DATA((ret), ret, ret,
 					{kfree(batt_prop); kfree(temp_buf); kfree(batt_property->name); kfree(batt_property); goto finish_update_data;});
 			} else {
-				pr_info("%s: invalid data(name=%s, property=%s, flag=%d)\n",
+				pr_debug_once("%s: invalid data(name=%s, property=%s, flag=%d)\n",
 					__func__, batt_data.node_name, batt_data.property, batt_data.flag);
 				ret = -EINVAL;
 				kfree(batt_prop);
@@ -388,7 +391,7 @@ int sec_battery_update_data(const char* file_path)
 				CHECK_ERROR_DATA((!temp_buf), ret, (-ENOMEM),
 					{kfree(batt_prop); goto finish_update_data;});
 			} else {
-				pr_info("%s: invalid data(name=%s, property=%s, flag=%d)\n",
+				pr_debug_once("%s: invalid data(name=%s, property=%s, flag=%d)\n",
 					__func__, batt_data.node_name, batt_data.property, batt_data.flag);
 				ret = -EINVAL;
 				kfree(batt_prop);
@@ -402,7 +405,7 @@ int sec_battery_update_data(const char* file_path)
 				ret = of_remove_property(temp_node->np, batt_property);
 				CHECK_ERROR_DATA((ret), ret, ret, {kfree(batt_prop); goto finish_update_data;});
 			} else {
-				pr_info("%s: invalid data(name=%s, property=%s, flag=%d)\n",
+				pr_debug_once("%s: invalid data(name=%s, property=%s, flag=%d)\n",
 					__func__, batt_data.node_name, batt_data.property, batt_data.flag);
 				ret = -EINVAL;
 				kfree(batt_prop);
@@ -410,7 +413,7 @@ int sec_battery_update_data(const char* file_path)
 			}
 			break;
 		default:
-			pr_info("%s: invalid flag(%d)\n", __func__, batt_data.flag);
+			pr_debug_once("%s: invalid flag(%d)\n", __func__, batt_data.flag);
 			ret = -EINVAL;
 			kfree(batt_prop);
 			goto finish_update_data;

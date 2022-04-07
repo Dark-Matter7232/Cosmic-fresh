@@ -4,6 +4,9 @@
 #include <linux/mutex.h>
 #include <linux/debugfs.h>
 
+#undef pr_info
+#undef pr_debug
+
 static struct dentry *debug_root;
 static struct dentry *status_all;
 static LIST_HEAD(vote_list);
@@ -310,31 +313,31 @@ struct sec_vote * sec_vote_init(const char * name, int type, int num, int init_v
 	struct sec_voter * voter = NULL;
 
 	if (!init) {
-		pr_info("%s: Init \n", __func__);
+		pr_debug_once("%s: Init \n", __func__);
 		init = true;
 		mutex_init(&vote_lock);
 	}
 	mutex_lock(&vote_lock);
 	vote = find_vote(name);
 	if (vote) {
-		pr_info("%s: %s exist \n", __func__, name);
+		pr_debug_once("%s: %s exist \n", __func__, name);
 		goto err;
 	}
 	if (voter_name == NULL) {
-		pr_info("%s: Please add voter name list \n", __func__);
+		pr_debug_once("%s: Please add voter name list \n", __func__);
 		goto err;
 	}
 
 	vote = kzalloc(sizeof(struct sec_vote), GFP_KERNEL);
 	if (!vote) {
-		pr_info("%s: mem aloocate fail \n", __func__);
+		pr_debug_once("%s: mem aloocate fail \n", __func__);
 		goto err;
 	}
 	vote->name = name;
 	vote->type = type;
 	voter = kzalloc(sizeof(struct sec_voter) * num, GFP_KERNEL);
 	if (!voter) {
-		pr_info("%s: mem aloocate fail \n", __func__);
+		pr_debug_once("%s: mem aloocate fail \n", __func__);
 		kfree(vote);
 		goto err;
 	}
@@ -351,34 +354,34 @@ struct sec_vote * sec_vote_init(const char * name, int type, int num, int init_v
 	if (debug_root == NULL) {
 		debug_root = debugfs_create_dir("sec-vote", NULL);
 		if (!debug_root) {
-			pr_err("Couldn't create debug dir\n");
+			pr_err_once("Couldn't create debug dir\n");
 		} else {
 			status_all = debugfs_create_file("status_all",
 					S_IFREG | 0444,
 					debug_root, NULL,
 					&vote_status_all_ops);
 			if (!status_all) {
-				pr_err("Couldn't create status_all dbg file \n");
+				pr_err_once("Couldn't create status_all dbg file \n");
 			}
 		}
 	}
 	if (debug_root)
 		vote->root = debugfs_create_dir(name, debug_root);
 	if (!vote->root) {
-		pr_err("Couldn't create debug dir %s\n", name);
+		pr_err_once("Couldn't create debug dir %s\n", name);
 	} else {
 		vote->status_ent = debugfs_create_file("status", S_IFREG | 0444,
 				vote->root, vote,
 				&vote_status_ops);
 		if (!vote->status_ent) {
-			pr_err("Couldn't create status dbg file for %s\n", name);
+			pr_err_once("Couldn't create status dbg file for %s\n", name);
 		}
 
 		vote->force_val_ent = debugfs_create_u32("force_val",
 				S_IFREG | 0644,
 				vote->root, &(vote->force_val));
 		if (!vote->force_val_ent) {
-			pr_err("Couldn't create force_val dbg file for %s\n", name);
+			pr_err_once("Couldn't create force_val dbg file for %s\n", name);
 		}
 
 		vote->force_set_ent = debugfs_create_file("force_set",
@@ -386,10 +389,10 @@ struct sec_vote * sec_vote_init(const char * name, int type, int num, int init_v
 				vote->root, vote,
 				&vote_force_ops);
 		if (!vote->force_set_ent) {
-			pr_err("Couldn't create force_set dbg file for %s\n", name);
+			pr_err_once("Couldn't create force_set dbg file for %s\n", name);
 		}
 	}
-	pr_info("%s: %s \n", __func__, name);
+	pr_debug_once("%s: %s \n", __func__, name);
 	list_add(&vote->list, &vote_list);
 	mutex_unlock(&vote_lock);
 	return vote;
@@ -401,7 +404,7 @@ EXPORT_SYMBOL(sec_vote_init);
 
 void sec_vote_destroy(struct sec_vote * vote)
 {
-	pr_info("%s: %s\n", __func__, vote->name);
+	pr_debug_once("%s: %s\n", __func__, vote->name);
 	list_del(&vote->list);
 	kfree(vote->voter);
 	debugfs_remove_recursive(vote->root);
@@ -416,11 +419,11 @@ void sec_vote(struct sec_vote * vote, int event, int en, int value)
 	int id, res;
 
 	if (event >= vote->num) {
-		pr_info("%s id Error(%d)\n", __func__, event);
+		pr_debug_once("%s id Error(%d)\n", __func__, event);
 		return;
 	}
 	mutex_lock(&vote->lock);
-	pr_debug("%s, %s en: %d->%d, v: %d->%d\n", vote->name,vote->voter_name[event],
+	pr_debug_once("%s, %s en: %d->%d, v: %d->%d\n", vote->name,vote->voter_name[event],
 		vote->voter[event].enable, en, vote->voter[event].value, value);
 	vote->voter[event].enable = en;
 	vote->voter[event].value = value;
@@ -439,18 +442,18 @@ void sec_vote(struct sec_vote * vote, int event, int en, int value)
 			select_enable(vote->voter, vote->num, &id, &res);
 			break;
 		default:
-			pr_err("%s type invalid\n", __func__);
+			pr_err_once("%s type invalid\n", __func__);
 			goto out;
 	}
 
 	if (res != vote->res) {
-		pr_info("%s: %s (%s, %d) -> (%s, %d)\n", __func__, vote->name,
+		pr_debug_once("%s: %s (%s, %d) -> (%s, %d)\n", __func__, vote->name,
 				(vote->id >= 0)?vote->voter_name[vote->id]: none_str, vote->res,
 				(id>=0)? vote->voter_name[id] : none_str, res);
 		vote->id = id;
 		vote->res = res;
 		if (vote->force_set)
-			pr_err("%s skip by force_set\n", __func__);
+			pr_err_once("%s skip by force_set\n", __func__);
 		else
 			vote->cb(vote->data, res);
 	}
@@ -462,7 +465,7 @@ EXPORT_SYMBOL(sec_vote);
 void sec_vote_refresh(struct sec_vote * vote)
 {
 	mutex_lock(&vote->lock);
-	pr_info("%s refresh (%s, %d)\n", vote->name,
+	pr_debug_once("%s refresh (%s, %d)\n", vote->name,
 		(vote->id >= 0)?vote->voter_name[vote->id]: none_str, vote->res);
 	vote->cb(vote->data, vote->res);
 	mutex_unlock(&vote->lock);

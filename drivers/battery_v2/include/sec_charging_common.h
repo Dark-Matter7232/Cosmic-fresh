@@ -1323,7 +1323,7 @@ static inline struct power_supply *get_power_supply_by_name(char *name)
 	int ret = 0;	\
 	psy = get_power_supply_by_name((name));	\
 	if (!psy) {	\
-		pr_err("%s: Fail to "#function" psy (%s)\n",	\
+		pr_err_once("%s: Fail to "#function" psy (%s)\n",	\
 			__func__, (name));	\
 		value.intval = 0;	\
 		ret = -ENOENT;	\
@@ -1332,7 +1332,7 @@ static inline struct power_supply *get_power_supply_by_name(char *name)
 			ret = psy->desc->function##_property(psy, \
 				(enum power_supply_property) (property), &(value)); \
 			if (ret < 0) {	\
-				pr_err("%s: Fail to %s "#function" (%d=>%d)\n", \
+				pr_err_once("%s: Fail to %s "#function" (%d=>%d)\n", \
 						__func__, name, (property), ret);	\
 				value.intval = 0;	\
 			}	\

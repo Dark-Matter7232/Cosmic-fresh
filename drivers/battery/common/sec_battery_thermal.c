@@ -11,6 +11,9 @@
  */
 #include "include/sec_battery.h"
 
+#undef pr_info
+#undef pr_debug
+
 #if defined(CONFIG_PREVENT_USB_CONN_OVERHEAT)
 extern int muic_set_hiccup_mode(int on_off);
 #endif
@@ -43,7 +46,7 @@ int sec_bat_get_high_priority_temp(struct sec_battery_info *battery)
 			priority_temp = battery->sub_bat_temp;
 	}
 
-	pr_info("%s priority_temp = %d \n", __func__, priority_temp);
+	pr_debug_once("%s priority_temp = %d \n", __func__, priority_temp);
 	return priority_temp;
 }
 //#endif
@@ -91,7 +94,7 @@ void sec_bat_check_mix_temp(struct sec_battery_info *battery)
 
 #if defined(CONFIG_WIRELESS_TX_MODE)
 			if (battery->wc_tx_enable) {
-				pr_info("%s @Tx_Mode enter mix_temp_limit, TX mode should turn off \n", __func__);
+				pr_debug_once("%s @Tx_Mode enter mix_temp_limit, TX mode should turn off \n", __func__);
 				sec_bat_set_tx_event(battery, BATT_TX_EVENT_WIRELESS_TX_HIGH_TEMP,
 						BATT_TX_EVENT_WIRELESS_TX_HIGH_TEMP);
 				battery->tx_retry_case |= SEC_BAT_TX_RETRY_MIX_TEMP;
@@ -102,7 +105,7 @@ void sec_bat_check_mix_temp(struct sec_battery_info *battery)
 			battery->mix_limit = false;
 			sec_vote(battery->input_vote, VOTER_MIX_LIMIT, false, 0);
 			if (battery->tx_retry_case & SEC_BAT_TX_RETRY_MIX_TEMP) {
-				pr_info("%s @Tx_Mode recovery mix_temp_limit, TX mode should be retried \n", __func__);
+				pr_debug_once("%s @Tx_Mode recovery mix_temp_limit, TX mode should be retried \n", __func__);
 				if ((battery->tx_retry_case & ~SEC_BAT_TX_RETRY_MIX_TEMP) == 0)
 					sec_bat_set_tx_event(battery, BATT_TX_EVENT_WIRELESS_TX_RETRY,
 							BATT_TX_EVENT_WIRELESS_TX_RETRY);
@@ -110,7 +113,7 @@ void sec_bat_check_mix_temp(struct sec_battery_info *battery)
 			}
 		}
 
-		pr_info("%s: mix_limit(%d), temp(%d), chg_temp(%d), input_current(%d)\n",
+		pr_debug_once("%s: mix_limit(%d), temp(%d), chg_temp(%d), input_current(%d)\n",
 			__func__, battery->mix_limit, temperature, chg_temp, input_current);
 	} else {
 		if (battery->mix_limit) {
@@ -156,7 +159,7 @@ void sec_bat_check_wpc_temp(struct sec_battery_info *battery)
 		if(is_hv_wireless_type(battery->cable_type) &&
 			value.intval == WIRELESS_VOUT_5_5V_STEP &&
 			battery->wpc_vout_level != WIRELESS_VOUT_5_5V_STEP) {
-			pr_info("%s: real vout was not 10V \n", __func__);
+			pr_debug_once("%s: real vout was not 10V \n", __func__);
 			battery->wpc_vout_level = WIRELESS_VOUT_5_5V_STEP;
 		}
 
@@ -219,13 +222,13 @@ void sec_bat_check_wpc_temp(struct sec_battery_info *battery)
 			if (wpc_vout_level != battery->wpc_vout_level) {
 				battery->wpc_vout_level = wpc_vout_level;
 				if (battery->current_event & SEC_BAT_CURRENT_EVENT_WPC_VOUT_LOCK) {
-					pr_info("%s: block to set wpc vout level(%d) because otg on\n",
+					pr_debug_once("%s: block to set wpc vout level(%d) because otg on\n",
 						__func__, wpc_vout_level);
 				} else {
 					value.intval = wpc_vout_level;
 					psy_do_property(battery->pdata->wireless_charger_name, set,
 						POWER_SUPPLY_PROP_INPUT_VOLTAGE_REGULATION, value);
-					pr_info("%s: change vout level(%d)",
+					pr_debug_once("%s: change vout level(%d)",
 						__func__, battery->wpc_vout_level);
 					sec_vote(battery->input_vote, VOTER_AICL, false, 0);
 				}
@@ -235,7 +238,7 @@ void sec_bat_check_wpc_temp(struct sec_battery_info *battery)
 				sec_vote(battery->input_vote, VOTER_AICL, false, 0);
 		}
 		mutex_unlock(&battery->voutlock);
-		pr_info("%s: vout_level(%d), chg_limit(%d)\n",
+		pr_debug_once("%s: vout_level(%d), chg_limit(%d)\n",
 			__func__, battery->wpc_vout_level, battery->chg_limit);
 		if (battery->chg_limit) {
 			if ((battery->siop_level >= 100 && !battery->lcd_status) &&
@@ -259,13 +262,13 @@ void sec_bat_check_tx_temperature(struct sec_battery_info *battery)
 {
 	if (battery->wc_tx_enable) {
 		if(battery->temperature >= battery->pdata->tx_high_threshold) {
-			pr_info("@Tx_Mode : %s: Battery temperature is too high. Tx mode should turn off  \n", __func__);
+			pr_debug_once("@Tx_Mode : %s: Battery temperature is too high. Tx mode should turn off  \n", __func__);
 			/* set tx event */
 			sec_bat_set_tx_event(battery, BATT_TX_EVENT_WIRELESS_TX_HIGH_TEMP, BATT_TX_EVENT_WIRELESS_TX_HIGH_TEMP);
 			battery->tx_retry_case |= SEC_BAT_TX_RETRY_HIGH_TEMP;
 			sec_wireless_set_tx_enable(battery, false);
 		} else if (battery->temperature <= battery->pdata->tx_low_threshold) {
-			pr_info("@Tx_Mode : %s: Battery temperature is too low. Tx mode should turn off  \n", __func__);
+			pr_debug_once("@Tx_Mode : %s: Battery temperature is too low. Tx mode should turn off  \n", __func__);
 			/* set tx event */
 			sec_bat_set_tx_event(battery, BATT_TX_EVENT_WIRELESS_TX_LOW_TEMP, BATT_TX_EVENT_WIRELESS_TX_LOW_TEMP);
 			battery->tx_retry_case |= SEC_BAT_TX_RETRY_LOW_TEMP;
@@ -273,14 +276,14 @@ void sec_bat_check_tx_temperature(struct sec_battery_info *battery)
 		}
 	} else if (battery->tx_retry_case & SEC_BAT_TX_RETRY_HIGH_TEMP) {
 		if (battery->temperature <= battery->pdata->tx_high_recovery) {
-			pr_info("@Tx_Mode : %s: Battery temperature goes to normal(High). Retry TX mode\n", __func__);
+			pr_debug_once("@Tx_Mode : %s: Battery temperature goes to normal(High). Retry TX mode\n", __func__);
 			battery->tx_retry_case &= ~SEC_BAT_TX_RETRY_HIGH_TEMP;
 			if (!battery->tx_retry_case)
 				sec_bat_set_tx_event(battery, BATT_TX_EVENT_WIRELESS_TX_RETRY, BATT_TX_EVENT_WIRELESS_TX_RETRY);
 		}
 	} else if (battery->tx_retry_case & SEC_BAT_TX_RETRY_LOW_TEMP) {
 		if (battery->temperature >= battery->pdata->tx_low_recovery) {
-			pr_info("@Tx_Mode : %s: Battery temperature goes to normal(Low). Retry TX mode\n", __func__);
+			pr_debug_once("@Tx_Mode : %s: Battery temperature goes to normal(Low). Retry TX mode\n", __func__);
 			battery->tx_retry_case &= ~SEC_BAT_TX_RETRY_LOW_TEMP;
 			if (!battery->tx_retry_case)
 				sec_bat_set_tx_event(battery, BATT_TX_EVENT_WIRELESS_TX_RETRY, BATT_TX_EVENT_WIRELESS_TX_RETRY);
@@ -341,7 +344,7 @@ void sec_bat_check_direct_chg_temp(struct sec_battery_info *battery)
 				sec_vote(battery->input_vote, VOTER_CHG_TEMP, battery->chg_limit, input_current);
 			}
 		}
-		pr_info("%s: cable_type(%d), chg_limit(%d) vbus_by_siop(%d)\n", __func__,
+		pr_debug_once("%s: cable_type(%d), chg_limit(%d) vbus_by_siop(%d)\n", __func__,
 			battery->cable_type, battery->chg_limit, battery->vbus_chg_by_siop);
 	}
 }
@@ -369,7 +372,7 @@ void sec_bat_check_pdic_temp(struct sec_battery_info *battery)
 			sec_vote(battery->input_vote, VOTER_PDIC_TEMP, false, 0);
 			battery->chg_limit = false;
 		}
-		pr_info("%s: cable_type(%d), chg_limit(%d)\n", __func__,
+		pr_debug_once("%s: cable_type(%d), chg_limit(%d)\n", __func__,
 			battery->cable_type, battery->chg_limit);
 	}
 }
@@ -411,7 +414,7 @@ void sec_bat_check_afc_temp(struct sec_battery_info *battery)
 				sec_vote(battery->input_vote, VOTER_CHG_TEMP, battery->chg_limit, input_current);
 			}
 		}
-		pr_info("%s: cable_type(%d), chg_limit(%d) vbus_by_siop(%d)\n", __func__,
+		pr_debug_once("%s: cable_type(%d), chg_limit(%d) vbus_by_siop(%d)\n", __func__,
 			battery->cable_type, battery->chg_limit, battery->vbus_chg_by_siop);
 	}
 #else
@@ -463,7 +466,7 @@ bool sec_usb_thm_overheatlimit(struct sec_battery_info *battery)
 #endif
 
 	if (battery->pdata->usb_temp_check_type == SEC_BATTERY_TEMP_CHECK_NONE) {
-		pr_err("%s: USB_THM, Invalid Temp Check Type, usb_thm <- bat_thm\n", __func__);
+		pr_err_once("%s: USB_THM, Invalid Temp Check Type, usb_thm <- bat_thm\n", __func__);
 		battery->usb_temp = battery->temperature;
 	}
 
@@ -479,14 +482,14 @@ bool sec_usb_thm_overheatlimit(struct sec_battery_info *battery)
 #endif
 
 		if (battery->usb_temp >= battery->overheatlimit_threshold) {
-			pr_info("%s: Usb Temp over than %d (usb_thm : %d)\n", __func__,
+			pr_debug_once("%s: Usb Temp over than %d (usb_thm : %d)\n", __func__,
 					battery->overheatlimit_threshold, battery->usb_temp);
 			battery->usb_thm_status = USB_THM_OVERHEATLIMIT;
 			return true;
 #if defined(CONFIG_PREVENT_USB_CONN_OVERHEAT)
 		} else if ((battery->usb_temp >= battery->usb_protection_temp) &&
 				(gap >= battery->temp_gap_bat_usb)) {
-			pr_info("%s: Temp gap between Usb temp and Bat temp : %d\n", __func__, gap);
+			pr_debug_once("%s: Temp gap between Usb temp and Bat temp : %d\n", __func__, gap);
 #if defined(CONFIG_BATTERY_CISD)
 			if (gap > battery->cisd.data[CISD_DATA_USB_OVERHEAT_ALONE_PER_DAY])
 				battery->cisd.data[CISD_DATA_USB_OVERHEAT_ALONE_PER_DAY] = gap;
@@ -534,14 +537,14 @@ void sec_bat_thermal_check(struct sec_battery_info *battery)
 	bat_thm = sec_bat_get_high_priority_temp(battery);
 #endif
 
-	pr_err("%s: co_c3: %d, c3_c2: %d, c2_c1: %d, c1_no: %d, no_wa: %d, wa_ov: %d, tz(%s)\n", __func__,
+	pr_err_once("%s: co_c3: %d, c3_c2: %d, c2_c1: %d, c1_no: %d, no_wa: %d, wa_ov: %d, tz(%s)\n", __func__,
 			battery->cold_cool3_thresh, battery->cool3_cool2_thresh, battery->cool2_cool1_thresh,
 			battery->cool1_normal_thresh, battery->normal_warm_thresh, battery->warm_overheat_thresh,
 			sec_bat_thermal_zone[battery->thermal_zone]);
 	if (battery->status == POWER_SUPPLY_STATUS_DISCHARGING ||
 		battery->skip_swelling) {
 		battery->health_change = false;
-		pr_debug("%s: DISCHARGING or 15 test mode. stop thermal check\n", __func__);
+		pr_debug_once("%s: DISCHARGING or 15 test mode. stop thermal check\n", __func__);
 		battery->thermal_zone = BAT_THERMAL_NORMAL;
 		sec_vote(battery->topoff_vote, VOTER_SWELLING, false, 0);
 		sec_vote(battery->fcc_vote, VOTER_SWELLING, false, 0);
@@ -553,7 +556,7 @@ void sec_bat_thermal_check(struct sec_battery_info *battery)
 	}
 
 	if (battery->pdata->temp_check_type == SEC_BATTERY_TEMP_CHECK_NONE) {
-		pr_err("%s: BAT_THM, Invalid Temp Check Type\n", __func__);
+		pr_err_once("%s: BAT_THM, Invalid Temp Check Type\n", __func__);
 		return;
 	} else {
 		/* COLD - COOL3 - COOL2 - COOL1 - NORMAL - WARM - OVERHEAT - OVERHEATLIMIT*/
@@ -584,19 +587,19 @@ void sec_bat_thermal_check(struct sec_battery_info *battery)
 		battery->bat_thm_count++;
 
 		if (battery->bat_thm_count < battery->pdata->temp_check_count) {
-			pr_info("%s : bat_thm_count %d/%d\n", __func__,
+			pr_debug_once("%s : bat_thm_count %d/%d\n", __func__,
 					battery->bat_thm_count, battery->pdata->temp_check_count);
 			battery->thermal_zone = pre_thermal_zone;
 			return;
 		}
 
-		pr_info("%s: thermal zone update (%s -> %s), bat_thm(%d), usb_thm(%d)\n", __func__,
+		pr_debug_once("%s: thermal zone update (%s -> %s), bat_thm(%d), usb_thm(%d)\n", __func__,
 				sec_bat_thermal_zone[pre_thermal_zone],
 				sec_bat_thermal_zone[battery->thermal_zone], bat_thm, battery->usb_temp);
 		battery->health_change = true;
 		battery->bat_thm_count = 0;
 
-		pr_info("%s : SAFETY TIME RESET!\n", __func__);
+		pr_debug_once("%s : SAFETY TIME RESET!\n", __func__);
 		battery->expired_time = battery->pdata->expired_time;
 		battery->prev_safety_time = 0;
 
@@ -608,14 +611,14 @@ void sec_bat_thermal_check(struct sec_battery_info *battery)
 			battery->warm_overheat_thresh -= THERMAL_HYSTERESIS_2;
 			battery->normal_warm_thresh -= THERMAL_HYSTERESIS_2;
 			if (battery->usb_thm_status == USB_THM_OVERHEATLIMIT) {
-				pr_info("%s: USB_THM_OVERHEATLIMIT\n", __func__);
+				pr_debug_once("%s: USB_THM_OVERHEATLIMIT\n", __func__);
 #if defined(CONFIG_BATTERY_CISD)
 				battery->cisd.data[CISD_DATA_USB_OVERHEAT_CHARGING]++;
 				battery->cisd.data[CISD_DATA_USB_OVERHEAT_CHARGING_PER_DAY]++;
 #endif
 #if defined(CONFIG_PREVENT_USB_CONN_OVERHEAT)
 			} else if (battery->usb_thm_status == USB_THM_GAP_OVER) {
-				pr_info("%s: USB_THM_GAP_OVER : %d\n", __func__, gap);
+				pr_debug_once("%s: USB_THM_GAP_OVER : %d\n", __func__, gap);
 #if defined(CONFIG_BATTERY_CISD)
 				battery->cisd.data[CISD_DATA_USB_OVERHEAT_RAPID_CHANGE]++;
 				battery->cisd.data[CISD_DATA_USB_OVERHEAT_RAPID_CHANGE_PER_DAY]++;
@@ -639,10 +642,10 @@ void sec_bat_thermal_check(struct sec_battery_info *battery)
 					muic_afc_set_voltage(SEC_INPUT_VOLTAGE_0V);
 #endif
 					battery->vbus_limit = true;
-					pr_info("%s: Set AFC TA to 0V\n", __func__);
+					pr_debug_once("%s: Set AFC TA to 0V\n", __func__);
 				} else if (is_pd_wire_type(battery->cable_type)) {
 					select_pdo(1);
-					pr_info("%s: Set PD TA to PDO 0\n", __func__);
+					pr_debug_once("%s: Set PD TA to PDO 0\n", __func__);
 				}
 			} else if (is_pd_wire_type(battery->cable_type)) {
 				select_pdo(1);
@@ -799,13 +802,13 @@ void sec_bat_thermal_check(struct sec_battery_info *battery)
 
 				if (voter_swelling_status == SEC_BAT_CHG_MODE_CHARGING) {
 					if (sec_bat_check_full(battery, battery->pdata->full_check_type)) {
-						pr_info("%s: battery thermal zone WARM. Full charged.\n", __func__);
+						pr_debug_once("%s: battery thermal zone WARM. Full charged.\n", __func__);
 						sec_vote(battery->chgen_vote, VOTER_SWELLING, true,
 								SEC_BAT_CHG_MODE_CHARGING_OFF);
 					}
 				} else if (voter_swelling_status == SEC_BAT_CHG_MODE_CHARGING_OFF) {
 					if (battery->voltage_now <= battery->pdata->swelling_high_rechg_voltage) {
-						pr_info("%s: thermal zone WARM. charging recovery. Vnow: %d\n",
+						pr_debug_once("%s: thermal zone WARM. charging recovery. Vnow: %d\n",
 								__func__, battery->voltage_now);
 						battery->expired_time = battery->pdata->expired_time;
 						battery->prev_safety_time = 0;

@@ -21,6 +21,9 @@
 #include "include/sec_battery.h"
 #include "include/sec_battery_misc.h"
 
+#undef pr_info
+#undef pr_debug
+
 static struct sec_bat_misc_dev *c_dev;
 
 #define SEC_BATT_MISC_DBG 1
@@ -47,15 +50,15 @@ static int sec_bat_misc_open(struct inode *inode, struct file *file)
 {
 	int ret = 0;
 
-	pr_info("%s %s + open success\n",WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s + open success\n",WC_AUTH_MSG, __func__);
 	if (!c_dev) {
-		pr_err("%s %s - error : c_dev is NULL\n", WC_AUTH_MSG, __func__);
+		pr_err_once("%s %s - error : c_dev is NULL\n", WC_AUTH_MSG, __func__);
 		ret = -ENODEV;
 		goto err;
 	}
 
 	if (_lock(&c_dev->open_excl)) {
-		pr_err("%s %s - error : device busy\n", WC_AUTH_MSG, __func__);
+		pr_err_once("%s %s - error : device busy\n", WC_AUTH_MSG, __func__);
 		ret = -EBUSY;
 		goto err;
 	}
@@ -64,12 +67,12 @@ static int sec_bat_misc_open(struct inode *inode, struct file *file)
 	/* check if there is some connection */
 	if (!c_dev->swam_ready()) {
 		_unlock(&c_dev->open_excl);
-		pr_err("%s - error : swam is not ready\n", __func__);
+		pr_err_once("%s - error : swam is not ready\n", __func__);
 		ret = -EBUSY;
 		goto err;
 	}
 #endif
-	pr_info("%s %s- open success\n", WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s- open success\n", WC_AUTH_MSG, __func__);
 
 	return 0;
 err:
@@ -81,7 +84,7 @@ static int sec_bat_misc_close(struct inode *inode, struct file *file)
 	if (c_dev)
 		_unlock(&c_dev->open_excl);
 	//c_dev->swam_close();
-	pr_info("%s %s - close success\n", WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s - close success\n", WC_AUTH_MSG, __func__);
 	return 0;
 }
 
@@ -90,7 +93,7 @@ static int send_swam_message(void *data, int size)
 	int ret;
 
 	ret = c_dev->swam_write(data, size);
-	pr_info("%s %s - size : %d, ret : %d\n", WC_AUTH_MSG, __func__, size, ret);
+	pr_debug_once("%s %s - size : %d, ret : %d\n", WC_AUTH_MSG, __func__, size, ret);
 	return ret;
 }
 
@@ -99,7 +102,7 @@ static int receive_swam_message(void *data, int size)
 	int ret;
 
 	ret = c_dev->swam_read(data);
-	pr_info("%s %s - size : %d, ret : %d\n", WC_AUTH_MSG, __func__, size, ret);
+	pr_debug_once("%s %s - size : %d, ret : %d\n", WC_AUTH_MSG, __func__, size, ret);
 	return ret;
 }
 
@@ -114,17 +117,17 @@ sec_bat_misc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #endif
 
 	if (_lock(&c_dev->ioctl_excl)) {
-		pr_err("%s %s - error : ioctl busy - cmd : %d\n", WC_AUTH_MSG, __func__, cmd);
+		pr_err_once("%s %s - error : ioctl busy - cmd : %d\n", WC_AUTH_MSG, __func__, cmd);
 		return  -EBUSY;
 	}
 
 	switch (cmd) {
 	case BATT_IOCTL_SWAM:
-		pr_info("%s %s - BATT_IOCTL_SWAM cmd\n", WC_AUTH_MSG, __func__);
+		pr_debug_once("%s %s - BATT_IOCTL_SWAM cmd\n", WC_AUTH_MSG, __func__);
 		if (copy_from_user(&c_dev->u_data, (void __user *) arg,
 				sizeof(struct swam_data))) {
 			ret = -EIO;
-			pr_err("%s %s - copy_from_user error\n", WC_AUTH_MSG, __func__);
+			pr_err_once("%s %s - copy_from_user error\n", WC_AUTH_MSG, __func__);
 			goto err;
 		}
 		buf = kzalloc(MAX_BUF, GFP_KERNEL);
@@ -132,57 +135,57 @@ sec_bat_misc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			return -EINVAL;
 		if (c_dev->u_data.size > MAX_BUF) {
 			ret = -ENOMEM;
-			pr_err("%s %s - user data size is %d error\n", WC_AUTH_MSG, __func__, c_dev->u_data.size);
+			pr_err_once("%s %s - user data size is %d error\n", WC_AUTH_MSG, __func__, c_dev->u_data.size);
 			goto err;
 		}
 
 		if (c_dev->u_data.dir == DIR_OUT) {
 			if (copy_from_user(buf, c_dev->u_data.pData, c_dev->u_data.size)) {
 				ret = -EIO;
-				pr_err("%s %s - copy_from_user error\n", WC_AUTH_MSG, __func__);
+				pr_err_once("%s %s - copy_from_user error\n", WC_AUTH_MSG, __func__);
 				goto err;
 			}
 #if SEC_BATT_MISC_DBG
-			pr_info("%s %s = send_swam_message - size : %d\n", WC_AUTH_MSG, __func__, c_dev->u_data.size);
+			pr_debug_once("%s %s = send_swam_message - size : %d\n", WC_AUTH_MSG, __func__, c_dev->u_data.size);
 			p_buf = buf;
 			for (i = 0 ; i < c_dev->u_data.size ; i++)
-				pr_info("%x ", (uint32_t)p_buf[i]);
-			pr_info("\n");
+				pr_debug_once("%x ", (uint32_t)p_buf[i]);
+			pr_debug_once("\n");
 #endif
 			ret = send_swam_message(buf, c_dev->u_data.size);
 			if (ret < 0) {
-				pr_err("%s %s- send_swam_message error\n", WC_AUTH_MSG, __func__);
+				pr_err_once("%s %s- send_swam_message error\n", WC_AUTH_MSG, __func__);
 				ret = -EINVAL;
 				goto err;
 			}
 		} else {
 #if SEC_BATT_MISC_DBG
-			pr_info("%s %s = received_swam_message - size : %d\n", WC_AUTH_MSG, __func__, c_dev->u_data.size);
+			pr_debug_once("%s %s = received_swam_message - size : %d\n", WC_AUTH_MSG, __func__, c_dev->u_data.size);
 #endif
 			ret = receive_swam_message(buf, c_dev->u_data.size);
 			if (ret < 0) {
-				pr_err("%s %s - receive_swam_message error\n", WC_AUTH_MSG, __func__);
+				pr_err_once("%s %s - receive_swam_message error\n", WC_AUTH_MSG, __func__);
 				ret = -EINVAL;
 				goto err;
 			}
 #if SEC_BATT_MISC_DBG
 			p_buf = buf;
-			pr_info("%s %s = received_swam_message - ret : %d\n", WC_AUTH_MSG, __func__, ret);
+			pr_debug_once("%s %s = received_swam_message - ret : %d\n", WC_AUTH_MSG, __func__, ret);
 			for (i = 0; i < ret ; i++)
-				pr_info("%x ", (uint32_t)p_buf[i]);
-			pr_info("\n");
+				pr_debug_once("%x ", (uint32_t)p_buf[i]);
+			pr_debug_once("\n");
 #endif
 			if (copy_to_user((void __user *)c_dev->u_data.pData,
 					 buf, ret)) {
 				ret = -EIO;
-				pr_err("%s %s - copy_to_user error\n", WC_AUTH_MSG, __func__);
+				pr_err_once("%s %s - copy_to_user error\n", WC_AUTH_MSG, __func__);
 				goto err;
 			}
 		}
 		break;
 
 	default:
-		pr_err("%s %s - unknown ioctl cmd : %d\n", WC_AUTH_MSG, __func__, cmd);
+		pr_err_once("%s %s - unknown ioctl cmd : %d\n", WC_AUTH_MSG, __func__, cmd);
 		ret = -ENOIOCTLCMD;
 		goto err;
 	}
@@ -228,7 +231,7 @@ static long
 sec_bat_misc_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int ret = 0;
-	pr_info("%s %s - cmd : %d\n", WC_AUTH_MSG, __func__, cmd);
+	pr_debug_once("%s %s - cmd : %d\n", WC_AUTH_MSG, __func__, cmd);
 	ret = sec_bat_misc_ioctl(file, cmd, (unsigned long)compat_ptr(arg));
 
 	return ret;
@@ -241,14 +244,14 @@ int sec_bat_swam_out_request_message(void *data, int size)
 	//int i = 0;
 	u8 *p_data;
 
-	pr_info("%s %s : auth service writes data\n", WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s : auth service writes data\n", WC_AUTH_MSG, __func__);
 
 	if (data == NULL) {
-		pr_info("%s %s: given data is not valid !\n", WC_AUTH_MSG, __func__);
+		pr_debug_once("%s %s: given data is not valid !\n", WC_AUTH_MSG, __func__);
 		return -EINVAL;
 	}
 
-	pr_info("%s %s : size = %d \n", WC_AUTH_MSG, __func__, size);
+	pr_debug_once("%s %s : size = %d \n", WC_AUTH_MSG, __func__, size);
 
 	/* clear received event */
 	value.intval = WIRELESS_AUTH_SENT;
@@ -257,7 +260,7 @@ int sec_bat_swam_out_request_message(void *data, int size)
 
 	p_data = (u8 *)data;
 	//for(i=0; i< size; i++)
-	//	pr_info("%s: auth read data = %x", __func__, p_data[i]);
+	//	pr_debug_once("%s: auth read data = %x", __func__, p_data[i]);
 
 	if(size > 1 ) {
 		/* set data size first */
@@ -271,17 +274,17 @@ int sec_bat_swam_out_request_message(void *data, int size)
 			POWER_SUPPLY_EXT_PROP_WIRELESS_AUTH_ADT_DATA, value);
 	} else if (size == 1 ) {
 		if (p_data[0] == 0x1) {
-			pr_info("%s %s : auth has been passed \n", WC_AUTH_MSG, __func__);
+			pr_debug_once("%s %s : auth has been passed \n", WC_AUTH_MSG, __func__);
 			value.intval = WIRELESS_AUTH_PASS;
 			psy_do_property("mfc-charger", set,
 				POWER_SUPPLY_EXT_PROP_WIRELESS_AUTH_ADT_STATUS, value);
 		} else if (p_data[0] == 0x2) {
-			pr_info("%s %s : auth has been failed \n", WC_AUTH_MSG, __func__);
+			pr_debug_once("%s %s : auth has been failed \n", WC_AUTH_MSG, __func__);
 			value.intval = WIRELESS_AUTH_FAIL;
 			psy_do_property("mfc-charger", set,
 				POWER_SUPPLY_EXT_PROP_WIRELESS_AUTH_ADT_STATUS, value);
 		} else
-			pr_info("%s %s : invalid arg %d \n", WC_AUTH_MSG, __func__, p_data[0]);
+			pr_debug_once("%s %s : invalid arg %d \n", WC_AUTH_MSG, __func__, p_data[0]);
 	}
 	return size;
 }
@@ -292,7 +295,7 @@ void sec_bat_swam_copy_data(u8 *src, u8 *dest, int size)
 
 	for(i=0; i < size; i++) {
 		dest[i] = src[i];
-		pr_info("%s %s : auth read data (for debug) = %x", WC_AUTH_MSG, __func__, dest[i]);
+		pr_debug_once("%s %s : auth read data (for debug) = %x", WC_AUTH_MSG, __func__, dest[i]);
 	}
 }
 
@@ -303,13 +306,13 @@ int sec_bat_swam_in_request_message(void *data)
 	//int i = 0;
 	//u8 in_data[MAX_BUF] = {0, };
 
-	pr_info("%s %s : auth service reads data\n", WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s : auth service reads data\n", WC_AUTH_MSG, __func__);
 
 	if (data == NULL) {
-		pr_info("%s %s : given data is not valid !\n", WC_AUTH_MSG, __func__);
+		pr_debug_once("%s %s : given data is not valid !\n", WC_AUTH_MSG, __func__);
 		return -EINVAL;
 	}
-	pr_info("%s %s\n", WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s\n", WC_AUTH_MSG, __func__);
 
 	/* get data size first */
 	psy_do_property("mfc-charger", get,
@@ -320,7 +323,7 @@ int sec_bat_swam_in_request_message(void *data)
 		POWER_SUPPLY_EXT_PROP_WIRELESS_AUTH_ADT_DATA, value);
 
 	if(value.intval == 0) {
-		pr_info("%s: data hasn't been received yet!\n", __func__);
+		pr_debug_once("%s: data hasn't been received yet!\n", __func__);
 		return -EINVAL;
 	}
 
@@ -328,7 +331,7 @@ int sec_bat_swam_in_request_message(void *data)
 	sec_bat_swam_copy_data((u8 *)value.strval, data, size);
 
 	//for(i=0; i< size; i++)
-	//	pr_info("%s: auth read data (for debug) = %x", __func__, in_data[i]);
+	//	pr_debug_once("%s: auth read data (for debug) = %x", __func__, in_data[i]);
 
 	return size;
 }
@@ -356,14 +359,14 @@ int sec_bat_misc_init(struct sec_battery_info *battery)
 
 	ret = misc_register(&sec_bat_misc_device);
 	if (ret) {
-		pr_err("%s %s - return error : %d\n", WC_AUTH_MSG, __func__, ret);
+		pr_err_once("%s %s - return error : %d\n", WC_AUTH_MSG, __func__, ret);
 		goto err;
 	}
 
 	c_dev = kzalloc(sizeof(struct sec_bat_misc_dev), GFP_KERNEL);
 	if (!c_dev) {
 		ret = -ENOMEM;
-		pr_err("%s %s - kzalloc failed : %d\n", WC_AUTH_MSG, __func__, ret);
+		pr_err_once("%s %s - kzalloc failed : %d\n", WC_AUTH_MSG, __func__, ret);
 		goto err1;
 	}
 	atomic_set(&c_dev->open_excl, 0);
@@ -376,7 +379,7 @@ int sec_bat_misc_init(struct sec_battery_info *battery)
 	//c_dev->swam_ready = ;
 	//c_dev->swam_close = ;
 
-	pr_info("%s %s - register success\n", WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s - register success\n", WC_AUTH_MSG, __func__);
 	return 0;
 err1:
 	misc_deregister(&sec_bat_misc_device);
@@ -387,7 +390,7 @@ EXPORT_SYMBOL(sec_bat_misc_init);
 
 void sec_bat_misc_exit(void)
 {
-	pr_info("%s %s() called\n", WC_AUTH_MSG, __func__);
+	pr_debug_once("%s %s() called\n", WC_AUTH_MSG, __func__);
 	if (!c_dev)
 		return;
 	kfree(c_dev);

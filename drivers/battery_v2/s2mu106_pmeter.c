@@ -26,6 +26,9 @@
 #define VOLTAGE_6P9V	6900
 #define VOLTAGE_5V	6000
 
+#undef pr_info
+#undef pr_debug
+
 static enum power_supply_property s2mu106_pmeter_props[] = {
 	POWER_SUPPLY_PROP_ONLINE,
 };
@@ -92,7 +95,7 @@ static int s2mu106_pm_get_vchgin(struct s2mu106_pmeter_data *pmeter)
 		return -EINVAL;
 
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 5;
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -109,7 +112,7 @@ static int s2mu106_pm_get_vwcin(struct s2mu106_pmeter_data *pmeter)
 		return -EINVAL;
 
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 5;
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -126,7 +129,7 @@ static int s2mu106_pm_get_vbyp(struct s2mu106_pmeter_data *pmeter)
 		return -EINVAL;
 
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 5;
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -145,7 +148,7 @@ static int s2mu106_pm_get_vsysa(struct s2mu106_pmeter_data *pmeter)
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 25;
 	charge_voltage = charge_voltage / 10;
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -164,7 +167,7 @@ static int s2mu106_pm_get_vbata(struct s2mu106_pmeter_data *pmeter)
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 25;
 	charge_voltage = charge_voltage / 10;
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -183,7 +186,7 @@ static int s2mu106_pm_get_vgpadc(struct s2mu106_pmeter_data *pmeter)
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 25;
 	charge_voltage = charge_voltage / 10;
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -202,7 +205,7 @@ static int s2mu106_pm_get_vcc1(struct s2mu106_pmeter_data *pmeter)
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 625;
 	charge_voltage = charge_voltage / 1000;
 
-	pr_debug("%s2, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s2, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -221,7 +224,7 @@ static int s2mu106_pm_get_vcc2(struct s2mu106_pmeter_data *pmeter)
 	charge_voltage = ((data1 << 4) | (data2 >> 4)) * 625;
 	charge_voltage = charge_voltage / 1000;
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, voltage = %d\n",
 			__func__, data1, data2, charge_voltage);
 	return charge_voltage;
 }
@@ -239,7 +242,7 @@ static int s2mu106_pm_get_ichgin(struct s2mu106_pmeter_data *pmeter)
 
 	charge_current = (int)((data1 << 4) | (data2 >> 4));
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
 			__func__, data1, data2, charge_current);
 	return charge_current;
 }
@@ -257,7 +260,7 @@ static int s2mu106_pm_get_iwcin(struct s2mu106_pmeter_data *pmeter)
 
 	charge_current = (int)((data1 << 4) | (data2 >> 4));
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
 			__func__, data1, data2, charge_current);
 	return charge_current;
 }
@@ -275,7 +278,7 @@ static int s2mu106_pm_get_iotg(struct s2mu106_pmeter_data *pmeter)
 
 	charge_current = (int)((data1 << 4) | (data2 >> 4));
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
 			__func__, data1, data2, charge_current);
 	return charge_current;
 }
@@ -293,7 +296,7 @@ static int s2mu106_pm_get_itx(struct s2mu106_pmeter_data *pmeter)
 
 	charge_current = (int)((data1 << 4) | (data2 >> 4));
 
-	pr_debug("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
+	pr_debug_once("%s, data1 : 0x%2x, data2 : 0x%2x, current = %d\n",
 			__func__, data1, data2, charge_current);
 	return charge_current;
 }
@@ -448,7 +451,7 @@ static int s2mu106_pmeter_probe(struct platform_device *pdev)
 
 	pmeter->psy_pm = power_supply_register(&pdev->dev, &pmeter->psy_pm_desc, &psy_cfg);
 	if (IS_ERR(pmeter->psy_pm)) {
-		pr_err("%s: Failed to Register psy_chg\n", __func__);
+		pr_err_once("%s: Failed to Register psy_chg\n", __func__);
 		ret = PTR_ERR(pmeter->psy_pm);
 		goto err_power_supply_register;
 	}
@@ -457,7 +460,7 @@ static int s2mu106_pmeter_probe(struct platform_device *pdev)
 	ret = request_threaded_irq(pmeter->irq_vchgin, NULL,
 			s2mu106_vchgin_isr, 0, "vchgin-irq", pmeter);
 	if (ret < 0) {
-		pr_err("%s: Fail to request SYS in IRQ: %d: %d\n",
+		pr_err_once("%s: Fail to request SYS in IRQ: %d: %d\n",
 				__func__, pmeter->irq_vchgin, ret);
 	}
 

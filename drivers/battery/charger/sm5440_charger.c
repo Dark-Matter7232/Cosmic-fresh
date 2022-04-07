@@ -30,6 +30,9 @@
 static int cc_cnt = 0;
 static int cv_cnt = 0;
 
+#undef pr_info
+#undef pr_debug
+
 char *sm5440_dc_state_str[] = {
 	"NO_CHARGING",
 	"DC_ERR",
@@ -325,7 +328,7 @@ static void sm5440_print_regmap(struct sm5440_charger *sm5440)
 	for (i = 0; i < print_reg_num; ++i) {
 		sprintf(temp_buf+strlen(temp_buf), "0x%02X[0x%02X],", SM5440_REG_MSK1 + i, regs[i]);
 		if (((i+1) % 10 == 0) || ((i+1) == print_reg_num)) {
-			pr_info("sm5440-charger: regmap: %s\n", temp_buf);
+			pr_debug_once("sm5440-charger: regmap: %s\n", temp_buf);
 			memset(temp_buf, 0x0, sizeof(temp_buf));
 		}
 	}
@@ -1027,7 +1030,7 @@ static int sm5440_chg_get_property(struct power_supply *psy,
 					break;
 				case POWER_SUPPLY_EXT_PROP_DIRECT_CHARGER_CHG_STATUS:
 					val->strval = sm5440_dc_state_str[sm5440->chg.state];
-					pr_info("%s: CHARGER_STATUS(%s)\n", __func__, val->strval);
+					pr_debug_once("%s: CHARGER_STATUS(%s)\n", __func__, val->strval);
 					break;
 
 				default:
@@ -2471,7 +2474,7 @@ static struct i2c_driver sm5440_charger_driver = {
 
 static int __init sm5440_i2c_init(void)
 {
-	pr_info("sm5440-charger: %s\n", __func__);
+	pr_debug_once("sm5440-charger: %s\n", __func__);
 	return i2c_add_driver(&sm5440_charger_driver);
 }
 module_init(sm5440_i2c_init);

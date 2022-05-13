@@ -97,7 +97,6 @@ static DEFINE_RWLOCK(binfmt_lock);
 #define HWCOMPOSER_BIN_PREFIX "/vendor/bin/hw/android.hardware.graphics.composer@2.1-service"
 #define SEC_WLBTD_BIN_PREFIX "/vendor/bin/wlbtd"
 #define SEC_WLAN_HAL_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.wifi@2.0-service"
-#define SEM_HYPER_BIN_PREFIX "/vendor/bin/hw/vendor.samsung.hardware.hyper-service"
 #define ZYGOTE32_BIN "/system/bin/app_process32"
 #define ZYGOTE64_BIN "/system/bin/app_process64"
 static struct signal_struct *zygote32_sig;
@@ -2005,11 +2004,6 @@ static int do_execveat_common(int fd, struct filename *filename,
 			zygote64_sig = current->signal;
 		else if (unlikely(!strncmp(filename->name, HWCOMPOSER_BIN_PREFIX, strlen(HWCOMPOSER_BIN_PREFIX)))) 
 		{
-			current->flags |= PF_PERF_CRITICAL;
-			set_cpus_allowed_ptr(current, cpu_perf_mask);
-		} else if (unlikely(!strncmp(filename->name,
-					   SEM_HYPER_BIN_PREFIX,
-					   strlen(SEM_HYPER_BIN_PREFIX)))) {
 			current->flags |= PF_PERF_CRITICAL;
 			set_cpus_allowed_ptr(current, cpu_perf_mask);
 		} else if (unlikely(!strncmp(filename->name, SEC_WLBTD_BIN_PREFIX, strlen(SEC_WLBTD_BIN_PREFIX))) ||

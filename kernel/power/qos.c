@@ -709,7 +709,7 @@ static inline int pm_qos_set_value_for_cpus(struct pm_qos_request *new_req,
 	return 0;
 }
 
-static int __always_inline pm_qos_update_target_cpus(struct pm_qos_constraints *c,
+static int pm_qos_update_target_cpus(struct pm_qos_constraints *c,
 				     struct plist_node *node,
 				     enum pm_qos_req_action action, int value,
 				     unsigned long new_cpus)
@@ -948,7 +948,7 @@ int pm_qos_request_for_cpumask(int pm_qos_class, struct cpumask *mask)
 }
 EXPORT_SYMBOL(pm_qos_request_for_cpumask);
 
-static __always_inline void __pm_qos_update_request(struct pm_qos_request *req,
+static void __pm_qos_update_request(struct pm_qos_request *req,
 			   s32 new_value)
 {
 	trace_pm_qos_update_request(req->pm_qos_class, new_value);
@@ -1105,7 +1105,7 @@ EXPORT_SYMBOL_GPL(pm_qos_add_request_trace);
  *
  * Attempts are made to make this code callable on hot code paths.
  */
-void __always_inline pm_qos_update_request(struct pm_qos_request *req,
+void pm_qos_update_request(struct pm_qos_request *req,
 			   s32 new_value)
 {
 	if (!req) /*guard against callers passing in null */

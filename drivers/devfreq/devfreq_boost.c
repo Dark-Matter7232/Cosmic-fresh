@@ -222,7 +222,7 @@ static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
 		struct boost_dev *b = d->devices + i;
 
 		if (*blank == FB_BLANK_UNBLANK) {
-                        set_stune_boost("top-app", 2, &boost_slot);
+                        set_stune_boost("top-app", 10, &boost_slot);
                         set_stune_boost("foreground", 1, &boost_slot);
                         do_prefer_idle("top-app", 1);
                         

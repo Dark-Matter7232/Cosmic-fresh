@@ -951,7 +951,8 @@ struct kbase_process {
  * @apc.power_off_work:     Work struct for powering off the GPU.
  * @apc.end_ts:             The latest end timestamp to power off the GPU.
  * @apc.timer:              A hrtimer for powering off based on wake duration.
- * @apc.lock:               Lock for @apc.end_ts and @apc.timer.
+ * @apc.pending:            Whether apc is requested and not handled yet.
+ * @apc.lock:               Lock for @apc.end_ts, @apc.timer and @apc.pending.
  * @sysc_alloc:             Array containing values to be programmed into
  *                          SYSC_ALLOC[0..7] GPU registers on L2 cache
  *                          power down. These come from either DTB or
@@ -1224,6 +1225,7 @@ struct kbase_device {
 		struct kthread_work power_off_work;
 		ktime_t end_ts;
 		struct hrtimer timer;
+		bool pending;
 		struct mutex lock;
 	} apc;
 

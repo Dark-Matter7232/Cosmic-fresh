@@ -134,6 +134,11 @@
 #define KBASE_RT_THREAD_CPUMASK_MAX (3)
 
 /**
+ * Minimum allowed wake duration in usec for apc request.
+ */
+#define KBASE_APC_MIN_DUR_USEC (100)
+
+/**
  * Maximum allowed wake duration in usec for apc request.
  */
 #define KBASE_APC_MAX_DUR_USEC (4000)
@@ -962,7 +967,7 @@ struct kbase_process {
  * @apc.power_off_work:     Work struct for powering off the GPU.
  * @apc.end_ts:             The latest end timestamp to power off the GPU.
  * @apc.timer:              A hrtimer for powering off based on wake duration.
- * @apc.pending:            Whether apc is requested and not handled yet.
+ * @apc.pending:            Whether an APC power on request is active and not handled yet.
  * @apc.lock:               Lock for @apc.end_ts, @apc.timer and @apc.pending.
  * @sysc_alloc:             Array containing values to be programmed into
  *                          SYSC_ALLOC[0..7] GPU registers on L2 cache

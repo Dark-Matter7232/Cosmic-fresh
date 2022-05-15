@@ -879,12 +879,12 @@ int pm_qos_read_req_value(int pm_qos_class, struct pm_qos_request *req)
 
 	plist_for_each(p, &pm_qos_array[pm_qos_class]->constraints->list) {
 		if (req == container_of(p, struct pm_qos_request, node)) {
-			spin_unlock_irqrestore(&pm_qos_lock, flags);
+			spin_unlock(&pm_qos_lock);
 			return p->prio;
 		}
 	}
 
-	spin_unlock_irqrestore(&pm_qos_lock, flags);
+	spin_unlock(&pm_qos_lock);
 
 	return -ENODATA;
 }
